@@ -11,12 +11,13 @@ candidate is meaningfully different from already submitted variants.
 Best public score so far:
 
 ```text
-0.08639  submissions/pose_heuristic_thr115_nms12.csv
+0.13275  submissions/yolo11s_fighterhand_thr115_same10_cross4_rootcount1_OFFLINE_CANDIDATE.csv
 ```
 
 Other checked variants:
 
 ```text
+0.08639  pose_heuristic_thr115_nms12.csv
 0.07902  pose_heuristic_thr125_nms12.csv
 0.07486  pose_heuristic_thr135_nms12.csv
 0.06582  pose_heuristic_thr15_nms12.csv
@@ -31,6 +32,8 @@ Other checked variants:
 
 Conclusions from public checks:
 
+- Larger pose model transferred to public: `yolo11s-pose` with fighter/hand
+  grouped NMS improved public score from `0.08639` to `0.13275`.
 - Global fighter swap is bad.
 - Frame offset `+3` is neutral/slightly worse; `-3` is worse.
 - Around the initial pose heuristic, recall helped up to `thr=1.15`; overly
@@ -81,6 +84,7 @@ submissions/pose_heuristic_thr08_nms6_OFFLINE_CANDIDATE.csv
 submissions/pose_heuristic_grouped_fighter_thr08_same8_cross2_OFFLINE_CANDIDATE.csv
 submissions/pose_heuristic_grouped_fighter_thr08_same8_cross2_rootcount09_OFFLINE_CANDIDATE.csv
 submissions/pose_context_dominance_w4_a02_thr105_nms7_cross2_OFFLINE_CANDIDATE.csv
+submissions/yolo11s_fighterhand_thr115_same10_cross4_rootcount1_OFFLINE_CANDIDATE.csv
 ```
 
 The grouped-NMS test candidate validates and has 737 `clear=true` rows after
@@ -88,7 +92,8 @@ sample capacity clipping, versus 699 for the global `thr=0.8,nms=6` candidate.
 The root-count variant validates and has 723 `clear=true` rows.
 The temporal-context candidate validates and has 739 `clear=true` rows.
 
-`yolo11s-pose` candidates are in progress. The full validation cache
+`yolo11s-pose` candidates produced the first large offline and public jump. The
+full validation cache
 `data/processed/pose_tracks/val_yolo11s_conf035/` is complete. Best checked
 offline config on that cache is:
 
@@ -98,8 +103,9 @@ offline config on that cache is:
 ```
 
 This is a large improvement over both the `yolo11n` simple baseline (`0.23802`)
-and the best `yolo11n` temporal-context candidate (`0.245871`). Test
-`yolo11s-pose` tracks are being generated before any submit decision.
+and the best `yolo11n` temporal-context candidate (`0.245871`). The matching
+test candidate validates, has 730 `clear=true` rows, and scored `0.13275`
+public.
 
 ## Hypotheses Checked
 

@@ -5,13 +5,13 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 
 ## Current State
 
-- Best public score: `0.08639` from
-  `submissions/pose_heuristic_thr115_nms12.csv`.
+- Best public score: `0.13275` from
+  `submissions/yolo11s_fighterhand_thr115_same10_cross4_rootcount1_OFFLINE_CANDIDATE.csv`.
 - Corrected offline validation uses all 13 fight-level validation videos in
   `data/processed/pose_tracks/val_yolo11n_conf035/`.
-- Best simple offline threshold/NMS baseline:
+- `yolo11n` simple offline threshold/NMS baseline:
   `0.23802` at `threshold=0.8`, `nms=6`, `n=1119`.
-- Best submitted-public analog on the same split:
+- Best `yolo11n` submitted-public analog on the same split:
   `0.20130` at `threshold=1.0`, `nms=12`.
 - Best checked grouped NMS:
   `0.24246`, fighter-grouped NMS, `threshold=0.8`, same-group NMS `8`,
@@ -22,6 +22,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `0.245871`, same `(fighter, hand)` dominance in a `+/-4` frame window,
   `alpha=0.2`, `threshold=1.05`, same-fighter NMS `7`, cross-fighter NMS `2`,
   `n=1170`.
+- Best checked `yolo11s-pose` offline variant:
+  `0.340888`, fighter+hand grouped NMS, `threshold=1.15`, same-group NMS `10`,
+  cross-group NMS `4`, `root_count=1.0`, `n=1202`.
 - Generated but not submitted candidates include the grouped-NMS, grouped-count,
   and temporal-context CSVs listed in `EXPERIMENTS.md`.
 - The task rewards timing most heavily. The metric weights time at `50%`,
@@ -52,6 +55,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - Audio reranking has not beaten the full-validation baseline; the best positive
   audio boost was still slightly worse than baseline (`0.23789` vs `0.23802`).
 - Fighter/color and attribute priors are not useful standalone improvements.
+- `yolo11s-pose` transferred to public and is now the strongest baseline:
+  `0.13275` public. The next detector/model experiments should compare against
+  `yolo11s`, not `yolo11n`.
 
 ## Promising Next Hypotheses
 
@@ -69,25 +75,29 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 
 ## Compute-Aware Experiment Queue
 
-1. No-GPU offline grid: rerun and narrow temporal-context sweeps on cached
-   validation tracks.
+1. GPU detector/model experiment: test `yolo11m-pose` on the validation split.
+   - Use `--cuda-visible-devices 1`, omit `--device`, and start with `--jobs 2`.
+   - Compare against `yolo11s` best `0.340888`; continue only if `yolo11m`
+     improves by about `+0.01` macro or clearly fixes hard videos.
+2. No-GPU offline grid: rerun and narrow temporal-context sweeps on cached
+   `yolo11s` and later `yolo11m` validation tracks.
    - Start near `window=4`, `alpha=0.2`, `dominance`,
      `threshold=1.0..1.15`, same-fighter NMS `6..8`, cross-NMS `2..4`.
    - Command shape:
      `python3 tools/evaluate_pose_temporal_context.py --tracks-dir data/processed/pose_tracks/val_yolo11n_conf035 --windows 3,4,5,6 --alphas 0.1,0.15,0.2,0.25,0.35 --features dominance,same_sum --thresholds 0.95,1.0,1.05,1.1,1.15 --nms-frames 6,7,8 --nms-group-modes fighter --cross-nms-frames 2,3,4`.
-2. No-GPU count stress test on cached validation tracks.
+3. No-GPU count stress test on cached validation tracks.
    - Compare threshold-only against root/root-round count modes around
      multipliers `0.8..1.0`.
    - Command shape:
      `python3 tools/evaluate_pose_threshold_grid.py --tracks-dir data/processed/pose_tracks/val_yolo11n_conf035 --thresholds 0.7,0.8,0.9,1.0,1.05,1.15 --nms-frames 4,6,7,8,10 --count-modes threshold,root_count,root_round_count,root_rate,root_round_rate --count-multipliers 0.8,0.9,1.0`.
-3. No-GPU robustness audit.
+4. No-GPU robustness audit.
    - Compare macro, time score, FP penalty, prediction count, and video wins
      against both `0.23802` and `0.245871`. Reject variants that win by count
      inflation only.
-4. GPU pass only if tracks are missing or a new detector/config is justified.
+5. GPU pass only if tracks are missing or a new detector/config is justified.
    - Regenerate pose tracks with GPU 1 only, verify with `nvidia-smi` UUID, then
      return to cached offline evaluation.
-5. Candidate generation after a gate passes.
+6. Candidate generation after a gate passes.
    - Use `tools/make_pose_heuristic_submission.py` with the winning parameters.
    - Validate locally; do not submit from this backlog step.
 
@@ -96,8 +106,8 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - Respect the 30 submissions/day limit. Do not submit small threshold sweeps.
 - A candidate must pass local validation against `sample_submission.csv`.
 - A candidate must be materially different from already submitted variants.
-- Automatic submit gate: beat the current best offline temporal-context score
-  `0.245871` by at least `0.010` macro, with no FP-penalty regression larger
+- Automatic submit gate: beat the current best offline `yolo11s` score
+  `0.340888` by at least `0.010` macro, with no FP-penalty regression larger
   than `0.01` and at least 10 of 13 validation-video wins versus
   `thr=0.8,nms=6`.
 - Manual-review gate: a smaller gain may be worth discussing only if it improves
