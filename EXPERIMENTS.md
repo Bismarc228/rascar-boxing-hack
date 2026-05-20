@@ -88,6 +88,19 @@ sample capacity clipping, versus 699 for the global `thr=0.8,nms=6` candidate.
 The root-count variant validates and has 723 `clear=true` rows.
 The temporal-context candidate validates and has 739 `clear=true` rows.
 
+`yolo11s-pose` candidates are in progress. The full validation cache
+`data/processed/pose_tracks/val_yolo11s_conf035/` is complete. Best checked
+offline config on that cache is:
+
+```text
+0.340888  yolo11s, fighter_hand grouped NMS, thr=1.15,
+          same-group nms=10, cross-group nms=4, root_count=1.0, n=1202
+```
+
+This is a large improvement over both the `yolo11n` simple baseline (`0.23802`)
+and the best `yolo11n` temporal-context candidate (`0.245871`). Test
+`yolo11s-pose` tracks are being generated before any submit decision.
+
 ## Hypotheses Checked
 
 - Metadata count priors are useful for reasoning, but pure temporal priors are
@@ -137,6 +150,11 @@ The temporal-context candidate validates and has 739 `clear=true` rows.
   a `+/-4` frame window (`alpha=0.2`) with `threshold=1.05`, same-fighter NMS
   `7`, cross-fighter NMS `2` gives `0.245871`, `time=0.396658`, 11/13 video
   wins, and `n=1170` on validation.
+- Larger pose model is the first submit-grade offline signal. On the same
+  validation split, `yolo11s-pose` raises the best local score to `0.340888`.
+  The best `yolo11s` grid point uses fighter+hand grouped NMS rather than the
+  earlier context boost; context did not beat the grouped selector on
+  `yolo11s`.
 
 ## Next Useful Work
 
