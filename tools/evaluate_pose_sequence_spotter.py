@@ -108,6 +108,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--thresholds", default="0.05,0.08,0.1,0.12,0.15,0.2,0.25,0.3,0.4")
     parser.add_argument("--nms-frames", default="8,10,12")
     parser.add_argument("--cross-nms-frames", default="2,4")
+    parser.add_argument("--snap-windows", default="0")
     parser.add_argument("--count-modes", default="threshold,root_rate,root_count")
     parser.add_argument("--count-multipliers", default="0.72,0.78,0.84,0.88,0.92")
     parser.add_argument("--pose-priors", default="0.0,0.1,0.2,0.4")
@@ -179,6 +180,7 @@ def main() -> int:
     group_by_key = {key: fight_group(video_by_key[key]) for key in ready_keys}
     groups = sorted(set(group_by_key.values()))
     scored_by_key: dict[str, list[PunchCandidate]] = {}
+    stream_scores_by_key_group: dict[tuple[str, int], np.ndarray] = {}
     device = resolve_device(args.device)
     seed_values = parse_ints(args.seeds) if args.seeds else [args.seed]
     print(f"device={device}", flush=True)
@@ -219,6 +221,7 @@ def main() -> int:
             (sample.key, sample.group_index): prediction
             for sample, prediction in zip(valid_samples, stream_predictions)
         }
+        stream_scores_by_key_group.update(by_key_group)
         for key in valid_keys:
             scored_by_key[key] = [
                 replace_score(
@@ -262,6 +265,8 @@ def main() -> int:
         count_mode="threshold",
         count_multiplier=1.0,
         pose_prior=0.0,
+        snap_window=0,
+        stream_scores_by_key_group=stream_scores_by_key_group,
     )
     baseline_score = score_predictions(gt, baseline_rows)
     print_score("primary_pool_ref", baseline_score, len(baseline_rows), 0)
@@ -270,6 +275,7 @@ def main() -> int:
     thresholds = parse_floats(args.thresholds)
     nms_values = parse_ints(args.nms_frames)
     cross_values = parse_ints(args.cross_nms_frames)
+    snap_windows = parse_ints(args.snap_windows)
     count_modes = [value for value in args.count_modes.split(",") if value]
     multipliers = parse_floats(args.count_multipliers)
     pose_priors = parse_floats(args.pose_priors)
@@ -282,51 +288,55 @@ def main() -> int:
         for threshold in thresholds:
             for nms_frames in nms_values:
                 for cross_nms in cross_values:
-                    for count_mode in count_modes:
-                        mode_multipliers = [1.0] if count_mode == "threshold" else multipliers
-                        for count_multiplier in mode_multipliers:
-                            rows = build_rows(
-                                ready_keys,
-                                video_by_key,
-                                reranked,
-                                attr_priors,
-                                train_videos,
-                                train_counts,
-                                gt_counts,
-                                threshold,
-                                nms_frames,
-                                cross_nms,
-                                count_mode,
-                                count_multiplier,
-                                pose_prior=0.0,
-                            )
-                            score = score_predictions(gt, rows)
-                            summary = score_summary(score)
-                            results.append(
-                                (
-                                    score["macro_score"],
-                                    summary["time"],
-                                    summary["fp_penalty"],
-                                    video_wins(score, baseline_score),
-                                    len(rows),
-                                    pose_prior,
+                    for snap_window in snap_windows:
+                        for count_mode in count_modes:
+                            mode_multipliers = [1.0] if count_mode == "threshold" else multipliers
+                            for count_multiplier in mode_multipliers:
+                                rows = build_rows(
+                                    ready_keys,
+                                    video_by_key,
+                                    reranked,
+                                    attr_priors,
+                                    train_videos,
+                                    train_counts,
+                                    gt_counts,
                                     threshold,
                                     nms_frames,
                                     cross_nms,
                                     count_mode,
                                     count_multiplier,
+                                    pose_prior=0.0,
+                                    snap_window=snap_window,
+                                    stream_scores_by_key_group=stream_scores_by_key_group,
                                 )
-                            )
+                                score = score_predictions(gt, rows)
+                                summary = score_summary(score)
+                                results.append(
+                                    (
+                                        score["macro_score"],
+                                        summary["time"],
+                                        summary["fp_penalty"],
+                                        video_wins(score, baseline_score),
+                                        len(rows),
+                                        pose_prior,
+                                        threshold,
+                                        nms_frames,
+                                        cross_nms,
+                                        snap_window,
+                                        count_mode,
+                                        count_multiplier,
+                                    )
+                                )
 
     print(
-        "score,time,fp_penalty,wins,n_pred,pose_prior,threshold,nms,cross_nms,"
+        "score,time,fp_penalty,wins,n_pred,pose_prior,threshold,nms,cross_nms,snap_window,"
         "count_mode,count_multiplier"
     )
     for result in sorted(results, reverse=True)[: args.top_k]:
         print(
             f"{result[0]:.6f},{result[1]:.6f},{result[2]:.6f},{result[3]},"
             f"{result[4]},{result[5]},{result[6]},{result[7]},{result[8]},"
-            f"{result[9]},{result[10]}"
+            f"{result[9]},{result[10]},{result[11]}"
         )
     print_best_detail(
         sorted(results, reverse=True)[0],
@@ -338,6 +348,7 @@ def main() -> int:
         train_counts,
         gt_counts,
         gt,
+        stream_scores_by_key_group,
     )
     return 0
 
@@ -630,6 +641,8 @@ def build_rows(
     count_mode: str,
     count_multiplier: float,
     pose_prior: float,
+    snap_window: int = 0,
+    stream_scores_by_key_group: dict[tuple[str, int], np.ndarray] | None = None,
 ) -> list[dict[str, str]]:
     rows = []
     row_id = 1
@@ -647,13 +660,14 @@ def build_rows(
         )
         for candidate in selected:
             attrs = estimate_attrs(candidate, attr_priors)
+            frame = snap_frame(candidate, video, snap_window, stream_scores_by_key_group)
             rows.append(
                 {
                     "id": str(row_id),
                     "video_id": video["video_id"],
                     "agn_index": video["agn_index"],
                     "video_key": key,
-                    "frame": str(max(0, min(int(video["frame_count"]) - 1, candidate.frame))),
+                    "frame": str(frame),
                     "fighter": candidate.fighter,
                     "punch_type": attrs["punch_type"],
                     "hand": candidate.hand,
@@ -664,6 +678,26 @@ def build_rows(
             )
             row_id += 1
     return rows
+
+
+def snap_frame(
+    candidate: PunchCandidate,
+    video: dict[str, str],
+    snap_window: int,
+    stream_scores_by_key_group: dict[tuple[str, int], np.ndarray] | None,
+) -> int:
+    frame_count = int(video["frame_count"])
+    frame = max(0, min(frame_count - 1, candidate.frame))
+    if snap_window <= 0 or stream_scores_by_key_group is None:
+        return frame
+    scores = stream_scores_by_key_group.get((candidate.video_key, GROUP_INDEX[(candidate.fighter, candidate.hand)]))
+    if scores is None or len(scores) == 0:
+        return frame
+    lo = max(0, frame - snap_window)
+    hi = min(len(scores), frame + snap_window + 1)
+    if hi <= lo:
+        return frame
+    return max(0, min(frame_count - 1, lo + int(np.argmax(scores[lo:hi]))))
 
 
 def apply_pose_prior(candidate: PunchCandidate, alpha: float) -> PunchCandidate:
@@ -725,7 +759,7 @@ def print_score(label: str, score: dict[str, object], n_rows: int, wins: int) ->
 
 
 def print_best_detail(
-    result: tuple[float, float, float, int, int, float, float, int, int, str, float],
+    result: tuple[float, float, float, int, int, float, float, int, int, int, str, float],
     ready_keys: list[str],
     video_by_key: dict[str, dict[str, str]],
     scored_by_key: dict[str, list[PunchCandidate]],
@@ -734,6 +768,7 @@ def print_best_detail(
     train_counts: Counter[str],
     gt_counts: Counter[str],
     gt: list[dict[str, str]],
+    stream_scores_by_key_group: dict[tuple[str, int], np.ndarray],
 ) -> None:
     (
         _score,
@@ -745,6 +780,7 @@ def print_best_detail(
         threshold,
         nms_frames,
         cross_nms,
+        snap_window,
         count_mode,
         count_multiplier,
     ) = result
@@ -766,6 +802,8 @@ def print_best_detail(
         count_mode,
         count_multiplier,
         pose_prior=0.0,
+        snap_window=snap_window,
+        stream_scores_by_key_group=stream_scores_by_key_group,
     )
     score = score_predictions(gt, rows)
     selected_counts = Counter(row["video_key"] for row in rows)
@@ -773,7 +811,7 @@ def print_best_detail(
         "best_detail: "
         f"score={score['macro_score']:.6f},pose_prior={pose_prior},threshold={threshold},"
         f"nms={nms_frames},cross_nms={cross_nms},count_mode={count_mode},"
-        f"count_multiplier={count_multiplier},n={len(rows)}",
+        f"count_multiplier={count_multiplier},snap_window={snap_window},n={len(rows)}",
         flush=True,
     )
     print("best_roots: root,n_videos,score,time,fp,n_pred", flush=True)
