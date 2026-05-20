@@ -67,6 +67,16 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - `yolo11m-pose` beats `yolo11s` offline by more than the submit gate, but the
   first public `yolo11m` context candidate scored `0.12958` versus `0.13275`.
   Treat this as overfit until a stronger validation explanation exists.
+- `yolo26s-pose` is not useful as a replacement detector: validation is only
+  `0.305323`, and role coverage/track-switch metrics are worse than the YOLO11
+  caches.
+- `yolo26m-pose` is a possible secondary timing witness but not a submit path
+  yet. Its best context candidate reaches `0.352804` with good FP penalty, but
+  the gain is concentrated in the old `бокс` root while both tournament roots
+  fail to improve versus the public-proven `yolo11s` anchor.
+- For larger pose models, prefer asymmetric agreement/snapping/fusion against
+  `yolo11s` over replacing the detector wholesale. A large-model-only candidate
+  must pass tournament-root audit, not just full-split macro.
 
 ## Promising Next Hypotheses
 
@@ -111,6 +121,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 6. Candidate generation after a gate passes.
    - Use `tools/make_pose_heuristic_submission.py` with the winning parameters.
    - Validate locally; do not submit from this backlog step.
+7. Large-model witness tests.
+   - Finish `yolo26l`/future `yolo26x` validation caches on GPU 1, then run the
+     same complete-cache, track-quality, score-scale, and tournament-root gate.
+   - If a large model is only strong on old `бокс`, use it only for fixed-count
+     timing snap or agreement boost around `yolo11s` events.
 
 ## Submit Gates
 

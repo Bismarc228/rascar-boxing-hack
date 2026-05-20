@@ -132,6 +132,45 @@ sync shift. The matching public submission scored `0.12958`, below the
 `yolo11s` public best, so the `yolo11m` validation lift is currently an overfit
 or test-distribution mismatch signal rather than a new baseline.
 
+YOLO26 pose models are installed through the current Ultralytics package and
+are being checked as larger detector witnesses. `yolo26s-pose` is not
+competitive on the validation split:
+
+```text
+0.305323  yolo26s, fighter_hand grouped NMS, thr=0.7,
+          same-group nms=12, cross-group nms=4, n=1366
+```
+
+Its track quality is worse than both `yolo11s` and `yolo11m`:
+
+```text
+model    both_roles  red_present  blue_present  red_sw/1k  blue_sw/1k
+yolo11s  0.8430      0.9326       0.9057        11.20      11.30
+yolo11m  0.8693      0.9405       0.9235         8.65       7.90
+yolo26s  0.7948      0.9062       0.8796        20.18      16.53
+yolo26m  0.8400      0.9281       0.9078        12.86       8.26
+```
+
+`yolo26m-pose` recovers most of the track quality and has a small local signal,
+but not enough transfer evidence for a submit:
+
+```text
+0.350484  raw yolo26m, fighter_hand grouped NMS, thr=0.85,
+          same-group nms=10, cross-group nms=2,
+          root_round_count=0.9, time=0.508861, fp=0.091754, n=1293
+0.352804  yolo26m same_sum context, window=8, alpha=-0.2,
+          fighter_hand grouped NMS, thr=0.85,
+          same-group nms=10, cross-group nms=2,
+          time=0.478999, fp=0.063795, n=1165
+```
+
+The context candidate beats the `yolo11s` anchor overall by `+0.011916`, but
+the root audit is not public-safe: `Турнир Бокс` is `-0.010997`,
+`Турнир Бокс 2` is `-0.000852`, and the gain comes from the old `бокс` root
+(`+0.064619`). The nearby conservative variants show the same pattern. Do not
+submit `yolo26m` threshold/context candidates unless a materially different
+agreement, snapping, or fusion test fixes the tournament-root regression.
+
 ## Hypotheses Checked
 
 - Metadata count priors are useful for reasoning, but pure temporal priors are
