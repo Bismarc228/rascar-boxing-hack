@@ -95,6 +95,22 @@ Need regenerate `thr=0.8,nms=6` before any possible submit.
 - Global frame-diff motion-only candidates are noisy. Crop-motion reranking is
   more plausible, but the first grid did not beat the simple full-split
   threshold/NMS candidate.
+- Audio streams exist in all train/test videos and test A/V stream starts are
+  aligned at container level. Test videos match the manifest `frame_count / 30`
+  timeline; only old `boks` train videos show small duration/FPS drift, so audio
+  features should map decoded samples with `frame = round(t * 30)`.
+- Audio onset detection is a weak timing signal, not a standalone detector.
+  On full validation, audio-only oracle-count peaks reach only `0.02927`
+  macro. Shifting pose candidates to nearby audio peaks hurts:
+  `0.23802 -> 0.22862` at `+/-3` frames and `0.21543` at `+/-6` frames.
+- Audio as a weak pose reranker also did not beat the full-validation baseline.
+  A no-pre-NMS wide-pool grid reproduced `0.23802` only when `alpha=0`; the
+  best positive audio boost seen was `0.23789` (`window=3`, `alpha=0.05`,
+  `threshold=1.15`, `nms=6`, 9/13 video wins but worse FP/macro). No audio
+  submission is justified yet.
+- Count calibration remains a public-risk area. Sample true counts are odd on
+  some test videos (`agn_062` especially); root/root-round rate counts are more
+  plausible but did not beat threshold-only on the current validation grid.
 
 ## Next Useful Work
 
@@ -104,5 +120,8 @@ Need regenerate `thr=0.8,nms=6` before any possible submit.
    simple heuristic as a fallback where the ranker fails.
 3. Explore per-video count control: dense NMS improves offline, but public
    penalty may differ by test fight.
-4. Improve attributes only after timing/selection improves; current gains are
+4. If revisiting audio, use it only as a learned feature
+   (`max_onset +/-3/6/12`, nearest onset distance) inside a pose-dominant ranker;
+   do not hard-shift frames to audio peaks.
+5. Improve attributes only after timing/selection improves; current gains are
    too small.
