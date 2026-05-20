@@ -126,6 +126,10 @@ The root-count variant validates and has 723 `clear=true` rows.
 - Frame offsets do not explain the remaining timing error for grouped NMS.
   Around the best grouped setup, offset `0` is best; `+1` drops to about
   `0.2385`, `-1` to about `0.2369`, and larger shifts degrade quickly.
+- Fighter/attribute priors are not currently a useful standalone improvement.
+  On the grouped baseline, simple color-confidence fighter override only moved
+  `0.242460 -> 0.242501`, and root/root-round attribute priors generally
+  lowered punch-type score.
 
 ## Next Useful Work
 
