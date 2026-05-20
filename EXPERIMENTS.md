@@ -123,6 +123,9 @@ The root-count variant validates and has 723 `clear=true` rows.
   plausible but did not materially beat threshold-only on the current validation
   grid. Best checked grouped-count variant was root_count `0.9`: `0.242684`
   versus grouped threshold `0.242460`.
+- Frame offsets do not explain the remaining timing error for grouped NMS.
+  Around the best grouped setup, offset `0` is best; `+1` drops to about
+  `0.2385`, `-1` to about `0.2369`, and larger shifts degrade quickly.
 
 ## Next Useful Work
 

@@ -42,6 +42,7 @@ def parse_args() -> argparse.Namespace:
         default="threshold,root_rate,dataset_rate,root_round_rate,root_count,root_round_count,oracle",
     )
     parser.add_argument("--count-multipliers", default="0.6,0.7,0.8,0.9,1.0,1.1,1.25")
+    parser.add_argument("--frame-offsets", default="0")
     return parser.parse_args()
 
 
@@ -82,6 +83,7 @@ def main() -> int:
     group_modes = [value for value in args.group_modes.split(",") if value]
     count_modes = [value for value in args.count_modes.split(",") if value]
     multipliers = parse_floats(args.count_multipliers)
+    frame_offsets = parse_ints(args.frame_offsets)
 
     baseline_rows = build_rows(
         ready_keys,
@@ -97,6 +99,7 @@ def main() -> int:
         cross_nms=6,
         count_mode="threshold",
         count_multiplier=1.0,
+        frame_offset=0,
     )
     baseline_score = score_predictions(gt, baseline_rows)
     print_score("baseline_global_thr08_nms6", baseline_score, len(baseline_rows), 0)
@@ -111,43 +114,46 @@ def main() -> int:
                     for count_mode in count_modes:
                         mode_multipliers = [1.0] if count_mode in {"threshold", "oracle"} else multipliers
                         for count_multiplier in mode_multipliers:
-                            rows = build_rows(
-                                ready_keys,
-                                video_by_key,
-                                candidates_by_key,
-                                attr_priors,
-                                train_videos,
-                                train_counts,
-                                gt_counts,
-                                threshold,
-                                group_mode,
-                                same_nms,
-                                cross_nms,
-                                count_mode,
-                                count_multiplier,
-                            )
-                            score = score_predictions(gt, rows)
-                            summary = score_summary(score)
-                            wins = video_wins(score, baseline_score)
-                            results.append(
-                                (
-                                    score["macro_score"],
-                                    summary["time"],
-                                    summary["fp_penalty"],
-                                    wins,
-                                    len(rows),
-                                    group_mode,
+                            for frame_offset in frame_offsets:
+                                rows = build_rows(
+                                    ready_keys,
+                                    video_by_key,
+                                    candidates_by_key,
+                                    attr_priors,
+                                    train_videos,
+                                    train_counts,
+                                    gt_counts,
                                     threshold,
+                                    group_mode,
                                     same_nms,
                                     cross_nms,
                                     count_mode,
                                     count_multiplier,
+                                    frame_offset,
                                 )
-                            )
+                                score = score_predictions(gt, rows)
+                                summary = score_summary(score)
+                                wins = video_wins(score, baseline_score)
+                                results.append(
+                                    (
+                                        score["macro_score"],
+                                        summary["time"],
+                                        summary["fp_penalty"],
+                                        wins,
+                                        len(rows),
+                                        group_mode,
+                                        threshold,
+                                        same_nms,
+                                        cross_nms,
+                                        count_mode,
+                                        count_multiplier,
+                                        frame_offset,
+                                    )
+                                )
 
     print(
         "score,time,fp_penalty,wins,n_pred,group_mode,threshold,same_nms,"
-        "cross_nms,count_mode,count_multiplier"
+        "cross_nms,count_mode,count_multiplier,frame_offset"
     )
     for result in sorted(results, reverse=True)[: args.top_k]:
         (
@@ -162,10 +168,11 @@ def main() -> int:
             cross_nms,
             count_mode,
             count_multiplier,
+            frame_offset,
         ) = result
         print(
             f"{score:.6f},{time_score:.6f},{fp_penalty:.6f},{wins},{n_pred},"
-            f"{group_mode},{threshold},{same_nms},{cross_nms},{count_mode},{count_multiplier}"
+            f"{group_mode},{threshold},{same_nms},{cross_nms},{count_mode},{count_multiplier},{frame_offset}"
         )
     return 0
 
@@ -184,6 +191,7 @@ def build_rows(
     cross_nms: int,
     count_mode: str,
     count_multiplier: float,
+    frame_offset: int,
 ) -> list[dict[str, str]]:
     rows = []
     row_id = 1
@@ -207,7 +215,9 @@ def build_rows(
                     "video_id": video["video_id"],
                     "agn_index": video["agn_index"],
                     "video_key": key,
-                    "frame": str(max(0, min(int(video["frame_count"]) - 1, candidate.frame))),
+                    "frame": str(
+                        max(0, min(int(video["frame_count"]) - 1, candidate.frame + frame_offset))
+                    ),
                     "fighter": candidate.fighter,
                     "punch_type": attrs["punch_type"],
                     "hand": candidate.hand,
