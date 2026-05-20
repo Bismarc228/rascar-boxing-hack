@@ -41,6 +41,7 @@ from tools.evaluate_pose_sequence_spotter import (
     replace_score,
     resolve_device,
     seed_everything,
+    snap_frame,
     train_model,
 )
 
@@ -76,6 +77,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--nms-frames", type=int, default=10)
     parser.add_argument("--cross-nms-frames", type=int, default=2)
+    parser.add_argument("--snap-window", type=int, default=0)
     parser.add_argument("--count-mode", default="root_count")
     parser.add_argument("--count-multiplier", type=float, default=0.92)
     parser.add_argument("--quiet", action="store_true")
@@ -199,7 +201,7 @@ def main() -> int:
             args.count_mode,
             args.count_multiplier,
         )
-        selected_by_video[key] = select_candidates(
+        selected = select_candidates(
             scored,
             PoseHeuristicConfig(
                 min_score=args.threshold,
@@ -208,6 +210,12 @@ def main() -> int:
                 cross_nms_frames=args.cross_nms_frames,
             ),
             count,
+        )
+        selected_by_video[key] = snap_selected_candidates(
+            selected,
+            video,
+            args.snap_window,
+            by_key_group,
         )
 
     rows = fill_sample_rows(sample_rows, test_videos, selected_by_video, attr_priors)
@@ -226,7 +234,7 @@ def main() -> int:
         "config="
         f"threshold={args.threshold},nms={args.nms_frames},cross={args.cross_nms_frames},"
         f"count_mode={args.count_mode},count_multiplier={args.count_multiplier},"
-        f"pose_prior={args.pose_prior}"
+        f"pose_prior={args.pose_prior},snap_window={args.snap_window}"
     )
     print("selected=" + ",".join(f"{key}:{by_video.get(key, 0)}" for key in sorted(test_video_by_key)))
     print(f"total_clear={sum(by_video.values())}")
@@ -285,6 +293,31 @@ def build_candidates_and_streams(
         )
     streams = build_stream_features(video, model_candidate_sets)
     return primary_pool, streams
+
+
+def snap_selected_candidates(
+    selected: list[PunchCandidate],
+    video: dict[str, str],
+    snap_window: int,
+    by_key_group: dict[tuple[str, int], np.ndarray],
+) -> list[PunchCandidate]:
+    if snap_window <= 0:
+        return selected
+    snapped = []
+    for candidate in selected:
+        frame = snap_frame(candidate, video, snap_window, by_key_group)
+        snapped.append(
+            PunchCandidate(
+                candidate.video_key,
+                frame,
+                candidate.fighter,
+                candidate.hand,
+                candidate.target,
+                candidate.score,
+                candidate.features,
+            )
+        )
+    return sorted(snapped, key=lambda item: item.frame)
 
 
 def fill_sample_rows(
