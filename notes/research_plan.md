@@ -158,6 +158,8 @@ becomes another threshold/NMS sweep. The active research branches are:
    - A two-video yolo26x-context smoke has weak positive signal but count/FP
      risk. Next step is full-validation fixed-count ablation with candidate
      limits, not submission.
+   - The current OpenCV full-decode path is too slow even with `--jobs`; build a
+     cached/requested-frame extractor before broader motion sweeps.
    - Features: frame-diff/optical-flow summaries around glove, opponent head,
      torso, and inter-fighter contact crops over `[-8,+8]` and `[-16,+16]`.
    - Use only as a reranker/tie-breaker with fixed candidate pool and count

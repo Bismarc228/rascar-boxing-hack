@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from collections import defaultdict
 from pathlib import Path
 import sys
@@ -48,6 +49,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--motion-betas", default="-0.05,0.0,0.05,0.1")
     parser.add_argument("--video-keys", default="")
     parser.add_argument("--max-candidates-per-video", type=int)
+    parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--top-k", type=int, default=30)
     parser.add_argument("--quiet", action="store_true")
     return parser.parse_args()
@@ -95,7 +97,6 @@ def main() -> int:
 
     candidates_by_key: dict[str, list[PunchCandidate]] = {}
     counts_by_key: dict[str, int | None] = {}
-    motion_by_key: dict[str, dict[int, tuple[float, float, float]]] = {}
     for key in progress(ready_keys, "motion-context", args.quiet):
         video = video_by_key[key]
         raw_candidates = score_pose_tracks(
@@ -110,14 +111,17 @@ def main() -> int:
                 reverse=True,
             )[: args.max_candidates_per_video]
         counts_by_key[key] = estimate_count(config, video, train_videos, train_gt, [])
-        wanted_frames = {candidate.frame for candidate in candidates_by_key[key]}
-        records = load_records(args.tracks_dir / f"{key}.jsonl", wanted_frames)
-        motion_by_key[key] = compute_motion(
-            args.data_root / video["video_path"],
-            records,
-            args.resize_width,
-            args.quiet,
-        )
+
+    motion_by_key = compute_all_motion(
+        args.data_root,
+        args.tracks_dir,
+        ready_keys,
+        video_by_key,
+        candidates_by_key,
+        args.resize_width,
+        args.quiet,
+        args.jobs,
+    )
 
     baseline_rows = build_rows(
         ready_keys,
@@ -200,6 +204,47 @@ def complete_track_keys(tracks_dir: Path, video_by_key: dict[str, dict[str, str]
         if line_count == int(video["frame_count"]):
             keys.append(path.stem)
     return keys
+
+
+def compute_all_motion(
+    data_root: Path,
+    tracks_dir: Path,
+    ready_keys: list[str],
+    video_by_key: dict[str, dict[str, str]],
+    candidates_by_key: dict[str, list[PunchCandidate]],
+    resize_width: int,
+    quiet: bool,
+    jobs: int,
+) -> dict[str, dict[int, tuple[float, float, float]]]:
+    tasks = [
+        (
+            key,
+            data_root / video_by_key[key]["video_path"],
+            tracks_dir / f"{key}.jsonl",
+            sorted({candidate.frame for candidate in candidates_by_key[key]}),
+            resize_width,
+            quiet,
+        )
+        for key in ready_keys
+    ]
+    if jobs <= 1:
+        return {key: motion for key, motion in map(compute_motion_task, tasks)}
+
+    output: dict[str, dict[int, tuple[float, float, float]]] = {}
+    with ProcessPoolExecutor(max_workers=jobs) as executor:
+        futures = [executor.submit(compute_motion_task, task) for task in tasks]
+        for future in as_completed(futures):
+            key, motion = future.result()
+            output[key] = motion
+    return output
+
+
+def compute_motion_task(
+    task: tuple[str, Path, Path, list[int], int, bool],
+) -> tuple[str, dict[int, tuple[float, float, float]]]:
+    key, video_path, tracks_path, wanted_frames, resize_width, quiet = task
+    records = load_records(tracks_path, set(wanted_frames))
+    return key, compute_motion(video_path, records, resize_width, quiet)
 
 
 def build_rows(

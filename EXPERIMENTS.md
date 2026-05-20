@@ -594,6 +594,12 @@ small-gain     0.405940  alpha=-0.03 beta=0.05  n=224
   The best smoke result gets its gain with row inflation and worse FP on one
   root. Continue only as a fixed-count/full-validation feature ablation, not a
   direct submit branch.
+- The same evaluator now supports per-video multiprocessing via `--jobs`. A
+  two-video `--jobs 2` smoke reproduced the no-motion baseline and the small
+  `beta=0.03` lift (`0.401618 -> 0.405932`). A 13-video full-validation decode
+  with `--jobs 6` was stopped after about eight minutes because OpenCV sequential
+  frame decode remained the bottleneck. Do not keep launching raw full-decode
+  motion sweeps; next motion step needs a cached or requested-frame extractor.
 - Grouped NMS is a small but real offline improvement. Best checked variant:
   `nms_group_mode=fighter`, `threshold=0.8`, same-group NMS `8`,
   cross-group NMS `2`: `0.24246` vs baseline `0.23802`, 9/13 video wins,
