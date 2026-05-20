@@ -107,6 +107,26 @@ and the best `yolo11n` temporal-context candidate (`0.245871`). The matching
 test candidate validates, has 730 `clear=true` rows, and scored `0.13275`
 public.
 
+`yolo11m-pose` validation tracks are complete in
+`data/processed/pose_tracks/val_yolo11m_conf035/`. They improve again over
+`yolo11s` on the same 13-video split:
+
+```text
+0.363216  yolo11m, fighter_hand grouped NMS, thr=0.9,
+          same-group nms=8, cross-group nms=4, root_count=1.0, n=1385
+0.359951  yolo11m, fighter_hand grouped NMS, thr=0.9,
+          same-group nms=8, cross-group nms=4, root_count=0.8, n=1195
+0.363325  yolo11m, same_sum context window=8 alpha=-0.2,
+          fighter_hand grouped NMS, thr=0.9, same-group nms=10,
+          cross-group nms=4, n=1198
+```
+
+The last point is the current cleaner candidate: it beats `yolo11s` by
+`+0.022437` macro, has timing score `0.493503`, FP penalty `0.065930`,
+and wins 11/13 validation videos. A focused frame-offset sweep around the
+`yolo11m` grid kept offset `0` at the top, so there is no evidence for a global
+sync shift.
+
 ## Hypotheses Checked
 
 - Metadata count priors are useful for reasoning, but pure temporal priors are
@@ -161,6 +181,9 @@ public.
   The best `yolo11s` grid point uses fighter+hand grouped NMS rather than the
   earlier context boost; context did not beat the grouped selector on
   `yolo11s`.
+- `yolo11m-pose` is another submit-grade offline signal. The best raw grid
+  point reaches `0.363216`, and a lower-FP temporal-context variant reaches
+  `0.363325` with plausible prediction count.
 
 ## Next Useful Work
 

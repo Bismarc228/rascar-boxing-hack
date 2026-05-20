@@ -25,6 +25,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - Best checked `yolo11s-pose` offline variant:
   `0.340888`, fighter+hand grouped NMS, `threshold=1.15`, same-group NMS `10`,
   cross-group NMS `4`, `root_count=1.0`, `n=1202`.
+- Best checked `yolo11m-pose` offline variant:
+  `0.363325`, same-score temporal context in a `+/-8` frame window,
+  `alpha=-0.2`, fighter+hand grouped NMS, `threshold=0.9`, same-group NMS `10`,
+  cross-group NMS `4`, `n=1198`, FP penalty `0.065930`, 11/13 validation wins.
 - Generated but not submitted candidates include the grouped-NMS, grouped-count,
   and temporal-context CSVs listed in `EXPERIMENTS.md`.
 - The task rewards timing most heavily. The metric weights time at `50%`,
@@ -58,6 +62,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - `yolo11s-pose` transferred to public and is now the strongest baseline:
   `0.13275` public. The next detector/model experiments should compare against
   `yolo11s`, not `yolo11n`.
+- `yolo11m-pose` beats `yolo11s` offline by more than the submit gate, while a
+  focused offset sweep still keeps frame offset `0` best. The next public
+  candidate should come from `yolo11m` test tracks if local validation passes.
 
 ## Promising Next Hypotheses
 
@@ -75,10 +82,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 
 ## Compute-Aware Experiment Queue
 
-1. GPU detector/model experiment: test `yolo11m-pose` on the validation split.
+1. GPU detector/model experiment: generate `yolo11m-pose` test tracks.
    - Use `--cuda-visible-devices 1`, omit `--device`, and start with `--jobs 2`.
-   - Compare against `yolo11s` best `0.340888`; continue only if `yolo11m`
-     improves by about `+0.01` macro or clearly fixes hard videos.
+   - Validation already passed the submit gate; generate and locally validate a
+     single cleaner candidate before considering Kaggle.
 2. No-GPU offline grid: rerun and narrow temporal-context sweeps on cached
    `yolo11s` and later `yolo11m` validation tracks.
    - Start near `window=4`, `alpha=0.2`, `dominance`,
