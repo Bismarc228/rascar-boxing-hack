@@ -194,6 +194,38 @@ raises the `yolo26m` context candidate to `0.369845` (`+0.017041`). So the next
 fighter-identity work should be local tracklet/per-video color calibration and
 switch smoothing, not a global or whole-video swap.
 
+`yolo26l-pose` validation tracks are complete in
+`data/processed/pose_tracks/val_yolo26l_conf035/`. It is weak as a plain global
+NMS replacement, but strong with grouped NMS and temporal context:
+
+```text
+0.360318  raw yolo26l, fighter_hand grouped NMS, thr=0.95,
+          same-group nms=8, cross-group nms=4, threshold count,
+          time=0.510790, fp=0.084732, n=1289
+0.369802  yolo26l same_count context, window=8, alpha=-0.1,
+          fighter_hand grouped NMS, thr=0.85,
+          same-group nms=10, cross-group nms=4,
+          time=0.495463, fp=0.061657, wins=10/13, n=1185
+0.366769  yolo26l same_sum context, window=6, alpha=-0.2,
+          fighter_hand grouped NMS, thr=0.85,
+          same-group nms=10, cross-group nms=4,
+          time=0.479037, fp=0.050365, wins=10/13, n=1126
+```
+
+The top context candidate beats the `yolo11s` anchor by `+0.028913` macro and
+improves mean FP penalty by `-0.006490`, but it still has a public-risk flag:
+`Турнир Бокс` is `-0.006526`, while `Турнир Бокс 2` is `+0.021366` and old
+`бокс` is `+0.081964`. The test manifest has three `Турнир Бокс` videos and
+six `Турнир Бокс 2` videos, so this is plausible but not automatic-submit
+safe. `test_yolo26l_conf035` extraction was started for a candidate CSV and
+local validation/count audit.
+
+External research notes point in the same direction: treat impact spotting as
+the primary problem, keep pose/track identity as support, calibrate fighter
+colors per video, and use refractory windows rather than a single global NMS.
+T-DEED/E2E-Spot-style Gaussian-label spotting is the next larger modeling path
+if cached pose heuristics stop improving.
+
 ## Hypotheses Checked
 
 - Metadata count priors are useful for reasoning, but pure temporal priors are
@@ -273,6 +305,10 @@ switch smoothing, not a global or whole-video swap.
   `0.276141`; a stricter `+/-4` label window improved to `0.315975`, but both
   remain below the heuristic/context `0.363325`. This path needs cleaner anchor
   labels, offset regression, or a different postprocess before any submit.
+- `yolo26l` is the first YOLO26 model with a stronger local candidate than
+  `yolo11m`: top context score `0.369802`, lower FP than `yolo11s`, and 10/13
+  wins. The blocker is a small `Турнир Бокс` root regression, not full-split
+  score.
 
 ## Next Useful Work
 
@@ -287,3 +323,5 @@ switch smoothing, not a global or whole-video swap.
    do not hard-shift frames to audio peaks.
 5. Improve attributes only after timing/selection improves; current gains are
    too small.
+6. If building a learned spotter, use Gaussian labels around impact frames and
+   keep the current pose selector as a precision-oriented fallback.

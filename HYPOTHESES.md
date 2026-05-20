@@ -84,6 +84,13 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   swap hurts every validation video, while event-level oracle fighter labels
   have about `+0.018` macro headroom. Work should target local tracklet
   identity and per-video color prototypes.
+- `yolo26l-pose` plus temporal context is the first large-model candidate that
+  beats both `yolo11s` and the failed `yolo11m` path locally (`0.369802`,
+  FP `0.061657`, 10/13 wins). It is still not automatic-submit safe because
+  `Турнир Бокс` regresses slightly.
+- External research reinforces the priority order: impact spotting and
+  precision/`clear` calibration first, fighter identity second, attributes
+  later.
 
 ## Promising Next Hypotheses
 
@@ -100,6 +107,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   and the current extractor uses fixed HSV red/blue masks. Treat color as
   tracklet identity evidence, then map local identities to red/blue labels with
   a confidence gate.
+- Try a T-DEED/E2E-Spot-inspired spotter only after a lightweight cached-feature
+  version is in place: Gaussian labels around GT frames, same-fighter refractory
+  NMS, and tournament-root validation.
 - Delay attribute work until timing/selection improves; attributes have lower
   metric weight and have not yet moved enough offline.
 
