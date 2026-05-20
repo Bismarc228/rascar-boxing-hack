@@ -196,6 +196,16 @@ or test-distribution mismatch signal rather than a new baseline.
   `0.363325 -> 0.363567`; the strongest low-FP same-count context variant was
   `0.362558`. These are threshold/context/count tweaks around the failed public
   candidate, not a materially new approach.
+- Cross-model `yolo11s`/`yolo11m` agreement did not produce a submit candidate.
+  A cached union/agreement grid topped out at `0.357725`, below the failed
+  `yolo11m` context score and not materially better than the public-proven
+  `yolo11s` path.
+- A quick PDF-inspired false-positive audit supports the "guard/stance
+  negative" hypothesis but not a simple hard filter. On the `yolo11s` validation
+  candidate, matched predictions have mean `reach=1.224` and
+  `arm_forward=0.622`, while unmatched predictions have mean `reach=0.986` and
+  `arm_forward=0.533`. The separation is real but overlapping, so any endpoint
+  feature should be a learned/rerank feature, not a blunt threshold.
 - First learned temporal-selector smoke tests on `yolo11m` OOF are not
   competitive. LightGBM with a wide `+/-15` positive window topped out at
   `0.276141`; a stricter `+/-4` label window improved to `0.315975`, but both
