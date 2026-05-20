@@ -125,6 +125,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   while the weak old `бокс` root is not in test. Validated test CSVs exist, but
   submit only after quota reset and preferably after the safer yolo26x agreement
   public check.
+- Fighter identity still has headroom, but not from current cached color/track
+  signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
+  (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,
+  candidate features, and track majority do not improve. Next identity work
+  must extract per-video ROI/tracklet appearance from raw frames.
 - External research reinforces the priority order: impact spotting and
   precision/`clear` calibration first, fighter identity second, attributes
   later.

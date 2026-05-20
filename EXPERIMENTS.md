@@ -457,6 +457,31 @@ Because public has punished dense variants before, the `root_count=0.88`
 sequence CSV is the safer first sequence submit; `root_count=0.92` is the
 higher-offline, higher-count variant.
 
+A learned fighter-correction diagnostic was added in
+`tools/evaluate_fighter_identity_model.py`. It keeps selected events fixed and
+trains an OOF model to decide whether to keep or flip only the `fighter` label.
+On the direct yolo26x context anchor, the oracle matched-fighter upper bound is
+large:
+
+```text
+baseline               0.374335  fighter=0.473601  n=1153
+oracle_matched_fighter 0.392941  fighter=0.566183  n=1153
+```
+
+But models using current cached pose/color/track features did not recover that
+headroom:
+
+```text
+HGB keep/flip model:    best 0.374335 with 0 flips; any flips regressed
+balanced logistic model best 0.374173 with 5 flips; larger flip sets regressed
+```
+
+Together with the older `track_role_majority` and `track_color_mean` regressions
+on yolo26x, this kills lightweight identity correction from current
+`score_red`/`score_blue` and track-majority signals. The next fighter-identity
+experiment needs real per-video ROI/tracklet appearance extraction from raw
+frames, keeping timing/count fixed.
+
 ## Hypotheses Checked
 
 - Metadata count priors are useful for reasoning, but pure temporal priors are

@@ -92,6 +92,9 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
    - Tracklet color prototypes from torso/shorts/glove crops.
    - Only change fighter labels with fixed timing/counts.
    - Gate by per-root fighter score and confusion matrix, not macro alone.
+   - Do not use current cached `score_red`/`score_blue` or track-majority
+     signals alone: HGB/logreg keep-flip models on yolo26x context failed to
+     recover the matched-fighter oracle headroom.
 
 ## Expanded Model Tracks
 
