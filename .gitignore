@@ -1,0 +1,48 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local environments and machine-specific files.
+.env
+.venv/
+venv/
+
+# Large/raw competition assets.
+*.zip
+*.mp4
+*.MOV
+*.avi
+*.mkv
+*.pt
+
+# Runtime outputs and experiment artifacts.
+logs/
+submissions/
+submission.csv
+data/processed/
+data/kaggle_leaderboard/
+
+# Root-level duplicates from unpacked Kaggle archive; canonical copies live in data/raw/.
+/train/
+/test/
+/sample_submission.csv
+/README.txt
+/RASCAR_baseline_boxing.ipynb
+
+# Downloaded video trees and archives under the Kaggle data root.
+data/raw/бокс/
+data/raw/Турнир Бокс/
+data/raw/Турнир Бокс 2/
+data/raw/_archives/
+
+# Keep the small dataset manifests committed if explicitly added.
+!data/raw/train/
+!data/raw/train/*.csv
+!data/raw/test/
+!data/raw/test/*.csv
+!data/raw/sample_submission.csv
+!data/raw/README.txt
+!data/raw/RASCAR_baseline_boxing.ipynb
