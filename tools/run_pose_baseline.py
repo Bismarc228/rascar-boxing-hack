@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -371,6 +372,11 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if os.environ.get("CUDA_VISIBLE_DEVICES") and args.device:
+        raise SystemExit(
+            "Do not combine CUDA_VISIBLE_DEVICES with --device for Ultralytics in this repo. "
+            "Use CUDA_VISIBLE_DEVICES=1 and omit --device so physical GPU 1 remains selected."
+        )
     process_video(args)
     return 0
 
