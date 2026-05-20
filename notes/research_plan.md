@@ -21,10 +21,10 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
   - `yolo26x + yolo26l` normalized agreement, validation `0.377090`, test CSV
     generated locally, root audit `risk_flags=none`, FP `0.091709`.
 - Strongest learned spotter candidates:
-  - 3-seed yolo26x/yolo11s/yolo26l pose-sequence TCN, `root_count=0.88`,
-    validation `0.379314`, test CSV generated, total `773`.
-  - Same sequence TCN, `root_count=0.92`, validation `0.382073`, test CSV
-    generated, total `796`.
+  - 3-seed yolo26x/yolo11s/yolo26l pose-sequence TCN with `snap_window=4`,
+    `root_count=0.88`, validation `0.389963`, test CSV generated, total `744`.
+  - Same snap4 sequence TCN, `root_count=0.92`, validation `0.390013`, test CSV
+    generated, total `765`.
 
 ## Validated External Research Takeaways
 
@@ -45,13 +45,14 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
    `yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088`.
    It has the best offline score among ready CSVs and lower FP than the
    yolo26x+yolo26l agreement candidate.
-2. If public does not regress badly, submit the safer sequence TCN candidate:
-   `seq_tcn_yolo26x_witness_3seed_thr05_nms10_cross2_rootcount088`. It is the
-   first learned spotter to beat agreement offline and has the same `agn_038`
-   count as the agreement candidate (`108`), but total test rows are higher
-   (`773`), so do not use it as the first reset-day public check.
-3. If the safer sequence TCN transfers, submit the higher-offline sequence TCN
-   `root_count=0.92` variant (`796` rows). If public punishes count, skip it.
+2. If public does not regress badly, submit the safer snap4 sequence TCN
+   candidate:
+   `seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088`.
+   It is the strongest low-row learned spotter so far (`0.389963`, 744 test
+   rows, `agn_038=81`).
+3. If the safer sequence TCN transfers, submit the higher-offline snap4
+   `root_count=0.92` variant (`0.390013`, 765 rows). If public punishes count,
+   skip it.
 4. If sequence TCN regresses, submit the yolo26x+yolo26l agreement candidate
    next. This checks whether public prefers large-model agreement or yolo11s
    conservative witness without changing model family as much.
@@ -149,6 +150,9 @@ becomes another threshold/NMS sweep. The active research branches are:
 6. Crop-motion/contact reranker.
    - Motion-only detection is killed, but local crop motion can still help
      distinguish impact from guard, feint, and recovery inside a wide pose pool.
+   - A two-video yolo26x-context smoke has weak positive signal but count/FP
+     risk. Next step is full-validation fixed-count ablation with candidate
+     limits, not submission.
    - Features: frame-diff/optical-flow summaries around glove, opponent head,
      torso, and inter-fighter contact crops over `[-8,+8]` and `[-16,+16]`.
    - Use only as a reranker/tie-breaker with fixed candidate pool and count

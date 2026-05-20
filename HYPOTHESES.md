@@ -75,6 +75,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   (`0.21299 -> 0.21590`), not enough to submit.
 - Motion-only candidates are noisy. Crop-motion reranking is more plausible, but
   the first grid did not beat the full-split threshold/NMS candidate.
+- A two-video yolo26x-context motion smoke has weak positive signal
+  (`0.401618 -> 0.405940` with small FP growth, or `0.422798` with row
+  inflation), but it is not a submit branch until full-validation fixed-count
+  ablation passes.
 - Audio-only onset detection is not a detector (`0.02927` macro with oracle
   counts), and hard-shifting pose candidates to audio peaks hurts.
 - Audio reranking has not beaten the full-validation baseline; the best positive
@@ -129,6 +133,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   while the weak old `бокс` root is not in test. Validated test CSVs exist, but
   submit only after quota reset and preferably after the safer yolo26x agreement
   public check.
+- Snapping selected sequence frames to the local TCN probability maximum is a
+  real improvement: `snap_window=4` reached `0.390013`, and the safer
+  `root_count=0.88` snap4 variant reached `0.389963` with lower FP and only
+  `744` test rows.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,

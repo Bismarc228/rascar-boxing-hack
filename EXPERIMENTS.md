@@ -457,6 +457,45 @@ Because public has punished dense variants before, the `root_count=0.88`
 sequence CSV is the safer first sequence submit; `root_count=0.92` is the
 higher-offline, higher-count variant.
 
+A follow-up postprocess sweep added `snap_window` to
+`tools/evaluate_pose_sequence_spotter.py`: after candidate selection, output
+frames can be shifted to the local TCN probability maximum without changing
+fighter/hand/count. This materially improved the sequence family:
+
+```text
+0.390013  time=0.560876, fp=0.101781, wins=11/13, n=1357,
+          pose_prior=0.4, threshold=0.6, nms=10, cross=2,
+          snap_window=4, root_count=0.92
+
+0.389963  time=0.545952, fp=0.088316, wins=11/13, n=1292,
+          pose_prior=0.2, threshold=0.6, nms=10, cross=2,
+          snap_window=4, root_count=0.88
+```
+
+Root audit for the `0.390013` point:
+
+```text
+Турнир Бокс    score=0.390725  time=0.521094  fp=0.072744  n=333
+Турнир Бокс 2  score=0.434546  time=0.590635  fp=0.083208  n=806
+бокс           score=0.285390  time=0.531224  fp=0.174156  n=218
+```
+
+`tools/make_pose_sequence_submission.py` now supports the same `--snap-window`
+postprocess. Two validated snap4 test CSVs were written:
+
+```text
+submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088_OFFLINE_CANDIDATE.csv
+  selected=agn_037:52,agn_038:81,agn_039:57,agn_047:125,agn_048:44,
+           agn_049:62,agn_062:125,agn_063:123,agn_064:75,total=744
+
+submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount092_OFFLINE_CANDIDATE.csv
+  selected=agn_037:52,agn_038:85,agn_039:57,agn_047:131,agn_048:44,
+           agn_049:62,agn_062:131,agn_063:128,agn_064:75,total=765
+```
+
+The `root_count=0.88` snap4 CSV is the safer sequence candidate: it beats the
+older `root_count=0.92` sequence validation score while reducing test rows.
+
 A learned fighter-correction diagnostic was added in
 `tools/evaluate_fighter_identity_model.py`. It keeps selected events fixed and
 trains an OOF model to decide whether to keep or flip only the `fighter` label.
@@ -519,6 +558,20 @@ current fighter labels.
 - Global frame-diff motion-only candidates are noisy. Crop-motion reranking is
   more plausible, but the first grid did not beat the simple full-split
   threshold/NMS candidate.
+- `tools/evaluate_crop_motion_context.py` now tests crop-motion as a matched
+  rescoring ablation on the current yolo26x context anchor. A quick
+  two-tournament-video smoke (`agn_023,agn_069`, max 3000 candidates/video,
+  resize 160) showed possible signal but not a submit-ready policy:
+
+```text
+baseline       0.401618  time=0.494436  fp=0.031065  n=219
+best smoke     0.422798  alpha=0.1 beta=0.1  n=267
+small-gain     0.405940  alpha=-0.03 beta=0.05  n=224
+```
+
+  The best smoke result gets its gain with row inflation and worse FP on one
+  root. Continue only as a fixed-count/full-validation feature ablation, not a
+  direct submit branch.
 - Grouped NMS is a small but real offline improvement. Best checked variant:
   `nms_group_mode=fighter`, `threshold=0.8`, same-group NMS `8`,
   cross-group NMS `2`: `0.24246` vs baseline `0.23802`, 9/13 video wins,
