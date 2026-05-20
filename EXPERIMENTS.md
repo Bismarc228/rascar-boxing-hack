@@ -17,6 +17,7 @@ Best public score so far:
 Other checked variants:
 
 ```text
+0.12958  submissions/yolo11m_context_samesum_w8_am02_thr09_same10_cross4_OFFLINE_CANDIDATE.csv
 0.08639  pose_heuristic_thr115_nms12.csv
 0.07902  pose_heuristic_thr125_nms12.csv
 0.07486  pose_heuristic_thr135_nms12.csv
@@ -34,6 +35,8 @@ Conclusions from public checks:
 
 - Larger pose model transferred to public: `yolo11s-pose` with fighter/hand
   grouped NMS improved public score from `0.08639` to `0.13275`.
+- `yolo11m-pose` plus same-score temporal context did not transfer despite a
+  large offline gain: public `0.12958`, below the `yolo11s` best.
 - Global fighter swap is bad.
 - Frame offset `+3` is neutral/slightly worse; `-3` is worse.
 - Around the initial pose heuristic, recall helped up to `thr=1.15`; overly
@@ -125,7 +128,9 @@ The last point is the current cleaner candidate: it beats `yolo11s` by
 `+0.022437` macro, has timing score `0.493503`, FP penalty `0.065930`,
 and wins 11/13 validation videos. A focused frame-offset sweep around the
 `yolo11m` grid kept offset `0` at the top, so there is no evidence for a global
-sync shift.
+sync shift. The matching public submission scored `0.12958`, below the
+`yolo11s` public best, so the `yolo11m` validation lift is currently an overfit
+or test-distribution mismatch signal rather than a new baseline.
 
 ## Hypotheses Checked
 
@@ -183,7 +188,14 @@ sync shift.
   `yolo11s`.
 - `yolo11m-pose` is another submit-grade offline signal. The best raw grid
   point reaches `0.363216`, and a lower-FP temporal-context variant reaches
-  `0.363325` with plausible prediction count.
+  `0.363325` with plausible prediction count. Public did not improve, so do not
+  submit more `yolo11m` threshold/context tweaks without a new validation
+  argument.
+- First learned temporal-selector smoke tests on `yolo11m` OOF are not
+  competitive. LightGBM with a wide `+/-15` positive window topped out at
+  `0.276141`; a stricter `+/-4` label window improved to `0.315975`, but both
+  remain below the heuristic/context `0.363325`. This path needs cleaner anchor
+  labels, offset regression, or a different postprocess before any submit.
 
 ## Next Useful Work
 

@@ -29,6 +29,8 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `0.363325`, same-score temporal context in a `+/-8` frame window,
   `alpha=-0.2`, fighter+hand grouped NMS, `threshold=0.9`, same-group NMS `10`,
   cross-group NMS `4`, `n=1198`, FP penalty `0.065930`, 11/13 validation wins.
+  Public score for the matching candidate was only `0.12958`, so it does not
+  replace the `yolo11s` public baseline.
 - Generated but not submitted candidates include the grouped-NMS, grouped-count,
   and temporal-context CSVs listed in `EXPERIMENTS.md`.
 - The task rewards timing most heavily. The metric weights time at `50%`,
@@ -62,9 +64,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - `yolo11s-pose` transferred to public and is now the strongest baseline:
   `0.13275` public. The next detector/model experiments should compare against
   `yolo11s`, not `yolo11n`.
-- `yolo11m-pose` beats `yolo11s` offline by more than the submit gate, while a
-  focused offset sweep still keeps frame offset `0` best. The next public
-  candidate should come from `yolo11m` test tracks if local validation passes.
+- `yolo11m-pose` beats `yolo11s` offline by more than the submit gate, but the
+  first public `yolo11m` context candidate scored `0.12958` versus `0.13275`.
+  Treat this as overfit until a stronger validation explanation exists.
 
 ## Promising Next Hypotheses
 
@@ -82,10 +84,12 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 
 ## Compute-Aware Experiment Queue
 
-1. GPU detector/model experiment: generate `yolo11m-pose` test tracks.
-   - Use `--cuda-visible-devices 1`, omit `--device`, and start with `--jobs 2`.
-   - Validation already passed the submit gate; generate and locally validate a
-     single cleaner candidate before considering Kaggle.
+1. Public-overfit audit for `yolo11m`.
+   - Compare the submitted context candidate against raw `yolo11m` and
+     `yolo11s` on validation by video, prediction count, and sample-capacity
+     clipping.
+   - Do not submit another `yolo11m` threshold/context tweak until that audit
+     identifies a materially different fix.
 2. No-GPU offline grid: rerun and narrow temporal-context sweeps on cached
    `yolo11s` and later `yolo11m` validation tracks.
    - Start near `window=4`, `alpha=0.2`, `dominance`,
