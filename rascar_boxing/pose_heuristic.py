@@ -35,6 +35,9 @@ class PoseHeuristicConfig:
     nms_frames: int = 12
     nms_group_mode: str = "global"
     cross_nms_frames: int | None = None
+    context_feature: str = "none"
+    context_window: int = 4
+    context_alpha: float = 0.0
     count_mode: str = "sample_true"
     count_multiplier: float = 1.0
     capacity_fraction: float = 1.0
@@ -70,6 +73,7 @@ def make_pose_heuristic_submission(
         video_key = video["video_key"]
         tracks_path = tracks_dir / f"{video_key}.jsonl"
         candidates = score_pose_tracks(tracks_path, config)
+        candidates = apply_temporal_context(candidates, config)
         count = estimate_count(config, video, train_videos, punches, sample_rows)
         selected_by_video[video_key] = select_candidates(candidates, config, count)
 
@@ -96,6 +100,7 @@ def predict_for_videos(
         video_key = video["video_key"]
         tracks_path = tracks_dir / f"{video_key}.jsonl"
         candidates = score_pose_tracks(tracks_path, config)
+        candidates = apply_temporal_context(candidates, config)
         count = estimate_count(config, video, train_videos, train_punches, sample_rows or [])
         selected = select_candidates(candidates, config, count)
         for candidate in sorted(selected, key=lambda item: item.frame):
@@ -168,6 +173,77 @@ def select_candidates(
             continue
         selected.append(candidate)
     return sorted(selected, key=lambda item: item.frame)
+
+
+def apply_temporal_context(
+    candidates: list[PunchCandidate],
+    config: PoseHeuristicConfig,
+) -> list[PunchCandidate]:
+    if config.context_feature == "none" or config.context_alpha == 0.0 or not candidates:
+        return candidates
+    if config.context_window < 0:
+        raise ValueError("context_window must be non-negative")
+
+    max_frame = max(candidate.frame for candidate in candidates) + config.context_window + 2
+    all_scores = np.zeros(max_frame + 1, dtype=np.float32)
+    group_scores: dict[tuple[str, str], np.ndarray] = {}
+    group_counts: dict[tuple[str, str], np.ndarray] = {}
+    for candidate in candidates:
+        frame = max(0, min(max_frame, candidate.frame))
+        group = (candidate.fighter, candidate.hand)
+        all_scores[frame] += candidate.score
+        if group not in group_scores:
+            group_scores[group] = np.zeros(max_frame + 1, dtype=np.float32)
+            group_counts[group] = np.zeros(max_frame + 1, dtype=np.float32)
+        group_scores[group][frame] += candidate.score
+        group_counts[group][frame] += 1.0
+
+    all_prefix = np.concatenate([[0.0], np.cumsum(all_scores)])
+    group_score_prefix = {
+        key: np.concatenate([[0.0], np.cumsum(values)])
+        for key, values in group_scores.items()
+    }
+    group_count_prefix = {
+        key: np.concatenate([[0.0], np.cumsum(values)])
+        for key, values in group_counts.items()
+    }
+
+    output = []
+    for candidate in candidates:
+        lo = max(0, candidate.frame - config.context_window)
+        hi = min(max_frame, candidate.frame + config.context_window) + 1
+        group = (candidate.fighter, candidate.hand)
+        same_sum = float(group_score_prefix[group][hi] - group_score_prefix[group][lo])
+        same_count = float(group_count_prefix[group][hi] - group_count_prefix[group][lo])
+        all_sum = float(all_prefix[hi] - all_prefix[lo])
+        other_sum = max(0.0, all_sum - same_sum)
+
+        if config.context_feature == "same_sum":
+            value = same_sum / max(1e-6, candidate.score)
+        elif config.context_feature == "same_count":
+            value = same_count
+        elif config.context_feature == "all_sum":
+            value = all_sum / max(1e-6, candidate.score)
+        elif config.context_feature == "dominance":
+            value = same_sum / max(1e-6, other_sum)
+        else:
+            raise ValueError(f"Unknown context_feature: {config.context_feature}")
+
+        score = candidate.score * max(0.01, 1.0 + config.context_alpha * math.log1p(value))
+        features = dict(candidate.features)
+        features[f"context_{config.context_feature}"] = float(value)
+        output.append(
+            PunchCandidate(
+                candidate.video_key,
+                candidate.frame,
+                candidate.fighter,
+                candidate.hand,
+                candidate.target,
+                float(score),
+                features,
+            )
+        )
+    return output
 
 
 def _nms_group_key(candidate: PunchCandidate, mode: str) -> tuple[str, ...]:

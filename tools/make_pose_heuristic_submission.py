@@ -49,6 +49,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--velocity-lag", type=int, default=3)
     parser.add_argument("--kp-conf", type=float, default=0.35)
     parser.add_argument("--frame-offset", type=int, default=0)
+    parser.add_argument(
+        "--context-feature",
+        choices=["none", "same_sum", "same_count", "all_sum", "dominance"],
+        default="none",
+    )
+    parser.add_argument("--context-window", type=int, default=4)
+    parser.add_argument("--context-alpha", type=float, default=0.0)
     return parser.parse_args()
 
 
@@ -66,6 +73,9 @@ def main() -> int:
         frame_offset=args.frame_offset,
         nms_group_mode=args.nms_group_mode,
         cross_nms_frames=args.cross_nms_frames,
+        context_feature=args.context_feature,
+        context_window=args.context_window,
+        context_alpha=args.context_alpha,
     )
     selected = make_pose_heuristic_submission(args.data_root, args.tracks_dir, args.output, config)
     errors = validate_submission(args.output, args.data_root / "sample_submission.csv")
