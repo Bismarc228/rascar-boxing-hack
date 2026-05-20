@@ -482,6 +482,29 @@ on yolo26x, this kills lightweight identity correction from current
 experiment needs real per-video ROI/tracklet appearance extraction from raw
 frames, keeping timing/count fixed.
 
+A first raw-frame ROI/tracklet appearance evaluator was added in
+`tools/evaluate_per_video_fighter_identity_calibration.py`. It samples source
+frames, extracts upper/lower bbox HSV/Lab/chromaticity descriptors per track,
+clusters tracks into two video-local identities, and evaluates only fighter
+label remapping with event timing/count fixed.
+
+On the yolo26x context anchor, appearance clusters were usually internally
+pure but did not align with useful GT fighter corrections:
+
+```text
+baseline            0.374335  fighter=0.473601  n=1153
+role_map_gated      0.370425  fighter=0.454804  changed=68
+role_map_all        0.368859  fighter=0.447336  changed=98
+oracle_cluster_map  0.368859  fighter=0.447336  changed=98
+```
+
+The oracle cluster mapping failing is the important result: simple bbox-level
+appearance clustering separates something stable, but not the identity signal
+needed for matched punch fighter labels. Do not build a test submission from
+this identity branch. Future identity work needs pose-guided ROI quality, real
+tracklet continuity/splitting, or a stronger visual embedding; otherwise keep
+current fighter labels.
+
 ## Hypotheses Checked
 
 - Metadata count priors are useful for reasoning, but pure temporal priors are

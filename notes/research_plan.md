@@ -95,6 +95,8 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
    - Do not use current cached `score_red`/`score_blue` or track-majority
      signals alone: HGB/logreg keep-flip models on yolo26x context failed to
      recover the matched-fighter oracle headroom.
+   - Do not use simple bbox-level ROI clustering alone: the first raw-frame
+     two-cluster appearance attempt regressed even with oracle cluster mapping.
 
 ## Expanded Model Tracks
 

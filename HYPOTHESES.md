@@ -130,6 +130,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,
   candidate features, and track majority do not improve. Next identity work
   must extract per-video ROI/tracklet appearance from raw frames.
+- A first raw-frame bbox ROI clustering attempt also failed: even oracle
+  cluster-to-fighter mapping regressed to `0.368859`. Simple per-video
+  appearance clusters are not enough; future identity work needs pose-guided
+  ROI quality and tracklet continuity/visual embeddings, not bbox color
+  clustering.
 - External research reinforces the priority order: impact spotting and
   precision/`clear` calibration first, fighter identity second, attributes
   later.
