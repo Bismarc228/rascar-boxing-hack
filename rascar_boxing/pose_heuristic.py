@@ -33,6 +33,8 @@ class PoseHeuristicConfig:
     velocity_lag: int = 3
     min_score: float = 0.08
     nms_frames: int = 12
+    nms_group_mode: str = "global"
+    cross_nms_frames: int | None = None
     count_mode: str = "sample_true"
     count_multiplier: float = 1.0
     capacity_fraction: float = 1.0
@@ -145,15 +147,41 @@ def select_candidates(
 ) -> list[PunchCandidate]:
     filtered = [item for item in candidates if item.score >= config.min_score]
     selected: list[PunchCandidate] = []
+    cross_nms = config.nms_frames if config.cross_nms_frames is None else config.cross_nms_frames
     for candidate in sorted(filtered, key=lambda item: item.score, reverse=True):
         if count is not None and len(selected) >= count:
             break
         if config.max_predictions is not None and len(selected) >= config.max_predictions:
             break
-        if any(abs(candidate.frame - chosen.frame) <= config.nms_frames for chosen in selected):
+        candidate_group = _nms_group_key(candidate, config.nms_group_mode)
+        suppressed = False
+        for chosen in selected:
+            frame_distance = abs(candidate.frame - chosen.frame)
+            if config.nms_group_mode == "global" or candidate_group == _nms_group_key(chosen, config.nms_group_mode):
+                if frame_distance <= config.nms_frames:
+                    suppressed = True
+                    break
+            elif frame_distance <= cross_nms:
+                suppressed = True
+                break
+        if suppressed:
             continue
         selected.append(candidate)
     return sorted(selected, key=lambda item: item.frame)
+
+
+def _nms_group_key(candidate: PunchCandidate, mode: str) -> tuple[str, ...]:
+    if mode == "global":
+        return ("global",)
+    if mode == "fighter":
+        return (candidate.fighter,)
+    if mode == "fighter_hand":
+        return (candidate.fighter, candidate.hand)
+    if mode == "fighter_target":
+        return (candidate.fighter, candidate.target)
+    if mode == "fighter_hand_target":
+        return (candidate.fighter, candidate.hand, candidate.target)
+    raise ValueError(f"Unknown nms_group_mode: {mode}")
 
 
 def estimate_count(

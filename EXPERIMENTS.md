@@ -77,9 +77,12 @@ Candidate CSVs generated but not submitted:
 ```text
 submissions/pose_heuristic_thr07_nms8_OFFLINE_CANDIDATE.csv
 submissions/pose_heuristic_thr07_nms12_OFFLINE_CANDIDATE.csv
+submissions/pose_heuristic_thr08_nms6_OFFLINE_CANDIDATE.csv
+submissions/pose_heuristic_grouped_fighter_thr08_same8_cross2_OFFLINE_CANDIDATE.csv
 ```
 
-Need regenerate `thr=0.8,nms=6` before any possible submit.
+The grouped-NMS test candidate validates and has 737 `clear=true` rows after
+sample capacity clipping, versus 699 for the global `thr=0.8,nms=6` candidate.
 
 ## Hypotheses Checked
 
@@ -95,6 +98,11 @@ Need regenerate `thr=0.8,nms=6` before any possible submit.
 - Global frame-diff motion-only candidates are noisy. Crop-motion reranking is
   more plausible, but the first grid did not beat the simple full-split
   threshold/NMS candidate.
+- Grouped NMS is a small but real offline improvement. Best checked variant:
+  `nms_group_mode=fighter`, `threshold=0.8`, same-group NMS `8`,
+  cross-group NMS `2`: `0.24246` vs baseline `0.23802`, 9/13 video wins,
+  `time=0.38748`, `fp_penalty=0.09466`, `n=1151`. This is useful for candidate
+  generation, but the improvement is below the current Kaggle submit gate.
 - Audio streams exist in all train/test videos and test A/V stream starts are
   aligned at container level. Test videos match the manifest `frame_count / 30`
   timeline; only old `boks` train videos show small duration/FPS drift, so audio

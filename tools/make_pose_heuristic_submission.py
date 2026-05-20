@@ -29,6 +29,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-predictions", type=int)
     parser.add_argument("--min-score", type=float, default=0.08)
     parser.add_argument("--nms-frames", type=int, default=12)
+    parser.add_argument(
+        "--nms-group-mode",
+        choices=["global", "fighter", "fighter_hand", "fighter_target", "fighter_hand_target"],
+        default="global",
+    )
+    parser.add_argument("--cross-nms-frames", type=int)
     parser.add_argument("--velocity-lag", type=int, default=3)
     parser.add_argument("--kp-conf", type=float, default=0.35)
     parser.add_argument("--frame-offset", type=int, default=0)
@@ -47,6 +53,8 @@ def main() -> int:
         capacity_fraction=args.capacity_fraction,
         max_predictions=args.max_predictions,
         frame_offset=args.frame_offset,
+        nms_group_mode=args.nms_group_mode,
+        cross_nms_frames=args.cross_nms_frames,
     )
     selected = make_pose_heuristic_submission(args.data_root, args.tracks_dir, args.output, config)
     errors = validate_submission(args.output, args.data_root / "sample_submission.csv")
