@@ -318,6 +318,23 @@ submissions/yolo26x_yolo26l_agree_w4_a10_pw10_sw08_thr14_nms10_cross2_rootcount0
            agn_049:62,agn_062:119,agn_063:119,agn_064:75  total=731
 ```
 
+`tools/audit_pose_agreement_candidate.py` adds the root/video audit for these
+fusion configs. Both agreement candidates pass `risk_flags=none`:
+
+```text
+yolo26x + yolo11s agreement:
+  macro=0.377949, time=0.533478, fp=0.086935, wins=10/13, n=1284
+  root deltas: Турнир Бокс +0.032473, Турнир Бокс 2 +0.038638, бокс +0.037968
+
+yolo26x + yolo26l agreement:
+  macro=0.377090, time=0.537665, fp=0.091709, wins=12/13, n=1283
+  root deltas: Турнир Бокс +0.025302, Турнир Бокс 2 +0.031736, бокс +0.057522
+```
+
+Because public just punished over-dense recall variants, the lower-FP
+`yolo26x + yolo11s` fusion is the cleaner first post-reset candidate despite
+having fewer validation video wins.
+
 External research notes point in the same direction: treat impact spotting as
 the primary problem, keep pose/track identity as support, calibrate fighter
 colors per video, and use refractory windows rather than a single global NMS.

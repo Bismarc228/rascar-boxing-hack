@@ -127,6 +127,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   reset-day submissions on fusion. Offline top is `0.377949` for yolo26x
   primary plus yolo11s secondary agreement; a matching test generator now
   exists in `tools/make_pose_agreement_submission.py`.
+- Root/video audit for agreement candidates now exists in
+  `tools/audit_pose_agreement_candidate.py`. Both yolo26x+yolo11s and
+  yolo26x+yolo26l pass tournament-root audit; yolo26x+yolo11s is the cleaner
+  first public candidate because it has lower validation FP.
 - Follow the concrete research queue in `notes/research_plan.md`: yolo26x
   agreement after reset, then direct yolo26x precision variants, then
   cached-feature Gaussian spotter, then RGB clip embeddings only if the cached

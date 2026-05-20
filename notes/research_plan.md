@@ -17,9 +17,9 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
     no tournament-root risk flags, test total `727`.
 - Strongest offline fusion candidates:
   - `yolo26x + yolo11s` normalized agreement, validation `0.377949`, test CSV
-    generated locally.
+    generated locally, root audit `risk_flags=none`, FP `0.086935`.
   - `yolo26x + yolo26l` normalized agreement, validation `0.377090`, test CSV
-    generated locally.
+    generated locally, root audit `risk_flags=none`, FP `0.091709`.
 
 ## Validated External Research Takeaways
 
@@ -38,7 +38,8 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
 
 1. Submit one yolo26x agreement candidate first if quota is fresh:
    `yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088`.
-   It has the best offline score among ready CSVs.
+   It has the best offline score among ready CSVs and lower FP than the
+   yolo26x+yolo26l agreement candidate.
 2. If public does not regress badly, submit the yolo26x+yolo26l agreement
    candidate next. This checks whether public prefers large-model agreement or
    yolo11s conservative witness.
@@ -52,23 +53,21 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
 
 ## Offline Work Before More Submits
 
-1. Add a root/video audit mode for agreement candidates, matching
-   `audit_pose_candidate.py`, so fusion variants are not judged by macro alone.
-2. Build a hybrid/splice generator: public-tuned `agn_038` plus conservative
+1. Build a hybrid/splice generator: public-tuned `agn_038` plus conservative
    offline-selected predictions for likely-private videos.
-3. Build a candidate-level Gaussian spotter:
+2. Build a candidate-level Gaussian spotter:
    - Generate frame/candidate features from yolo11s/yolo26l/yolo26x caches.
    - Label frames with Gaussian targets around GT impact frames.
    - Train a small 1D TCN/UNet or CatBoost/XGBoost ranker with video-group CV.
    - Postprocess with same `(fighter, hand)` refractory NMS and calibrated row
      count.
-4. Add RGB clip embeddings only if cached-feature spotter plateaus:
+3. Add RGB clip embeddings only if cached-feature spotter plateaus:
    - Start with pretrained video backbones available through `torchvision` or
      install `transformers/timm/decord` if needed.
    - Extract short clips around pose candidates on GPU 1.
    - Use embeddings as features for the spotter/reranker, not as a standalone
      detector first.
-5. Implement video-local fighter identity calibration:
+4. Implement video-local fighter identity calibration:
    - Tracklet color prototypes from torso/shorts/glove crops.
    - Only change fighter labels with fixed timing/counts.
    - Gate by per-root fighter score and confusion matrix, not macro alone.
