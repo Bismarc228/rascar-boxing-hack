@@ -21,7 +21,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, default=Path("submissions/pose_heuristic.csv"))
     parser.add_argument(
         "--count-mode",
-        choices=["threshold", "sample_true", "sample_capacity_fraction", "dataset_count", "dataset_rate", "fixed"],
+        choices=[
+            "threshold",
+            "sample_true",
+            "sample_capacity_fraction",
+            "dataset_count",
+            "dataset_rate",
+            "root_count",
+            "root_rate",
+            "root_round_count",
+            "root_round_rate",
+            "fixed",
+        ],
         default="sample_true",
     )
     parser.add_argument("--count-multiplier", type=float, default=1.0)

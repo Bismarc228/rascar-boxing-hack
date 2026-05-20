@@ -79,10 +79,12 @@ submissions/pose_heuristic_thr07_nms8_OFFLINE_CANDIDATE.csv
 submissions/pose_heuristic_thr07_nms12_OFFLINE_CANDIDATE.csv
 submissions/pose_heuristic_thr08_nms6_OFFLINE_CANDIDATE.csv
 submissions/pose_heuristic_grouped_fighter_thr08_same8_cross2_OFFLINE_CANDIDATE.csv
+submissions/pose_heuristic_grouped_fighter_thr08_same8_cross2_rootcount09_OFFLINE_CANDIDATE.csv
 ```
 
 The grouped-NMS test candidate validates and has 737 `clear=true` rows after
 sample capacity clipping, versus 699 for the global `thr=0.8,nms=6` candidate.
+The root-count variant validates and has 723 `clear=true` rows.
 
 ## Hypotheses Checked
 
@@ -118,7 +120,9 @@ sample capacity clipping, versus 699 for the global `thr=0.8,nms=6` candidate.
   submission is justified yet.
 - Count calibration remains a public-risk area. Sample true counts are odd on
   some test videos (`agn_062` especially); root/root-round rate counts are more
-  plausible but did not beat threshold-only on the current validation grid.
+  plausible but did not materially beat threshold-only on the current validation
+  grid. Best checked grouped-count variant was root_count `0.9`: `0.242684`
+  versus grouped threshold `0.242460`.
 
 ## Next Useful Work
 

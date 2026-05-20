@@ -206,20 +206,36 @@ def estimate_count(
     elif config.count_mode == "sample_capacity_fraction":
         capacity = sum(1 for row in sample_rows if row["video_key"] == video_key)
         raw_count = capacity * config.capacity_fraction
-    elif config.count_mode in {"dataset_count", "dataset_rate"}:
+    elif config.count_mode in {
+        "dataset_count",
+        "dataset_rate",
+        "root_count",
+        "root_rate",
+        "root_round_count",
+        "root_round_rate",
+    }:
         clear_punches = [row for row in train_punches if row.get("clear") == "true"]
         by_video = Counter(row["video_key"] for row in clear_punches)
-        videos_by_key = {row["video_key"]: row for row in train_videos}
-        peers = [row for row in train_videos if row["dataset_type"] == video["dataset_type"]]
+        if config.count_mode.startswith("dataset_"):
+            peers = [row for row in train_videos if row["dataset_type"] == video["dataset_type"]]
+        elif config.count_mode.startswith("root_round_"):
+            peers = [
+                row
+                for row in train_videos
+                if row["data_root"] == video["data_root"]
+                and row["round_number"] == video["round_number"]
+            ]
+            peers = peers or [row for row in train_videos if row["data_root"] == video["data_root"]]
+        else:
+            peers = [row for row in train_videos if row["data_root"] == video["data_root"]]
         if not peers:
             peers = train_videos
-        if config.count_mode == "dataset_count":
+        if config.count_mode.endswith("_count"):
             raw_count = sum(by_video[row["video_key"]] for row in peers) / max(1, len(peers))
         else:
             n_punches = sum(by_video[row["video_key"]] for row in peers)
             n_seconds = sum(int(row["frame_count"]) / FPS for row in peers)
             raw_count = (n_punches / max(1e-6, n_seconds)) * (int(video["frame_count"]) / FPS)
-        _ = videos_by_key
     else:
         raise ValueError(f"Unknown count_mode: {config.count_mode}")
 
