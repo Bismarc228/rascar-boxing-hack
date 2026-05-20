@@ -335,6 +335,23 @@ Because public just punished over-dense recall variants, the lower-FP
 `yolo26x + yolo11s` fusion is the cleaner first post-reset candidate despite
 having fewer validation video wins.
 
+`tools/splice_submission_videos.py` can now build public/private hybrid CSVs by
+replacing only selected test-video rows. Since `agn_038` is the confirmed
+public-impact video, three validated `agn_038` hybrids are ready for post-reset
+probing:
+
+```text
+submissions/hybrid_yolo26l_best_agn038_yolo26x_yolo11s_agree_OFFLINE_CANDIDATE.csv
+  base=yolo26l public best, override agn_038 from yolo26x+yolo11s agreement,
+  selected agn_038=108, total=680
+submissions/hybrid_yolo26l_best_agn038_yolo26x_yolo26l_agree_OFFLINE_CANDIDATE.csv
+  base=yolo26l public best, override agn_038 from yolo26x+yolo26l agreement,
+  selected agn_038=104, total=676
+submissions/hybrid_yolo26l_best_agn038_yolo26x_context_rootrate088_OFFLINE_CANDIDATE.csv
+  base=yolo26l public best, override agn_038 from yolo26x context root_rate=0.88,
+  selected agn_038=63, total=635
+```
+
 External research notes point in the same direction: treat impact spotting as
 the primary problem, keep pose/track identity as support, calibrate fighter
 colors per video, and use refractory windows rather than a single global NMS.

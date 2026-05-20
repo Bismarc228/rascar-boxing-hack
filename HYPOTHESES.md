@@ -131,6 +131,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `tools/audit_pose_agreement_candidate.py`. Both yolo26x+yolo11s and
   yolo26x+yolo26l pass tournament-root audit; yolo26x+yolo11s is the cleaner
   first public candidate because it has lower validation FP.
+- Public/private hybrid generation now exists in `tools/splice_submission_videos.py`.
+  Use it to tune confirmed-public `agn_038` without disturbing likely-private
+  videos when public probing is needed after reset.
 - Follow the concrete research queue in `notes/research_plan.md`: yolo26x
   agreement after reset, then direct yolo26x precision variants, then
   cached-feature Gaussian spotter, then RGB clip embeddings only if the cached

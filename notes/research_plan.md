@@ -50,24 +50,28 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
 4. Use no more than two public-mask probes after reset, and only for unknown
    high-value videos (`agn_037`, `agn_048`). Do not burn probes on videos
    already showing no public effect.
+5. If the first full yolo26x agreement submit is noisy, switch to `agn_038`
+   hybrids instead of changing likely-private videos. Ready hybrid CSVs replace
+   only `agn_038` on top of the yolo26l public best with:
+   - yolo26x+yolo11s agreement (`agn_038=108`, total `680`),
+   - yolo26x+yolo26l agreement (`agn_038=104`, total `676`),
+   - yolo26x context `root_rate=0.88` (`agn_038=63`, total `635`).
 
 ## Offline Work Before More Submits
 
-1. Build a hybrid/splice generator: public-tuned `agn_038` plus conservative
-   offline-selected predictions for likely-private videos.
-2. Build a candidate-level Gaussian spotter:
+1. Build a candidate-level Gaussian spotter:
    - Generate frame/candidate features from yolo11s/yolo26l/yolo26x caches.
    - Label frames with Gaussian targets around GT impact frames.
    - Train a small 1D TCN/UNet or CatBoost/XGBoost ranker with video-group CV.
    - Postprocess with same `(fighter, hand)` refractory NMS and calibrated row
      count.
-3. Add RGB clip embeddings only if cached-feature spotter plateaus:
+2. Add RGB clip embeddings only if cached-feature spotter plateaus:
    - Start with pretrained video backbones available through `torchvision` or
      install `transformers/timm/decord` if needed.
    - Extract short clips around pose candidates on GPU 1.
    - Use embeddings as features for the spotter/reranker, not as a standalone
      detector first.
-4. Implement video-local fighter identity calibration:
+3. Implement video-local fighter identity calibration:
    - Tracklet color prototypes from torso/shorts/glove crops.
    - Only change fighter labels with fixed timing/counts.
    - Gate by per-root fighter score and confusion matrix, not macro alone.
