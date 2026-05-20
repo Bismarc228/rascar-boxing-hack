@@ -20,6 +20,11 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
     generated locally, root audit `risk_flags=none`, FP `0.086935`.
   - `yolo26x + yolo26l` normalized agreement, validation `0.377090`, test CSV
     generated locally, root audit `risk_flags=none`, FP `0.091709`.
+- Strongest learned spotter candidates:
+  - 3-seed yolo26x/yolo11s/yolo26l pose-sequence TCN, `root_count=0.88`,
+    validation `0.379314`, test CSV generated, total `773`.
+  - Same sequence TCN, `root_count=0.92`, validation `0.382073`, test CSV
+    generated, total `796`.
 
 ## Validated External Research Takeaways
 
@@ -40,17 +45,24 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
    `yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088`.
    It has the best offline score among ready CSVs and lower FP than the
    yolo26x+yolo26l agreement candidate.
-2. If public does not regress badly, submit the yolo26x+yolo26l agreement
-   candidate next. This checks whether public prefers large-model agreement or
-   yolo11s conservative witness.
-3. Submit direct yolo26x `root_rate=0.88` before threshold-count if public
+2. If public does not regress badly, submit the safer sequence TCN candidate:
+   `seq_tcn_yolo26x_witness_3seed_thr05_nms10_cross2_rootcount088`. It is the
+   first learned spotter to beat agreement offline and has the same `agn_038`
+   count as the agreement candidate (`108`), but total test rows are higher
+   (`773`), so do not use it as the first reset-day public check.
+3. If the safer sequence TCN transfers, submit the higher-offline sequence TCN
+   `root_count=0.92` variant (`796` rows). If public punishes count, skip it.
+4. If sequence TCN regresses, submit the yolo26x+yolo26l agreement candidate
+   next. This checks whether public prefers large-model agreement or yolo11s
+   conservative witness without changing model family as much.
+5. Submit direct yolo26x `root_rate=0.88` before threshold-count if public
    remains precision-sensitive. The threshold-count candidate is locally best
    but has `844` test rows, so it is riskier after the yolo26l threshold-count
    public failure.
-4. Use no more than two public-mask probes after reset, and only for unknown
+6. Use no more than two public-mask probes after reset, and only for unknown
    high-value videos (`agn_037`, `agn_048`). Do not burn probes on videos
    already showing no public effect.
-5. If the first full yolo26x agreement submit is noisy, switch to `agn_038`
+7. If the first full yolo26x agreement submit is noisy, switch to `agn_038`
    hybrids instead of changing likely-private videos. Ready hybrid CSVs replace
    only `agn_038` on top of the yolo26l public best with:
    - yolo26x+yolo11s agreement (`agn_038=108`, total `680`),

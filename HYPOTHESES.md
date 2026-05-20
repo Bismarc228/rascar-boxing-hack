@@ -114,6 +114,17 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - Pure density on the yolo26l pool is killed: threshold-count scored `0.10260`.
   Future candidates should be fixed-count, root-rate, or agreement-calibrated,
   not wide threshold recalls.
+- A first learned per-video count controller did not beat simple count policies.
+  On yolo26x context it matched the threshold/root-rate anchor (`0.374335`) but
+  stayed below `root_round_count=1.0` (`0.374359`). On yolo26x+yolo11s
+  agreement it regressed (`0.375863` versus `0.377949`). Do not spend submit
+  budget on learned count control without a richer confidence model.
+- A seed-ensembled pose-sequence TCN is the first learned spotter that beats
+  yolo26x agreement offline: `0.382073` for `root_count=0.92` and `0.379314`
+  for the safer `root_count=0.88` variant. The gain is on tournament roots,
+  while the weak old `бокс` root is not in test. Validated test CSVs exist, but
+  submit only after quota reset and preferably after the safer yolo26x agreement
+  public check.
 - External research reinforces the priority order: impact spotting and
   precision/`clear` calibration first, fighter identity second, attributes
   later.
@@ -140,13 +151,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   Use it to tune confirmed-public `agn_038` without disturbing likely-private
   videos when public probing is needed after reset.
 - Follow the concrete research queue in `notes/research_plan.md`: yolo26x
-  agreement after reset, then direct yolo26x precision variants, then
-  cached-feature Gaussian spotter, then RGB clip embeddings only if the cached
-  spotter plateaus.
-- Train an event selector only if it is a stronger Gaussian/sequence spotter
-  with calibrated count/FP control. Keep the direct yolo26x/agreement heuristic
-  as fallback; do not revisit simple candidate-level rankers on the current
-  feature set.
+  agreement after reset, then the sequence TCN candidates, then direct yolo26x
+  precision variants.
+- The event-selector path is now sequence/anchor spotting, not flat candidate
+  ranking. Keep the direct yolo26x/agreement heuristic as fallback; do not
+  revisit simple candidate-level rankers on the current feature set.
 - Improve per-video count control. Dense NMS improves offline, but test/public
   FP risk may differ by fight, so count calibration needs stress tests.
 - Use audio only as a weak learned feature such as local onset max or nearest

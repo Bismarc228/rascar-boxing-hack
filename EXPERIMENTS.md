@@ -388,6 +388,75 @@ colors per video, and use refractory windows rather than a single global NMS.
 T-DEED/E2E-Spot-style Gaussian-label spotting is the next larger modeling path
 if cached pose heuristics stop improving.
 
+A first per-video count-controller tool was added in
+`tools/evaluate_count_controller.py`. It treats count/precision as a learned
+postprocess over fixed candidates, then reuses the existing `fighter_hand` NMS.
+Two offline checks did not beat the existing count policies:
+
+```text
+direct yolo26x context:
+  best policy       0.374359  root_round_count=1.0
+  count controller  0.374335  ridge residual_count
+  oracle count      0.374335
+
+yolo26x + yolo11s agreement:
+  best policy       0.377949  root_count=0.88
+  count controller  0.375863  ridge residual_count
+  oracle count      0.377747
+```
+
+For the direct yolo26x context anchor, the base threshold already limits the
+selected rows enough that count prediction has little room. For the agreement
+anchor, the learned count controller inflated FP on several videos. Keep
+root/count policies as the active baseline; revisit learned count control only
+with a materially richer confidence model or a looser candidate pool.
+
+A pose-sequence TCN evaluator was added in
+`tools/evaluate_pose_sequence_spotter.py`. It predicts per-frame probability
+for each `(fighter, hand)` stream from yolo26x candidate channels plus
+yolo11s/yolo26l witness channels, then emits only primary yolo26x candidates
+through the existing grouped NMS/count gates. Single-seed runs were noisy
+(`0.381271` once, `0.371275` on repeat), so the useful path is seed ensembling.
+
+The best checked 3-seed ensemble (`seeds=41,42,43`, `epochs=8`,
+`chunks_per_epoch=1600`) reached:
+
+```text
+0.382073  time=0.578456, fp=0.123397, wins=11/13, n=1433,
+          pose_prior=0.4, threshold=0.5, nms=10, cross=2,
+          root_count=0.92
+
+0.379314  time=0.568053, fp=0.117141, wins=11/13, n=1388,
+          pose_prior=0.4, threshold=0.5, nms=10, cross=2,
+          root_count=0.88
+```
+
+Root audit for the `0.382073` point:
+
+```text
+Турнир Бокс    score=0.411245  time=0.543674  fp=0.072521  n=333
+Турнир Бокс 2  score=0.424374  time=0.606603  fp=0.103566  n=850
+бокс           score=0.254197  time=0.547560  fp=0.220546  n=250
+```
+
+The weak `бокс` root is not in test; all test videos are tournament videos, so
+this is a real post-reset candidate family. A matching generator was added in
+`tools/make_pose_sequence_submission.py`. Two validated test CSVs were written:
+
+```text
+submissions/seq_tcn_yolo26x_witness_3seed_thr05_nms10_cross2_rootcount088_OFFLINE_CANDIDATE.csv
+  selected=agn_037:52,agn_038:108,agn_039:57,agn_047:125,agn_048:44,
+           agn_049:62,agn_062:125,agn_063:125,agn_064:75,total=773
+
+submissions/seq_tcn_yolo26x_witness_3seed_thr05_nms10_cross2_rootcount092_OFFLINE_CANDIDATE.csv
+  selected=agn_037:52,agn_038:113,agn_039:57,agn_047:131,agn_048:44,
+           agn_049:62,agn_062:131,agn_063:131,agn_064:75,total=796
+```
+
+Because public has punished dense variants before, the `root_count=0.88`
+sequence CSV is the safer first sequence submit; `root_count=0.92` is the
+higher-offline, higher-count variant.
+
 ## Hypotheses Checked
 
 - Metadata count priors are useful for reasoning, but pure temporal priors are
