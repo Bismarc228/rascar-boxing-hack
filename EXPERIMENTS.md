@@ -191,6 +191,11 @@ or test-distribution mismatch signal rather than a new baseline.
   `0.363325` with plausible prediction count. Public did not improve, so do not
   submit more `yolo11m` threshold/context tweaks without a new validation
   argument.
+- A post-public `yolo11m` count audit did not justify another submit. Adding
+  root-count capping to the submitted same-sum context setup only moved offline
+  `0.363325 -> 0.363567`; the strongest low-FP same-count context variant was
+  `0.362558`. These are threshold/context/count tweaks around the failed public
+  candidate, not a materially new approach.
 - First learned temporal-selector smoke tests on `yolo11m` OOF are not
   competitive. LightGBM with a wide `+/-15` positive window topped out at
   `0.276141`; a stricter `+/-4` label window improved to `0.315975`, but both
