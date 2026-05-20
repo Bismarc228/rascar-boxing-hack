@@ -125,8 +125,12 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   both have positive tournament-root validation deltas.
 - Build a submission generator for normalized yolo26x agreement before spending
   reset-day submissions on fusion. Offline top is `0.377949` for yolo26x
-  primary plus yolo11s secondary agreement, but the current tooling only
-  evaluates it on validation.
+  primary plus yolo11s secondary agreement; a matching test generator now
+  exists in `tools/make_pose_agreement_submission.py`.
+- Follow the concrete research queue in `notes/research_plan.md`: yolo26x
+  agreement after reset, then direct yolo26x precision variants, then
+  cached-feature Gaussian spotter, then RGB clip embeddings only if the cached
+  spotter plateaus.
 - Train an event selector only if it uses stronger temporal features and
   fight-group validation. Keep the simple heuristic as fallback.
 - Improve per-video count control. Dense NMS improves offline, but test/public

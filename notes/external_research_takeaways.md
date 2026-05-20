@@ -38,3 +38,29 @@ from the local attachments.
 4. Delay punch-type/effectiveness modeling until selection/timing is stronger.
    Their metric weight is lower and current attribute priors are not the main
    bottleneck.
+
+## Validation Against Current Evidence
+
+- **Accepted: impact spotting first.** This is consistent with the metric
+  (`time` is 50%) and with public feedback: dense yolo26l threshold-count
+  scored only `0.10260`, while precision-controlled yolo26l variants reached
+  `0.13849`.
+- **Accepted: confidence/`clear=false` calibration.** Count and precision are
+  now the main public lever. Future spotters must output calibrated event
+  confidence so postprocess can choose fewer clear rows instead of blindly
+  increasing recall.
+- **Accepted with a smaller first step: T-DEED/E2E-Spot/Dense Detection
+  Anchors.** The full RGB spotter is plausible, but the shortest path is a
+  cached-feature temporal spotter first: yolo11s/yolo26l/yolo26x candidate
+  scores, agreement, pose velocities, per-fighter context, and optional RGB
+  clip embeddings.
+- **Accepted: video-local fighter identity.** Event-level fighter oracle had
+  about `+0.018` macro headroom, while whole-video swaps failed. So identity
+  work should only alter high-confidence local tracklet labels under fixed
+  timing/counts.
+- **Already integrated: same-fighter refractory period.** Current best models
+  already use `fighter_hand` grouped NMS and cross-NMS; future spotter
+  postprocess should keep the same structure instead of global NMS.
+- **Rejected for now: standalone audio and attribute modeling.** Audio-only and
+  audio hard-snap experiments underperformed; attributes have lower weight and
+  should wait until spotting/timing is stronger.

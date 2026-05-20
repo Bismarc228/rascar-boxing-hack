@@ -293,7 +293,7 @@ submissions/yolo26x_raw_thr065_same8_cross6_rootroundrate078_OFFLINE_CANDIDATE.c
 ```
 
 A first normalized agreement grid found stronger validation numbers, but it
-needs a dedicated submission generator before it can be tested publicly:
+needed a dedicated submission generator before it could be tested publicly:
 
 ```text
 0.377949  yolo26x primary + yolo11s secondary agreement,
@@ -304,6 +304,18 @@ needs a dedicated submission generator before it can be tested publicly:
           window=4, alpha=1.0, primary_weight=1.0,
           secondary_weight=0.8, threshold=1.4, nms=10,
           cross=2, root_count=0.84, n=1283
+```
+
+`tools/make_pose_agreement_submission.py` now generates matching test
+submissions. Two post-reset CSVs were generated and validated locally:
+
+```text
+submissions/yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088_OFFLINE_CANDIDATE.csv
+  selected=agn_037:52,agn_038:108,agn_039:57,agn_047:90,agn_048:44,
+           agn_049:62,agn_062:125,agn_063:114,agn_064:75  total=727
+submissions/yolo26x_yolo26l_agree_w4_a10_pw10_sw08_thr14_nms10_cross2_rootcount084_OFFLINE_CANDIDATE.csv
+  selected=agn_037:52,agn_038:104,agn_039:57,agn_047:99,agn_048:44,
+           agn_049:62,agn_062:119,agn_063:119,agn_064:75  total=731
 ```
 
 External research notes point in the same direction: treat impact spotting as
