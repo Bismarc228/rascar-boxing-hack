@@ -537,6 +537,22 @@ current fighter labels.
   best positive audio boost seen was `0.23789` (`window=3`, `alpha=0.05`,
   `threshold=1.15`, `nms=6`, 9/13 video wins but worse FP/macro). No audio
   submission is justified yet.
+- A matched current-anchor audio rerank was added in
+  `tools/evaluate_audio_pose_context.py` and tested on the yolo26x
+  `same_count w10 alpha=-0.2, threshold=0.65, same NMS=8, cross=4` anchor.
+  The `alpha=0` control exactly reproduces the pose anchor. Any nonzero local
+  onset multiplier regressed:
+
+```text
+threshold baseline     0.374335  time=0.491512  fp=0.052324  n=1153
+best nonzero audio     0.365845  window=6  alpha=0.03  n=1364
+root_rate=0.88 base    0.372166  time=0.486328  fp=0.050154  n=1135
+best nonzero audio     0.371687  window=6  alpha=0.03  n=1285
+```
+
+  Positive audio boosts improve raw timing but inflate row count and FP; negative
+  boosts cut recall too hard. Keep audio only as a possible learned feature in a
+  richer reranker, not as a direct multiplicative rescore.
 - Count calibration remains a public-risk area. Sample true counts are odd on
   some test videos (`agn_062` especially); root/root-round rate counts are more
   plausible but did not materially beat threshold-only on the current validation

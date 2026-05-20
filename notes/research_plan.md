@@ -36,8 +36,8 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
   cached-feature spotter beats current peak selectors on tournament roots.
 - Fighter identity should be video-local and tracklet-local. Whole-video swaps
   are killed; event-level fighter correction still has headroom.
-- Audio is a weak feature near pose candidates only. No audio-only or hard snap
-  submissions.
+- Audio is a weak feature near pose candidates only. No audio-only, hard snap,
+  or direct onset-rescore submissions.
 
 ## Immediate Queue After Reset
 
@@ -159,8 +159,12 @@ becomes another threshold/NMS sweep. The active research branches are:
    - Revisit with RGB/pose clips only after event timing/selection moves.
 8. Audio as a weak auxiliary feature only.
    - Audio-only detection and hard audio snapping are killed.
+   - Direct local-onset multiplicative rescoring is also killed on the current
+     yolo26x context anchor (`0.374335 -> 0.365845`) and on `root_rate=0.88`
+     (`0.372166 -> 0.371687`).
    - If revisited, add local onset/spectral features near existing pose
-     candidates and require a matched no-audio ablation.
+     candidates inside a learned reranker and require a matched no-audio
+     ablation.
 
 ## Validation Protocol For New Models
 

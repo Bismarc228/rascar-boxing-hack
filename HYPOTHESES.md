@@ -79,6 +79,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   counts), and hard-shifting pose candidates to audio peaks hurts.
 - Audio reranking has not beaten the full-validation baseline; the best positive
   audio boost was still slightly worse than baseline (`0.23789` vs `0.23802`).
+- The same conclusion holds on the current yolo26x context anchor:
+  `tools/evaluate_audio_pose_context.py` reproduced `0.374335` at `alpha=0`,
+  while best nonzero audio fell to `0.365845`; with `root_rate=0.88`, best
+  nonzero audio was `0.371687` versus `0.372166`.
 - Fighter/color and attribute priors are not useful standalone improvements.
 - `yolo11s-pose` transferred to public and is now the strongest baseline:
   `0.13275` public. The next detector/model experiments should compare against
@@ -169,7 +173,8 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - Improve per-video count control. Dense NMS improves offline, but test/public
   FP risk may differ by fight, so count calibration needs stress tests.
 - Use audio only as a weak learned feature such as local onset max or nearest
-  onset distance inside a pose-dominant selector. Do not hard-shift frames.
+  onset distance inside a pose-dominant selector. Do not hard-shift frames or
+  use direct multiplicative onset rescoring.
 - Revisit crop-motion only as a tie-breaker/reranker for a wide pose pool.
 - Calibrate fighter colors per video, because equipment colors vary by video
   and the current extractor uses fixed HSV red/blue masks. Treat color as
