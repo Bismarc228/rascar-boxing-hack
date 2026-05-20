@@ -352,6 +352,27 @@ submissions/hybrid_yolo26l_best_agn038_yolo26x_context_rootrate088_OFFLINE_CANDI
   selected agn_038=63, total=635
 ```
 
+A fast learned-selector sanity check on the yolo26x cache did not justify
+another candidate-ranker path. Command shape:
+
+```text
+tools/evaluate_learned_temporal_selector.py --tracks-dir val_yolo26x_conf035
+  --model hgb --max-candidates-per-video 1200 --windows 2,4,8
+```
+
+Best result was only:
+
+```text
+0.303634  time=0.536335, fp=0.157001, n=1476,
+          pose_prior=0.2, threshold=0.12, nms=8, cross=4,
+          root_rate=0.84
+```
+
+This is far below direct yolo26x (`0.374335`) and yolo26x agreement
+(`0.377949`). Treat simple candidate-level rankers on the current features as
+killed unless the feature set changes substantially; the next learned approach
+should be a calibrated Gaussian/sequence spotter with explicit count/FP control.
+
 External research notes point in the same direction: treat impact spotting as
 the primary problem, keep pose/track identity as support, calibrate fighter
 colors per video, and use refractory windows rather than a single global NMS.

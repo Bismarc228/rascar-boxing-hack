@@ -66,6 +66,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `+1`, `-1`, and larger shifts degrade.
 - Supervised rankers using the current pose features underperform the simple
   heuristic on mean LOOV.
+- The same remains true on yolo26x with a faster HGB sanity check: best
+  `0.303634` with FP `0.157001`, far below direct yolo26x/agreement. Do not
+  spend reset submissions on this selector family.
 - Supervised attribute models only produced a small gain in one timing setup
   (`0.21299 -> 0.21590`), not enough to submit.
 - Motion-only candidates are noisy. Crop-motion reranking is more plausible, but
@@ -138,8 +141,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   agreement after reset, then direct yolo26x precision variants, then
   cached-feature Gaussian spotter, then RGB clip embeddings only if the cached
   spotter plateaus.
-- Train an event selector only if it uses stronger temporal features and
-  fight-group validation. Keep the simple heuristic as fallback.
+- Train an event selector only if it is a stronger Gaussian/sequence spotter
+  with calibrated count/FP control. Keep the direct yolo26x/agreement heuristic
+  as fallback; do not revisit simple candidate-level rankers on the current
+  feature set.
 - Improve per-video count control. Dense NMS improves offline, but test/public
   FP risk may differ by fight, so count calibration needs stress tests.
 - Use audio only as a weak learned feature such as local onset max or nearest

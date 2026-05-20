@@ -65,6 +65,10 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
    - Train a small 1D TCN/UNet or CatBoost/XGBoost ranker with video-group CV.
    - Postprocess with same `(fighter, hand)` refractory NMS and calibrated row
      count.
+   - Do not reuse the current simple candidate-level selector family as-is:
+     a yolo26x HGB sanity check reached only `0.303634` with FP `0.157001`.
+     The next model must use sequence/anchor labels or a materially richer
+     feature representation.
 2. Add RGB clip embeddings only if cached-feature spotter plateaus:
    - Start with pretrained video backbones available through `torchvision` or
      install `transformers/timm/decord` if needed.
