@@ -368,10 +368,19 @@ Best result was only:
           root_rate=0.84
 ```
 
-This is far below direct yolo26x (`0.374335`) and yolo26x agreement
-(`0.377949`). Treat simple candidate-level rankers on the current features as
-killed unless the feature set changes substantially; the next learned approach
-should be a calibrated Gaussian/sequence spotter with explicit count/FP control.
+An ad hoc Gaussian-label HGB candidate regressor on the same yolo26x cache was
+better but still below the heuristic/fusion anchor:
+
+```text
+0.361257  time=0.534848, fp=0.105266, n=1323,
+          pose_prior=0.4, threshold=0.30, nms=8, cross=2,
+          root_rate=0.78
+```
+
+This is below direct yolo26x (`0.374335`) and yolo26x agreement (`0.377949`).
+Treat simple candidate-level rankers on the current features as killed unless
+the feature set changes substantially; the next learned approach should be a
+calibrated sequence/anchor spotter with explicit count/FP control.
 
 External research notes point in the same direction: treat impact spotting as
 the primary problem, keep pose/track identity as support, calibrate fighter

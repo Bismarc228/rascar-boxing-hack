@@ -66,9 +66,10 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
    - Postprocess with same `(fighter, hand)` refractory NMS and calibrated row
      count.
    - Do not reuse the current simple candidate-level selector family as-is:
-     a yolo26x HGB sanity check reached only `0.303634` with FP `0.157001`.
-     The next model must use sequence/anchor labels or a materially richer
-     feature representation.
+     yolo26x HGB checks reached `0.303634` and then `0.361257` with Gaussian
+     labels, both below direct yolo26x/agreement.
+   - The next model must use sequence/anchor labels or a materially richer
+     feature representation, not another flat candidate regressor.
 2. Add RGB clip embeddings only if cached-feature spotter plateaus:
    - Start with pretrained video backbones available through `torchvision` or
      install `transformers/timm/decord` if needed.
@@ -79,6 +80,82 @@ all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
    - Tracklet color prototypes from torso/shorts/glove crops.
    - Only change fighter labels with fixed timing/counts.
    - Gate by per-root fighter score and confusion matrix, not macro alone.
+
+## Expanded Model Tracks
+
+The external research is useful only if it changes the model family, not if it
+becomes another threshold/NMS sweep. The active research branches are:
+
+1. Pose-sequence event spotter.
+   - Input: per-frame features from cached yolo11s/yolo26l/yolo26x tracks,
+     model-agreement channels, wrist/head/torso velocities, fighter distance,
+     role-switch flags, and local score context.
+   - Models: 1D TCN/UNet first, then a small temporal Transformer if the TCN
+     beats current agreement selectors.
+   - Labels: Gaussian or dense-anchor labels around impact frames, with focal or
+     weighted BCE loss to handle calm-frame imbalance.
+   - Validation gate: beat `0.377949` yolo26x+yolo11s agreement on fight-group
+     CV, improve timing, and avoid FP/count inflation.
+2. RGB clip reranker or spotter.
+   - Start as frozen embeddings around pose candidates, not a standalone dense
+     detector. Candidate windows should cover roughly `[-16,+16]` and
+     `[-32,+32]` frames around each event.
+   - Candidate backbones: torchvision video models first if available; install
+     `transformers`, `timm`, `decord`/`av`, or similar only when needed for
+     VideoMAE/TimeSformer/Swin-style embeddings.
+   - Use embeddings in CatBoost/LightGBM or a small head with the same
+     `(fighter, hand)` NMS and count calibration.
+   - GPU jobs must use physical GPU 1 only.
+3. Multi-model pose agreement as a detector witness.
+   - Keep yolo26x as primary; use yolo11s/yolo26l/yolo11m as witnesses for
+     timing snap, confidence boost, or disagreement penalty.
+   - Do not replace the whole detector unless tournament-root audits stay
+     positive and FP stays controlled.
+4. Video-local fighter identity.
+   - Build per-video tracklet prototypes from pose-guided torso/shorts/glove
+     crops, plus optional DINO/CLIP-style crop embeddings if color histograms
+     are too brittle.
+   - Validate with timing/count fixed. Only the fighter column may change in the
+     first identity experiments.
+   - Required reports: `score_fighter`, wrong-fighter near misses inside
+     `+/-15` frames, red/blue confusion matrix, and per-root deltas.
+5. Per-video precision/count controller.
+   - The public checks already punished dense recall, so count calibration is a
+     model branch, not just postprocess housekeeping.
+   - Features: video duration, root/round/fight metadata, candidate score
+     distribution, model-agreement density, same-fighter burst density, and
+     selected-count priors from neighboring rounds in train.
+   - Output: expected `clear=true` count or a threshold offset per video, then
+     the normal grouped NMS decides the rows.
+   - Gate on FP penalty and macro by tournament root; reject gains that only
+     tune the old `бокс` root.
+6. Crop-motion/contact reranker.
+   - Motion-only detection is killed, but local crop motion can still help
+     distinguish impact from guard, feint, and recovery inside a wide pose pool.
+   - Features: frame-diff/optical-flow summaries around glove, opponent head,
+     torso, and inter-fighter contact crops over `[-8,+8]` and `[-16,+16]`.
+   - Use only as a reranker/tie-breaker with fixed candidate pool and count
+     calibration; require a no-motion ablation.
+7. Attribute classifier only after spotting improves.
+   - Punch type/effectiveness/target/hand have lower metric weight and previous
+     attribute-only gains were small.
+   - Revisit with RGB/pose clips only after event timing/selection moves.
+8. Audio as a weak auxiliary feature only.
+   - Audio-only detection and hard audio snapping are killed.
+   - If revisited, add local onset/spectral features near existing pose
+     candidates and require a matched no-audio ablation.
+
+## Validation Protocol For New Models
+
+- Use fight-group validation first, then report per-root and per-video deltas.
+- Every model must compare against both direct yolo26x context and
+  yolo26x+yolo11s agreement, not against the old yolo11n/yolo11s baseline.
+- Separate three ablations: timing/count fixed, fighter-only change, and full
+  selection. This prevents a fighter or RGB idea from hiding FP inflation.
+- Track `score_time`, `score_fighter`, FP penalty, selected row count, and wins
+  across the 13 validation videos.
+- Submit only after quota reset and only for a candidate that is materially new
+  and passes the validation gate. No public probing while quota is exhausted.
 
 ## Submit Gates
 

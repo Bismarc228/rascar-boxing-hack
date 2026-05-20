@@ -66,9 +66,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `+1`, `-1`, and larger shifts degrade.
 - Supervised rankers using the current pose features underperform the simple
   heuristic on mean LOOV.
-- The same remains true on yolo26x with a faster HGB sanity check: best
-  `0.303634` with FP `0.157001`, far below direct yolo26x/agreement. Do not
-  spend reset submissions on this selector family.
+- The same remains true on yolo26x with HGB-style candidate selectors. A fast
+  HGB sanity check reached only `0.303634` with FP `0.157001`; a later
+  Gaussian-label candidate regressor improved to `0.361257` with FP
+  `0.105266`, but still stayed below direct yolo26x/agreement. Do not spend
+  reset submissions on this selector family.
 - Supervised attribute models only produced a small gain in one timing setup
   (`0.21299 -> 0.21590`), not enough to submit.
 - Motion-only candidates are noisy. Crop-motion reranking is more plausible, but
