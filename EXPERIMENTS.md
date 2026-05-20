@@ -491,10 +491,32 @@ submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088_
 submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount092_OFFLINE_CANDIDATE.csv
   selected=agn_037:52,agn_038:85,agn_039:57,agn_047:131,agn_048:44,
            agn_049:62,agn_062:131,agn_063:128,agn_064:75,total=765
+
+submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross4_snap4_rootcount082_OFFLINE_CANDIDATE.csv
+  selected=agn_037:52,agn_038:77,agn_039:57,agn_047:116,agn_048:44,
+           agn_049:62,agn_062:116,agn_063:113,agn_064:75,total=712
 ```
 
 The `root_count=0.88` snap4 CSV is the safer sequence candidate: it beats the
 older `root_count=0.92` sequence validation score while reducing test rows.
+All three snap4 CSVs and the yolo26x+yolo11s agreement CSV passed
+`tools/validate_data.py --submission ...`.
+
+A narrow repeat OOF audit for the safer snap4 `root_count=0.88` setup landed at
+`0.387039` rather than the first sweep's `0.389963`, showing some CUDA/training
+noise while preserving the conclusion that it beats agreement. Repeat root
+detail:
+
+```text
+Турнир Бокс    score=0.395133  time=0.516072  fp=0.062979  n=318
+Турнир Бокс 2  score=0.426295  time=0.560647  fp=0.064081  n=756
+бокс           score=0.287346  time=0.514271  fp=0.159782  n=206
+```
+
+The defensive `root_count=0.82` / `cross=4` audit point scored `0.382612`
+(`time=0.520478`, `fp=0.073716`, `n=1203`) and generated only 712 test rows. It
+is a fallback if public is strongly count-sensitive, not the first sequence
+submit.
 
 A learned fighter-correction diagnostic was added in
 `tools/evaluate_fighter_identity_model.py`. It keeps selected events fixed and

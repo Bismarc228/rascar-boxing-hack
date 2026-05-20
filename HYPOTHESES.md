@@ -137,6 +137,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   real improvement: `snap_window=4` reached `0.390013`, and the safer
   `root_count=0.88` snap4 variant reached `0.389963` with lower FP and only
   `744` test rows.
+- A narrow repeat audit of the safer snap4 point landed at `0.387039`, so
+  sequence scores have some training/CUDA noise but remain above agreement.
+  The defensive `root_count=0.82` snap4 variant scored `0.382612` with only
+  `712` test rows.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,
