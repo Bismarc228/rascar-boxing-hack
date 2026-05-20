@@ -11,13 +11,21 @@ candidate is meaningfully different from already submitted variants.
 Best public score so far:
 
 ```text
-0.13275  submissions/yolo11s_fighterhand_thr115_same10_cross4_rootcount1_OFFLINE_CANDIDATE.csv
+0.13849  submissions/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
 ```
 
 Other checked variants:
 
 ```text
+0.13664  submissions/yolo26l_context_samesum_w6_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
+0.13664  submissions/yolo26l_samesum_w6_am02_thr085_same10_cross4_rootrate084_OFFLINE_CANDIDATE.csv
+0.13664  submissions/yolo26l_samesum_w6_am02_thr085_same10_cross4_rootrate086_OFFLINE_CANDIDATE.csv
+0.13664  submissions/yolo26l_samesum_w8_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
+0.13580  submissions/yolo26l_context_samecount_w8_am01_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
+0.13580  submissions/yolo26l_context_samecount_w8_am01_thr085_same10_cross4_rootrate09_OFFLINE_CANDIDATE.csv
 0.12958  submissions/yolo11m_context_samesum_w8_am02_thr09_same10_cross4_OFFLINE_CANDIDATE.csv
+0.12020  submissions/yolo26l_samesum_w6_am025_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
+0.10260  submissions/yolo26l_context_samecount_w8_am01_thr085_same10_cross4_threshold_OFFLINE_CANDIDATE.csv
 0.08639  pose_heuristic_thr115_nms12.csv
 0.07902  pose_heuristic_thr125_nms12.csv
 0.07486  pose_heuristic_thr135_nms12.csv
@@ -37,6 +45,14 @@ Conclusions from public checks:
   grouped NMS improved public score from `0.08639` to `0.13275`.
 - `yolo11m-pose` plus same-score temporal context did not transfer despite a
   large offline gain: public `0.12958`, below the `yolo11s` best.
+- `yolo26l-pose` transferred and is now the public anchor. The best checked
+  public variant is `same_sum`, window `4`, alpha `-0.2`, threshold `0.85`,
+  same-group NMS `10`, cross-NMS `4`, `root_rate=0.88`: public `0.13849`.
+- Dense threshold-count on the same `yolo26l` pool failed hard (`0.10260`), so
+  public currently rewards precision/count control more than raw recall.
+- The daily budget was exhausted at `30/30` submissions on 2026-05-20. The
+  helper reports reset at `2026-05-21T00:00:00Z`; do not submit again before
+  that reset.
 - Global fighter swap is bad.
 - Frame offset `+3` is neutral/slightly worse; `-3` is worse.
 - Around the initial pose heuristic, recall helped up to `thr=1.15`; overly
@@ -210,6 +226,10 @@ NMS replacement, but strong with grouped NMS and temporal context:
           fighter_hand grouped NMS, thr=0.85,
           same-group nms=10, cross-group nms=4,
           time=0.479037, fp=0.050365, wins=10/13, n=1126
+0.365177  yolo26l same_sum context, window=4, alpha=-0.2,
+          fighter_hand grouped NMS, thr=0.85,
+          same-group nms=10, cross-group nms=4,
+          root_rate=0.88, time=0.481575, fp=0.053874, n=1136
 ```
 
 The top context candidate beats the `yolo11s` anchor by `+0.028913` macro and
@@ -218,7 +238,73 @@ improves mean FP penalty by `-0.006490`, but it still has a public-risk flag:
 `бокс` is `+0.081964`. The test manifest has three `Турнир Бокс` videos and
 six `Турнир Бокс 2` videos, so this is plausible but not automatic-submit
 safe. `test_yolo26l_conf035` extraction was started for a candidate CSV and
-local validation/count audit.
+local validation/count audit. Public checks changed the practical anchor: the
+`same_sum` `window=4` `alpha=-0.2` variant has weaker offline macro than the
+`same_count` offline winner, but scored best publicly (`0.13849`). Nearby
+`root_rate=0.84/0.86/0.88` and `window=6/8` variants all clustered at
+`0.13664`, while `alpha=-0.15` dropped to `0.13095` and `alpha=-0.25` dropped
+to `0.12020`.
+
+The public-mask probes that zeroed individual test videos imply at least
+`agn_038` is in the public split: zeroing it dropped score to `0.06940`, while
+zeroing `agn_047`, `agn_049`, `agn_062`, `agn_063`, `agn_064`, or `agn_039`
+left the score at `0.13664` for that baseline. Treat this as useful evidence,
+but do not spend more submissions on mask probing before the UTC reset.
+
+`yolo26x-pose` validation tracks are complete in
+`data/processed/pose_tracks/val_yolo26x_conf035/`. It is the first larger
+model that passes the tournament-root audit cleanly:
+
+```text
+0.371622  raw yolo26x, fighter_hand grouped NMS, thr=0.65,
+          same-group nms=8, cross-group nms=6,
+          root_round_rate=0.78, time=0.513862, fp=0.074331,
+          wins=10/13, n=1229, risk_flags=none
+0.374335  yolo26x same_count context, window=10, alpha=-0.2,
+          fighter_hand grouped NMS, thr=0.65,
+          same-group nms=8, cross-group nms=4,
+          threshold count, time=0.491512, fp=0.052324,
+          wins=10/13, n=1153, risk_flags=none
+0.372166  same yolo26x context candidate with root_rate=0.88,
+          time=0.486328, fp=0.050154, wins=10/13, n=1135,
+          risk_flags=none
+```
+
+Root deltas for the top yolo26x context candidate versus the public-proven
+`yolo11s` anchor are positive on all roots: `Турнир Бокс +0.043377`,
+`Турнир Бокс 2 +0.022672`, `бокс +0.048659`. `test_yolo26x_conf035`
+extraction was started on GPU 1 after submissions were stopped so a candidate
+CSV can be prepared after reset without waiting on detector inference.
+
+The `test_yolo26x_conf035` cache completed on GPU 1. Three post-reset candidate
+CSVs were generated and validated locally, but not submitted because the daily
+quota is exhausted:
+
+```text
+submissions/yolo26x_samecount_w10_am02_thr065_same8_cross4_threshold_OFFLINE_CANDIDATE.csv
+  selected=agn_037:84,agn_038:63,agn_039:60,agn_047:112,agn_048:121,
+           agn_049:96,agn_062:110,agn_063:103,agn_064:95  total=844
+submissions/yolo26x_samecount_w10_am02_thr065_same8_cross4_rootrate088_OFFLINE_CANDIDATE.csv
+  selected=agn_037:52,agn_038:63,agn_039:57,agn_047:112,agn_048:44,
+           agn_049:62,agn_062:110,agn_063:103,agn_064:75  total=678
+submissions/yolo26x_raw_thr065_same8_cross6_rootroundrate078_OFFLINE_CANDIDATE.csv
+  selected=agn_037:52,agn_038:91,agn_039:57,agn_047:100,agn_048:44,
+           agn_049:62,agn_062:126,agn_063:120,agn_064:75  total=727
+```
+
+A first normalized agreement grid found stronger validation numbers, but it
+needs a dedicated submission generator before it can be tested publicly:
+
+```text
+0.377949  yolo26x primary + yolo11s secondary agreement,
+          window=4, alpha=0.2, primary_weight=1.0,
+          secondary_weight=0.8, threshold=1.4, nms=10,
+          cross=2, root_count=0.88, n=1284
+0.377090  yolo26x primary + yolo26l secondary agreement,
+          window=4, alpha=1.0, primary_weight=1.0,
+          secondary_weight=0.8, threshold=1.4, nms=10,
+          cross=2, root_count=0.84, n=1283
+```
 
 External research notes point in the same direction: treat impact spotting as
 the primary problem, keep pose/track identity as support, calibrate fighter

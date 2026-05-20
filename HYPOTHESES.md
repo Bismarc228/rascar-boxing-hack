@@ -5,8 +5,8 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 
 ## Current State
 
-- Best public score: `0.13275` from
-  `submissions/yolo11s_fighterhand_thr115_same10_cross4_rootcount1_OFFLINE_CANDIDATE.csv`.
+- Best public score: `0.13849` from
+  `submissions/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv`.
 - Corrected offline validation uses all 13 fight-level validation videos in
   `data/processed/pose_tracks/val_yolo11n_conf035/`.
 - `yolo11n` simple offline threshold/NMS baseline:
@@ -31,6 +31,20 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   cross-group NMS `4`, `n=1198`, FP penalty `0.065930`, 11/13 validation wins.
   Public score for the matching candidate was only `0.12958`, so it does not
   replace the `yolo11s` public baseline.
+- Best checked `yolo26l-pose` public variant:
+  `0.13849`, `same_sum` temporal context in a `+/-4` frame window,
+  `alpha=-0.2`, fighter+hand grouped NMS, `threshold=0.85`, same-group NMS
+  `10`, cross-group NMS `4`, `root_rate=0.88`. Dense threshold-count on the
+  same pool scored only `0.10260`, so public is currently punishing count
+  inflation.
+- Best checked `yolo26x-pose` offline variant:
+  `0.374335`, `same_count` temporal context in a `+/-10` frame window,
+  `alpha=-0.2`, fighter+hand grouped NMS, `threshold=0.65`, same-group NMS `8`,
+  cross-group NMS `4`, threshold count, FP penalty `0.052324`, 10/13 wins, and
+  no tournament-root risk flags. It has not been submitted; the daily Kaggle
+  limit was exhausted before yolo26x test tracks were ready.
+- Kaggle quota on 2026-05-20 is exhausted (`30/30`). Reset is
+  `2026-05-21T00:00:00Z`. Do not submit before reset.
 - Generated but not submitted candidates include the grouped-NMS, grouped-count,
   and temporal-context CSVs listed in `EXPERIMENTS.md`.
 - The task rewards timing most heavily. The metric weights time at `50%`,
@@ -84,10 +98,17 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   swap hurts every validation video, while event-level oracle fighter labels
   have about `+0.018` macro headroom. Work should target local tracklet
   identity and per-video color prototypes.
-- `yolo26l-pose` plus temporal context is the first large-model candidate that
-  beats both `yolo11s` and the failed `yolo11m` path locally (`0.369802`,
-  FP `0.061657`, 10/13 wins). It is still not automatic-submit safe because
-  `Турнир Бокс` regresses slightly.
+- `yolo26l-pose` plus temporal context transferred to public and is now the
+  public anchor. The local macro winner (`same_count w8 alpha=-0.1`) scored
+  `0.13580`, but public preferred the more precision-oriented `same_sum w4
+  alpha=-0.2` candidate at `0.13849`.
+- Tiny count-only moves around `yolo26l same_sum w6 alpha=-0.2` did not improve
+  public: `root_rate=0.84/0.86/0.88` all scored `0.13664`. A stronger context
+  penalty (`alpha=-0.25`) hurt badly (`0.12020`), and weaker penalty
+  (`alpha=-0.15`) also hurt (`0.13095`).
+- Pure density on the yolo26l pool is killed: threshold-count scored `0.10260`.
+  Future candidates should be fixed-count, root-rate, or agreement-calibrated,
+  not wide threshold recalls.
 - External research reinforces the priority order: impact spotting and
   precision/`clear` calibration first, fighter identity second, attributes
   later.
@@ -96,6 +117,16 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 
 - Expand temporal-context scoring around pose candidates, not single-frame
   scoring. The current best signal is local same `(fighter, hand)` dominance.
+- Prepare yolo26x test candidates after its test cache completes, but do not
+  submit before the UTC reset. The cache is complete and three validated CSVs
+  are ready: context threshold-count (`844` rows), context `root_rate=0.88`
+  (`678` rows), and raw `root_round_rate=0.78` (`727` rows). Priority configs
+  are `same_count w10 alpha=-0.2` with threshold count and `root_rate=0.88`;
+  both have positive tournament-root validation deltas.
+- Build a submission generator for normalized yolo26x agreement before spending
+  reset-day submissions on fusion. Offline top is `0.377949` for yolo26x
+  primary plus yolo11s secondary agreement, but the current tooling only
+  evaluates it on validation.
 - Train an event selector only if it uses stronger temporal features and
   fight-group validation. Keep the simple heuristic as fallback.
 - Improve per-video count control. Dense NMS improves offline, but test/public
@@ -151,6 +182,8 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 ## Submit Gates
 
 - Respect the 30 submissions/day limit. Do not submit small threshold sweeps.
+- On 2026-05-20 the daily limit is exhausted. Submit gate is closed until
+  `2026-05-21T00:00:00Z`.
 - A candidate must pass local validation against `sample_submission.csv`.
 - A candidate must be materially different from already submitted variants.
 - Automatic submit gate: beat the current best offline `yolo11s` score
