@@ -77,6 +77,13 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - For larger pose models, prefer asymmetric agreement/snapping/fusion against
   `yolo11s` over replacing the detector wholesale. A large-model-only candidate
   must pass tournament-root audit, not just full-split macro.
+- `yolo26m` timing snap around fixed `yolo11s` selected events gives only a
+  small but root-stable lift (`0.340888 -> 0.343372`). This is not enough to
+  submit, but it is safer than replacing all events with a large-model path.
+- Fighter identity is not solved by a per-video keep/swap decision. Full-video
+  swap hurts every validation video, while event-level oracle fighter labels
+  have about `+0.018` macro headroom. Work should target local tracklet
+  identity and per-video color prototypes.
 
 ## Promising Next Hypotheses
 
@@ -89,6 +96,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - Use audio only as a weak learned feature such as local onset max or nearest
   onset distance inside a pose-dominant selector. Do not hard-shift frames.
 - Revisit crop-motion only as a tie-breaker/reranker for a wide pose pool.
+- Calibrate fighter colors per video, because equipment colors vary by video
+  and the current extractor uses fixed HSV red/blue masks. Treat color as
+  tracklet identity evidence, then map local identities to red/blue labels with
+  a confidence gate.
 - Delay attribute work until timing/selection improves; attributes have lower
   metric weight and have not yet moved enough offline.
 

@@ -171,6 +171,29 @@ the root audit is not public-safe: `Турнир Бокс` is `-0.010997`,
 submit `yolo26m` threshold/context candidates unless a materially different
 agreement, snapping, or fusion test fixes the tournament-root regression.
 
+`yolo26m` is slightly useful as a timing witness while keeping `yolo11s` counts
+fixed. Snapping `yolo11s` selected frames to nearby `yolo26m` raw candidates
+with the same `(fighter, hand)` gives:
+
+```text
+0.343372  yolo11s fixed-count events, yolo26m raw timing snap,
+          window=8, sec_thr=0.85, score-distance weighted frame,
+          time=0.471365, fp=0.068115, wins=10/13, n=1202
+```
+
+The gain is small but well distributed by root (`+0.003762`,
+`+0.002910`, `+0.000211`). This is below the submit gate, but it supports using
+large models as secondary timing witnesses rather than wholesale replacements.
+
+Fighter identity still has meaningful headroom, but not through a full-video
+label swap. On the `yolo11s` anchor, swapping all red/blue labels worsens
+`0.340888 -> 0.271555`, and per-video oracle keep/swap chooses keep for all 13
+validation videos. However, an event-level oracle that fixes only the `fighter`
+label on matched predictions raises `yolo11s` to `0.359788` (`+0.018899`) and
+raises the `yolo26m` context candidate to `0.369845` (`+0.017041`). So the next
+fighter-identity work should be local tracklet/per-video color calibration and
+switch smoothing, not a global or whole-video swap.
+
 ## Hypotheses Checked
 
 - Metadata count priors are useful for reasoning, but pure temporal priors are
