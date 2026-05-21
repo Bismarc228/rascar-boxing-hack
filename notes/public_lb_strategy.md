@@ -100,6 +100,10 @@ passes validation, but is not a submit candidate yet. Public already showed
 `agn_047/062/063` are neutral when added individually, so this is a possible
 private-risk candidate, not a public breakthrough.
 
+The helper now has two output modes: `--row-mode sample` for fixed Kaggle
+submission rows and `--row-mode video_rows` for validation prediction rows.
+Both modes were smoke-tested on the `agn_038` sequence replacement.
+
 `root_count=0.92` and `root_count=0.82` sequence variants were checked through
 the same gate. They select essentially the same safe video set. On `agn_038`,
 `root_count=0.88` and `0.92` have `98.8%` of selected frames within 3 frames of

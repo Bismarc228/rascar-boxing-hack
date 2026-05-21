@@ -46,6 +46,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base", type=Path, required=True)
     parser.add_argument("--override", type=Path, required=True)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--row-mode",
+        choices=["sample", "video_rows"],
+        default="sample",
+        help="sample replaces rows by fixed Kaggle ids; video_rows replaces whole video row groups",
+    )
     parser.add_argument("--video-keys", help="Optional comma-separated subset to consider")
     parser.add_argument("--max-count-delta", type=int, default=20)
     parser.add_argument("--min-base-within-15", type=float, default=0.80)
@@ -159,22 +165,39 @@ def write_hybrid(
     base_rows: list[dict[str, str]],
     override_rows: list[dict[str, str]],
     replace_keys: set[str],
+    row_mode: str,
 ) -> None:
-    override_by_id = {row["id"]: row for row in override_rows}
     output: list[dict[str, str]] = []
-    for row in base_rows:
-        if row["video_key"] in replace_keys:
-            output.append(dict(override_by_id[row["id"]]))
-        else:
-            output.append(dict(row))
+    if row_mode == "sample":
+        override_by_id = {row["id"]: row for row in override_rows}
+        for row in base_rows:
+            if row["video_key"] in replace_keys:
+                output.append(dict(override_by_id[row["id"]]))
+            else:
+                output.append(dict(row))
+    elif row_mode == "video_rows":
+        for row in base_rows:
+            if row["video_key"] not in replace_keys:
+                output.append(dict(row))
+        for row in override_rows:
+            if row["video_key"] in replace_keys:
+                output.append(dict(row))
+        output.sort(key=lambda row: (row["video_key"], int(row["frame"]), row["fighter"], row["hand"]))
+        for index, row in enumerate(output, start=1):
+            row["id"] = str(index)
+    else:
+        raise ValueError(f"Unknown row mode: {row_mode}")
+
     write_csv_rows(output_path, output, SUBMISSION_COLUMNS)
-    errors = validate_submission(output_path, data_root / "sample_submission.csv")
-    if errors:
-        for error in errors:
-            print(f"validation_error={error}", file=sys.stderr)
-        raise SystemExit(1)
+    if row_mode == "sample":
+        errors = validate_submission(output_path, data_root / "sample_submission.csv")
+        if errors:
+            for error in errors:
+                print(f"validation_error={error}", file=sys.stderr)
+            raise SystemExit(1)
     selected = Counter(row["video_key"] for row in output if row["clear"] == "true")
     print(f"wrote={output_path}")
+    print(f"row_mode={row_mode}")
     print(f"replace_keys={','.join(sorted(replace_keys))}")
     print("selected=" + ",".join(f"{key}:{selected[key]}" for key in sorted(selected)))
 
@@ -205,7 +228,7 @@ def main() -> int:
     print(f"final_replace_keys={','.join(sorted(replace_keys))}")
 
     if args.output:
-        write_hybrid(args.output, args.data_root, base_rows, override_rows, replace_keys)
+        write_hybrid(args.output, args.data_root, base_rows, override_rows, replace_keys, args.row_mode)
     return 0
 
 
