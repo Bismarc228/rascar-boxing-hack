@@ -34,6 +34,7 @@ candidate is worth spending one of the remaining attempts.
 | full yolo26x/yolo11s agreement | Public `0.10784`, already failed. |
 | crop-motion direct submit | Local gain is weak and source oracle contribution is marginal. |
 | temporal frozen RGB contact fixed-row branch | Union and attacker/opponent ViT-B clip smokes both regressed below the current best OOF source; no test CSV generated. |
+| candidate-level RGB contact raw-pose branch | Improves same-pool raw pose OOF, but best smoke score `0.359641` is far below current best `0.401483`; no test CSV generated. |
 
 ## Current Recommendation
 

@@ -141,6 +141,12 @@ next visible score   public=0.04481
   `0.398528` for offset-only. This kills fixed-row frozen RGB contact as a
   direct branch; future RGB work should move to candidate-level contact or
   fine-tuning rather than another crop/mode sweep.
+- Candidate-level RGB contact was tested before final NMS on a bounded raw
+  yolo26x pose pool. It improves the same-pool pose baseline
+  (`0.330787 -> 0.359641`) and reduces FP penalty (`0.156681 -> 0.110506`),
+  but remains far below the current best local source (`0.401483`). This keeps
+  RGB contact alive as an auxiliary pre-NMS signal, but not as a direct
+  raw-pose row source.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is

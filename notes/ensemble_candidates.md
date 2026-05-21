@@ -35,6 +35,7 @@ today, only if offline evidence clearly beats the current public anchor.
 | yolo26x/yolo11s agreement | Good OOF before public, but public full submit was `0.10784`; may still be useful as an agreement/witness feature around selected events. | Do not use as row source unless a video-local gate proves it. |
 | audio onset features | Audio-only and hard snap are killed, but local onset max/distance can remain as weak features for a learned pose-dominant selector. | Do not generate audio-only rows or hard-shift selected frames to audio peaks. |
 | fighter identity visual embeddings | Existing HSV/bbox clustering and simple role/color flips failed; robust embeddings from pose-guided crops are still untested and independent from timing. | Keep only if fixed-timing validation improves fighter score without hurting time/count. |
+| candidate-level RGB contact | A first ViT-B/16 temporal clip smoke over a raw yolo26x pose candidate pool improves same-pool OOF `0.330787 -> 0.359641` and reduces FP penalty, so RGB has real pre-NMS signal. Absolute score remains far below the current best `0.401483`. | Do not submit as a raw-pose branch. Next useful test is adding RGB contact to sequence-TCN candidate scores before final NMS/count. |
 
 ## Killed During Ensemble Audit
 
