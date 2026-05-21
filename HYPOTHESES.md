@@ -162,6 +162,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - Public transfer nuance: sequence snap4 is not safe as a full replacement. It
   is excellent on `agn_038` but bad on `agn_037`; future sequence use should be
   video-local and agreement-gated.
+- Local base-vs-sequence nearest-frame diff supports the public result:
+  `agn_038` has `85%` of base events within 15 frames of a sequence event, but
+  `agn_037` only `42%`. `agn_048` and `agn_049` look similarly risky; `agn_039`
+  and `agn_064` have large timing tails. Do not submit those blind hybrids.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,

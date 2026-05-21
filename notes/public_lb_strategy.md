@@ -73,6 +73,35 @@ A new submit must satisfy all of:
 5. Keep full sequence and yolo26x agreement as offline research artifacts, not
    submission candidates.
 
+## Local Base-vs-Sequence Diff
+
+Rough nearest-frame comparison between yolo26l public base and sequence snap4
+`root_count=0.88` explains why broad replacement is unsafe:
+
+```text
+video    count_delta  base events with seq frame <=15/30/90f  median nearest gap
+agn_037  +0           0.42 / 0.44 / 0.46                    358.5f
+agn_038  +7           0.85 / 0.88 / 0.93                      1.0f
+agn_039  +0           0.70 / 0.70 / 0.70                      1.0f, high tail
+agn_047 +13           0.83 / 0.87 / 0.96                      1.0f
+agn_048  +0           0.39 / 0.39 / 0.41                    336.5f
+agn_049  +0           0.42 / 0.42 / 0.44                    236.5f
+agn_062 +12           0.88 / 0.93 / 0.99                      1.0f
+agn_063 +16           0.93 / 0.96 / 1.00                      1.0f
+agn_064  +0           0.64 / 0.65 / 0.68                      2.0f, high tail
+```
+
+Interpretation:
+
+- `agn_038` has mostly local frame changes and is public-good.
+- `agn_037`, `agn_048`, and `agn_049` are high-risk timing rewrites despite
+  unchanged counts.
+- `agn_039` and `agn_064` have near matches for many rows but large tails; not
+  enough evidence for a submit under the two-attempt cap.
+- `agn_047`, `agn_062`, and `agn_063` look locally consistent and were
+  public-neutral; they may be private, so changing them is a private-risk
+  decision, not a public-score play.
+
 ## Operational Guardrails
 
 - GPU 0 stays unused. Any future GPU job must use physical GPU 1:

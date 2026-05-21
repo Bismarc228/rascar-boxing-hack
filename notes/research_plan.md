@@ -70,6 +70,9 @@ Revised queue:
 3. Compare `agn_048`, `agn_039`, `agn_049`, and `agn_064` locally before any
    upload. They have equal counts between base and sequence, so risk is timing
    and fighter/attribute drift.
+   First diff pass says `agn_048` and `agn_049` are high-risk rewrites like
+   `agn_037`; `agn_039` and `agn_064` have large timing tails and are not
+   submit-worthy without a stronger gate.
 4. Use at most two more submissions today, and only if a candidate has a
    concrete reason to beat `0.16461`. Blind hybrids are stopped.
 5. Do not submit full yolo26x agreement, full sequence-TCN, or sequence
