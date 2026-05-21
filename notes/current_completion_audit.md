@@ -37,6 +37,8 @@ completion claim; it records concrete evidence and remaining gaps.
   - `tools/evaluate_exchange_state_gate.py`
   - `tools/make_exchange_state_gate_submission.py`
   - `tools/evaluate_fight_source_policy.py`
+  - `tools/evaluate_fixed_row_attribute_model.py`
+  - `tools/make_fixed_row_attribute_submission.py`
   - `tools/evaluate_deep_fighter_identity_calibration.py`
   - `tools/make_crop_motion_context_submission.py`
   - `tools/evaluate_row_source_ensemble.py`
@@ -86,6 +88,10 @@ next visible score   public=0.04481
 - Fight-level source policy over the current table features was tested and
   killed as a submit path. Best OOF policy (`mean_root=0.389690`) stays below
   simply using `exchange=0.390962`; Ridge/HGB policies regress.
+- Fixed-row attribute modeling is now a positive independent branch:
+  hybrid+rival+exchange rows improve `0.390962 -> 0.396329`, mostly through
+  effectiveness. Validated public-anchor and private-risk test CSVs exist, but
+  no upload was made.
 - A first RGB/deep crop embedding identity smoke was tested and regressed; no
   robust RGB/video embedding model has passed validation yet.
 - A first frozen RGB event-filter smoke also regressed

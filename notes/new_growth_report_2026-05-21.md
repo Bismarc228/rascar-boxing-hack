@@ -274,6 +274,13 @@ features around selected events; report gains with fixed timing.
 **Bad version.** Attribute-only submit or nearest-row attribute transfer. Both
 are too small by existing evidence.
 
+**2026-05-21 audit update.** A pose/context fixed-row attribute model is now
+positive. On hybrid+rival+exchange rows, OOF all-attribute replacement improves
+`0.390962 -> 0.396329`; the biggest gain is effectiveness
+`0.189015 -> 0.239715`. This is independent from timing/fighter work and has
+validated public-anchor and private-risk test artifacts, but it remains a
+budget decision because it is attribute-only.
+
 ### 7. Human/Manual Test Annotation
 
 **Hypothesis.** There are only 9 test videos. If the competition rules allow

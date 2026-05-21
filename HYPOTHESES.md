@@ -247,6 +247,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `0.389690`, below the single-source `exchange` rows at `0.390962`; Ridge/HGB
   policies regress. Future source policy needs stronger clip/tracklet features,
   not count/overlap diagnostics alone.
+- Fixed-row attribute modeling is a real positive branch. On
+  hybrid+rival+exchange rows, OOF attribute replacement improves
+  `0.390962 -> 0.396329`, mainly from effectiveness (`0.189015 -> 0.239715`).
+  Keep this as an independent ensemble/submission candidate, but do not upload
+  automatically because it is attribute-only.
 - Relaxed row/id capacity is now technically audited but not submit-approved.
   `tools/make_relaxed_capacity_submission.py` produced a 1594-row diagnostic
   that reallocates 20 spare `agn_062` filler ids to extra `agn_037` predictions.
