@@ -142,6 +142,12 @@ full attr_effectiveness + RGB m0     0.397369
 no miss->landed transition subset    0.398438
 ```
 
+Saved OOF rows:
+
+```text
+data/processed/validation_rows/hybrid_yolo26l_seq_tcn_snap4_gated_rival_exchange_attr_effectiveness_rgb_effectiveness_margin0_no_miss_to_landed_oof.csv
+```
+
 Test artifact summary:
 
 ```text

@@ -224,9 +224,11 @@ next visible score   public=0.11807
   to `0.392902` OOF and there is no clean matching test analog, so this is not a
   submission branch.
 - A separate public-anchor-only source-policy check is testable, but it does not
-  create a new artifact: mean/ridge/stump policies collapse to the already
-  generated full `attr_all_rgb` artifact, while HGB regresses. The public-anchor
-  source oracle is `0.404058`, but policy OOF does not beat `attr_all_rgb`.
+  create a new artifact. After adding the transition-gated effectiveness source,
+  ridge ranks `attr_eff_rgb_no_miss_landed` first for every test video, which is
+  exactly the already generated full transition-gated CSV. The updated
+  public-anchor source oracle is `0.404506`, but policy OOF does not beat the
+  best single transition-gated source.
 - A stricter root-based splice using the latest RGB/audio-exchange source only
   on previously public-neutral `agn_047,agn_062,agn_063` validates at
   `submissions/hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv`.

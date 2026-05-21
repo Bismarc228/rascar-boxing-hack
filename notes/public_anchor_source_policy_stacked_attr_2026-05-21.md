@@ -29,6 +29,12 @@ attr_eff_rgb    0.397369
 attr_all_rgb    0.398315
 ```
 
+After adding the transition-gated effectiveness source:
+
+```text
+attr_eff_rgb_no_miss_landed  0.398438
+```
+
 ## Oracle
 
 ```text
@@ -54,6 +60,13 @@ Pairwise oracle:
 attr_all_rgb    0.401531
 attr_eff_rgb    0.400865
 public_rgb_eff  0.371523
+```
+
+With the transition-gated source included:
+
+```text
+source_oracle                  0.404506
+attr_eff_rgb_no_miss_landed    0.401717 pairwise oracle
 ```
 
 There is real hindsight headroom, but it is not converted by the available
@@ -85,13 +98,18 @@ hgb choices: public_rgb_eff for every test video
 stump full-data rule: attr_all_rgb for every test video
 ```
 
+After adding `attr_eff_rgb_no_miss_landed`, ridge ranks that source first for
+every test video, while HGB still ranks `public_rgb_eff` first. No new hybrid is
+created: the ridge choice is exactly the full transition-gated artifact.
+
 ## Decision
 
 No new source-policy artifact. The best learned/testable policy collapses to an
-already generated artifact:
+already generated artifact. After the transition-gated update, the preferred
+artifact is:
 
 ```text
-submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_all_rgb_eff_m03_OFFLINE_CANDIDATE.csv
+submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_effectiveness_rgb_eff_m0_no_miss_to_landed_OFFLINE_CANDIDATE.csv
 ```
 
 Keep the oracle numbers as diagnostics, but do not generate or submit a

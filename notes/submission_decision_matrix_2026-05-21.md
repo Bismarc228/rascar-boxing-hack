@@ -56,7 +56,7 @@ candidate is worth spending one of the remaining attempts.
 | learned exchange-side fighter flip | Best OOF `0.401720` is only `+0.000236` over current best; no test CSV generated. |
 | automatic row-source policy with RGB/audio/tracklet sources | Oracle headroom is high (`0.430014`), but current policies stay below the best single source (`hgb=0.404206` vs `0.407232`); no test CSV generated. |
 | stacked-attribute source policy | Focused oracle with stacked attribute sources reaches `0.422839`, and a preserve-order ridge policy materializes `0.407417`, but the lift over `rgb_eff_m02` is only `+0.000185`, stumps regress to `0.392902`, and there is no clean test analog. |
-| public-anchor source policy over stacked attribute sources | Testable source-policy audit collapses to existing artifacts: mean/stump choose full `attr_all_rgb`, ridge is slightly below it (`0.398149` vs `0.398315`), and HGB regresses. No new CSV generated. |
+| public-anchor source policy over stacked attribute sources | Testable source-policy audit collapses to existing artifacts. With transition-gated effectiveness included, ridge chooses `attr_eff_rgb_no_miss_landed` for every test video; HGB regresses. No new CSV generated. |
 
 ## Current Recommendation
 
