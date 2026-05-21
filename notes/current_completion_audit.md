@@ -34,6 +34,8 @@ completion claim; it records concrete evidence and remaining gaps.
   - `tools/analyze_fighter_identity_errors.py`
   - `tools/evaluate_fighter_rival_flip.py`
   - `tools/make_fighter_rival_flip_submission.py`
+  - `tools/evaluate_exchange_state_gate.py`
+  - `tools/make_exchange_state_gate_submission.py`
   - `tools/evaluate_deep_fighter_identity_calibration.py`
   - `tools/make_crop_motion_context_submission.py`
   - `tools/evaluate_row_source_ensemble.py`
@@ -75,6 +77,11 @@ next visible score   public=0.04481
   gated hybrid), but simple role/color flips regress. A narrow opposite-fighter
   rival rule is weakly positive (`0.389125 -> 0.389672`) and saved only as an
   ensemble micro-signal.
+- A fixed-row exchange/no-punch gate is now positive as a validation source:
+  yolo26l base `0.365177 -> 0.370306`, sequence `0.379682 -> 0.383814`, and
+  hybrid+rival `0.389672 -> 0.390962`. The validated test artifact only drops
+  one row at the OOF-selected threshold, so this remains an ensemble/source
+  feature rather than a direct submit trigger.
 - A first RGB/deep crop embedding identity smoke was tested and regressed; no
   robust RGB/video embedding model has passed validation yet.
 - A first frozen RGB event-filter smoke also regressed

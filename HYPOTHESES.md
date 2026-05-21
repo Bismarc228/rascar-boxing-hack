@@ -224,6 +224,13 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   context improved `0.365177 -> 0.368244` with `alpha=-0.04,beta=0.08`, mostly
   through timing/fighter score but with higher FP. Keep it only for future
   ensemble/rerank work, not as a direct submit.
+- Exchange-state/no-punch gating is now a non-dead source feature. A fixed-row
+  HGB gate over local raw pose-candidate context improves yolo26l base
+  `0.365177 -> 0.370306`, sequence `0.379682 -> 0.383814`, and hybrid+rival
+  `0.389672 -> 0.390962`; plain hybrid does not improve. Full source oracle
+  with base/seq/motion/hybrid-rival/exchange reaches `0.403225`, but the test
+  artifact at the OOF-selected threshold drops only one row, so do not submit
+  directly.
 - Relaxed row/id capacity is now technically audited but not submit-approved.
   `tools/make_relaxed_capacity_submission.py` produced a 1594-row diagnostic
   that reallocates 20 spare `agn_062` filler ids to extra `agn_037` predictions.

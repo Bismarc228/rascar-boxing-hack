@@ -237,6 +237,14 @@ peaks. Current NMS/count controls are indirect.
 **Bad version.** Full-frame motion-only detector. Prior motion/audio-only
 families were noisy and low precision.
 
+**2026-05-21 audit update.** A fixed-row exchange/no-punch HGB gate is positive
+as a validation source: yolo26l base `0.365177 -> 0.370306`, sequence
+`0.379682 -> 0.383814`, and hybrid+rival `0.389672 -> 0.390962`. The full
+source oracle with base/seq/motion/hybrid-rival/exchange reaches `0.403225`.
+The plain gated hybrid does not improve, and the train-all test artifact at the
+OOF-selected threshold drops only one row, so this is a source-gating feature
+rather than a direct upload.
+
 ### 6. Attribute Clip Classifier After Timing Stabilizes
 
 **Hypothesis.** Attributes are not the main bottleneck now, but `punch_type` and
