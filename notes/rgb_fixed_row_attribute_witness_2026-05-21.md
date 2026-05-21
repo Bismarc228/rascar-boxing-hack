@@ -133,6 +133,6 @@ micro-signal only:
 - timing, count, fighter, hand, target, and punch type are unchanged for the
   saved `effectiveness` variant;
 - 367 validation rows change `effectiveness`;
-- no test generator or test CSV was created;
+- no test generator or test CSV was created for the tracklet-appearance source;
 - no Kaggle upload should be made from this branch without explicit approval and
   a validated test-side generation plan.

@@ -13,6 +13,10 @@ remaining gaps.
   previous `audio_tracklet` best (`0.405200 -> 0.407232`) with confidence margin
   `0.2`. It uses cached ViT-B/16 clip features, changes 367 validation
   effectiveness labels, and has no test CSV or upload approval.
+- The same RGB effectiveness margin was also applied to the nearest test-capable
+  audio-exchange source (`0.404915 -> 0.406939`). Full and `agn_038`-protected
+  test CSVs now validate, but this remains an attribute-only/private-risk
+  artifact, not an upload trigger.
 - The first useful audio result is the fixed-row pose+audio gate:
   `0.401483 -> 0.404479`. Audio-only was neutral, pose-only was only
   `0.401999`, so the saved gain requires the learned pose+audio interaction.
@@ -91,6 +95,9 @@ remaining gaps.
 - Validated audio-gate exchange-side test artifacts:
   - `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_OFFLINE_CANDIDATE.csv`
   - `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_exchange_side_noagn038_OFFLINE_CANDIDATE.csv`
+- Validated RGB-effectiveness-on-audio-exchange test artifacts:
+  - `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_rgb_eff_m02_OFFLINE_CANDIDATE.csv`
+  - `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_exchange_side_rgb_eff_m02_noagn038_OFFLINE_CANDIDATE.csv`
 - Private-risk gated candidate:
   `submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv`.
 - Gate tools:
@@ -119,6 +126,7 @@ remaining gaps.
   - `tools/make_fixed_row_audio_gate_submission.py`
   - `tools/make_exchange_side_fighter_model_submission.py`
   - `tools/evaluate_tracklet_appearance_fighter_model.py`
+  - `tools/make_rgb_fixed_row_attribute_submission.py`
 - Validation row tools:
   - `tools/make_pose_validation_rows.py`
   - `tools/evaluate_pose_sequence_spotter.py --write-best-rows`
@@ -165,6 +173,11 @@ next visible score   public=0.04481
   (`0.405200 -> 0.407232` with confidence margin `0.2`). It is saved as an OOF
   diagnostic/source but has no test artifact and should not drive an upload
   alone.
+- The nearest test-capable RGB effectiveness source is now materialized on top of
+  `audio_gate_exchange_side`: OOF `0.404915 -> 0.406939`, full test artifact
+  changes 195 effectiveness labels, and protected no-`agn_038` artifact changes
+  165. It validates, but it is still attribute-only and does not remove sequence
+  public-risk.
 - RGB confidence-margin checks for `punch_type`, `hand`, and `target` all remain
   below the baseline, so the RGB attribute signal is limited to effectiveness.
 - Exchange-side fighter identity remains a micro-signal only
