@@ -144,19 +144,21 @@ python3 -m py_compile $(find rascar_boxing tools -name '*.py' -print)  # passed
 python3 tools/validate_data.py --data-root data/raw --submission submission.csv  # passed
 ```
 
-Kaggle state from the last explicit quota check; re-check before any upload:
+Kaggle state from the last explicit quota check (`2026-05-21T14:04:36Z`);
+re-check before any upload:
 
 ```text
 daily_limit=30
 last_checked_used_since_utc_midnight=8
 last_checked_remaining_today=22
+reset_at_utc=2026-05-22T00:00:00Z
 current operative rule=no upload without explicit approval and strong evidence
 ```
 
 Leaderboard state:
 
 ```text
-кто убил бенчмарка   public=0.29887
+кто убил бенчмарка   public=0.32088
 Los Pollos Hermanos  public=0.16461
 next visible score   public=0.10431
 ```
