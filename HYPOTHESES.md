@@ -231,6 +231,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   with base/seq/motion/hybrid-rival/exchange reaches `0.403225`, but the test
   artifact at the OOF-selected threshold drops only one row, so do not submit
   directly.
+- Frozen CLIP ViT-B/16 union-crop embeddings are killed as a direct fixed-row
+  clear/drop witness on the current strongest OOF source:
+  `0.390962 -> 0.388244` at the best threshold. RGB is still a possible path,
+  but it needs true short-clip/contact modeling or structured attacker/opponent
+  crops, not still union-crop embeddings.
 - Fight-level source policy on current table features is killed. The source
   oracle is `0.403225`, but the best leave-one-fight policy reaches only
   `0.389690`, below the single-source `exchange` rows at `0.390962`; Ridge/HGB

@@ -26,8 +26,8 @@ from rascar_boxing.metric import match_events, score_predictions
 from tools.evaluate_pose_selection_variants import score_summary, video_wins
 
 
-IMAGENET_MEAN = np.asarray([0.485, 0.456, 0.406], dtype=np.float32)[:, None, None]
-IMAGENET_STD = np.asarray([0.229, 0.224, 0.225], dtype=np.float32)[:, None, None]
+DEFAULT_MEAN = np.asarray([0.485, 0.456, 0.406], dtype=np.float32)[:, None, None]
+DEFAULT_STD = np.asarray([0.229, 0.224, 0.225], dtype=np.float32)[:, None, None]
 
 
 def parse_args() -> argparse.Namespace:
@@ -102,7 +102,7 @@ def load_or_extract_features(
         data = np.load(args.feature_cache)
         return data["features"].astype(np.float32)
     device = pick_device(args.device)
-    model = load_model(args.model_name, args.pretrained, device)
+    model, mean, std = load_model(args.model_name, args.pretrained, device)
     frame_offsets = parse_ints(args.frame_offsets)
     tensors = []
     metas: list[tuple[int, int]] = []
@@ -136,6 +136,8 @@ def load_or_extract_features(
                             records.get(frame),
                             args.image_size,
                             args.crop_expand,
+                            mean,
+                            std,
                         )
                     tensors.append(tensor)
                     metas.append((event_index, offset))
@@ -158,12 +160,19 @@ def pick_device(value: str) -> torch.device:
     return torch.device(value)
 
 
-def load_model(model_name: str, pretrained: bool, device: torch.device) -> torch.nn.Module:
+def load_model(
+    model_name: str,
+    pretrained: bool,
+    device: torch.device,
+) -> tuple[torch.nn.Module, np.ndarray, np.ndarray]:
     import timm
 
     model = timm.create_model(model_name, pretrained=pretrained, num_classes=0, global_pool="avg")
     model.eval().to(device)
-    return model
+    cfg = getattr(model, "default_cfg", {}) or {}
+    mean = np.asarray(cfg.get("mean", DEFAULT_MEAN[:, 0, 0]), dtype=np.float32)[:, None, None]
+    std = np.asarray(cfg.get("std", DEFAULT_STD[:, 0, 0]), dtype=np.float32)[:, None, None]
+    return model, mean, std
 
 
 def image_to_tensor(
@@ -171,13 +180,15 @@ def image_to_tensor(
     record: dict[str, Any] | None,
     image_size: int,
     crop_expand: float,
+    mean: np.ndarray,
+    std: np.ndarray,
 ) -> torch.Tensor:
     crop = crop_union(image, record, crop_expand)
     crop = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
     crop = cv2.resize(crop, (image_size, image_size), interpolation=cv2.INTER_AREA)
     arr = crop.astype(np.float32) / 255.0
     arr = np.transpose(arr, (2, 0, 1))
-    arr = (arr - IMAGENET_MEAN) / IMAGENET_STD
+    arr = (arr - mean) / std
     return torch.from_numpy(arr.astype(np.float32))
 
 

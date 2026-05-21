@@ -97,6 +97,10 @@ next visible score   public=0.04481
 - RGB timing-offset regression over the same temporal features also regressed
   (`0.365177 -> 0.357606`), so direct RGB frame correction is not a current
   path.
+- Frozen CLIP ViT-B/16 union-crop embeddings on the current
+  hybrid+rival+exchange OOF source also regressed (`0.390962 -> 0.388244` at
+  the best threshold), so stronger RGB work needs true clip/contact modeling or
+  more structured crops.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is

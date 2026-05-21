@@ -251,6 +251,12 @@ The plain gated hybrid does not improve, and the train-all test artifact at the
 OOF-selected threshold drops only one row, so this is a source-gating feature
 rather than a direct upload.
 
+**2026-05-21 RGB update.** Frozen CLIP ViT-B/16 union-crop embeddings were
+tested on the current hybrid+rival+exchange OOF rows with frames `t-8,t,t+8`.
+They regressed (`0.390962 -> 0.388244` best threshold), so direct still-image
+union-crop RGB filtering is killed. The remaining RGB direction must be a real
+short-clip/contact model or structured attacker/opponent crops.
+
 ### 6. Attribute Clip Classifier After Timing Stabilizes
 
 **Hypothesis.** Attributes are not the main bottleneck now, but `punch_type` and
