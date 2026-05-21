@@ -186,6 +186,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   headroom exists. The remaining gate mistakes are not cleanly separated by
   nearest-frame/count metrics; add per-video/fight context before another
   threshold-only gate.
+- The per-video feature table confirms the weakness: `agn_056` passes overlap
+  gates but sequence is worse. Test replacements for `agn_062/063` are still
+  plausible private improvements, but not strong enough to spend a public
+  attempt under the current cap.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,

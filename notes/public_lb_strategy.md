@@ -151,6 +151,12 @@ sequence is bad on `agn_010` and `agn_056`, while useful on videos such as
 all of these cases; the next improvement needs richer per-video features or a
 fight/root-aware policy, not another blind threshold tweak.
 
+`tools/analyze_gate_oracle_features.py` now prints this per-video table. The
+most relevant miss for test is `agn_056` (`Турнир Бокс 2`, fight 5, round 1):
+it passes local overlap/count gates but sequence is worse. That weakens the
+case for submitting the `agn_062/063` private-risk replacement without another
+signal.
+
 `root_count=0.92` and `root_count=0.82` sequence variants were checked through
 the same gate. They select essentially the same safe video set. On `agn_038`,
 `root_count=0.88` and `0.92` have `98.8%` of selected frames within 3 frames of

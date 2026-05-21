@@ -106,6 +106,10 @@ Revised queue:
     not separable by simple nearest/count thresholds alone; next work should add
     per-video/fight features or root-aware policy before considering another
     gated test candidate.
+12. `tools/analyze_gate_oracle_features.py` reports per-video metadata, gate
+    features, and oracle deltas. It shows the key tournament miss is `agn_056`:
+    overlap/count features look safe, but sequence is worse. Therefore
+    replacing `agn_062/063` on test remains private-risk, not a submit trigger.
 
 ## Offline Work Before More Submits
 
