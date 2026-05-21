@@ -82,6 +82,9 @@ next visible score   public=0.04481
   opposite-fighter rival rule is weakly positive on the current best source
   (`0.401483 -> 0.401575`, 20 changed OOF rows) and saved only as an ensemble
   micro-signal.
+- A learned exchange-side fighter flip classifier was tested as a high-precision
+  identity model and improved only `0.401483 -> 0.401720`, still far below the
+  `>=0.4045` promotion gate. It remains a diagnostic, not a submit branch.
 - A fixed-row exchange/no-punch gate is now positive as a validation source:
   yolo26l base `0.365177 -> 0.370306`, sequence `0.379682 -> 0.383814`, and
   hybrid+rival `0.389672 -> 0.390962`. The validated test artifact only drops
@@ -151,7 +154,9 @@ next visible score   public=0.04481
   so RGB contact can be blended into sequence-TCN candidate scores before final
   NMS/count. A short infrastructure smoke passed (`rgb_alpha=1.0` scored
   `0.312313` vs `0.309016` for `rgb_alpha=0.0` under a deliberately undertrained
-  sequence model), but this is not yet a competitive OOF run.
+  sequence model). A medium cap-400 run with two seeds reached `0.388112`;
+  RGB helped that weaker sequence setup, but absolute OOF stayed below the
+  current best `0.401483`, so no test CSV was generated.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is

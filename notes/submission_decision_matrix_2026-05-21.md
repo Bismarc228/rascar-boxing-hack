@@ -35,6 +35,8 @@ candidate is worth spending one of the remaining attempts.
 | crop-motion direct submit | Local gain is weak and source oracle contribution is marginal. |
 | temporal frozen RGB contact fixed-row branch | Union and attacker/opponent ViT-B clip smokes both regressed below the current best OOF source; no test CSV generated. |
 | candidate-level RGB contact raw-pose branch | Improves same-pool raw pose OOF, but best smoke score `0.359641` is far below current best `0.401483`; no test CSV generated. |
+| sequence-TCN + RGB contact bridge cap-400 | Medium OOF `0.388112`, below current best `0.401483`; no test CSV generated. |
+| learned exchange-side fighter flip | Best OOF `0.401720` is only `+0.000236` over current best; no test CSV generated. |
 
 ## Current Recommendation
 
