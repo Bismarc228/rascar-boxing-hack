@@ -46,6 +46,7 @@ OOF rows:
 
 ```text
 data/processed/validation_rows/hybrid_yolo26l_seq_tcn_snap4_gated_rival_exchange_attr_all_oof.csv
+data/processed/validation_rows/hybrid_yolo26l_seq_tcn_snap4_gated_rival_exchange_attr_effectiveness_oof.csv
 ```
 
 Source ensemble check with base/seq/exchange/attr/motion:
@@ -78,6 +79,19 @@ changed=498
 Validation passed.
 ```
 
+Conservative effectiveness-only public-anchor artifact:
+
+```text
+submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_effectiveness_OFFLINE_CANDIDATE.csv
+```
+
+Result:
+
+```text
+changed=191
+Validation passed.
+```
+
 Private-risk gated shape:
 
 ```text
@@ -91,9 +105,25 @@ changed=525
 Validation passed.
 ```
 
+Conservative effectiveness-only private-risk artifact:
+
+```text
+submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_rival_exchange_attr_effectiveness_OFFLINE_CANDIDATE.csv
+```
+
+Result:
+
+```text
+changed=214
+Validation passed.
+```
+
 ## Decision
 
 - Keep as a real ensemble/submission candidate branch.
+- Keep both variants:
+  - `effectiveness` is the safer version (`+0.004056` OOF, fewer changes).
+  - `all_attrs` is the stronger local version (`+0.005367` OOF).
 - Do not upload automatically: this is attribute-only and should be weighed
   against the current public best and submit budget.
 - The branch is independent from timing/fighter work and should remain saved
