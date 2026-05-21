@@ -14,7 +14,7 @@ completion claim; it records concrete evidence and remaining gaps.
 | Improve public score | Public moved from `0.00000` baselines to `0.16461` with `hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088`. | Done |
 | Respect GPU 0 constraint | GPU work was run with `CUDA_VISIBLE_DEVICES=1`; GPU UUID check confirmed physical GPU 1 (`GPU-ff3c1fe8...`). | Done |
 | Punch timing improvements | Larger pose models, sequence TCN snap4, and video-local gate are implemented and validated. Best OOF gated hybrid reached `0.395013`. | Strong progress |
-| Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, and ResNet50 crop clustering are killed; no robust identity fix yet. | Open |
+| Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, and ResNet50 crop clustering are killed. A narrow opposite-fighter rival rule is saved as a micro-signal on the current best source (`0.401483 -> 0.401575`), but no robust identity fix exists yet. | Open |
 | Audio/video feature research | Audio-only, hard snap, and direct audio rescore are killed; crop-motion has a weak independent validation gain and is saved for ensemble work. | Partially explored |
 | Submission budget control | Current rule: no default uploads, at most two more attempts today, only for a clear reason above public `0.16461`. | Active guardrail |
 
@@ -77,10 +77,11 @@ next visible score   public=0.04481
 ## Remaining Gaps
 
 - No robust fighter identity correction has passed validation. A fixed-row
-  audit now shows meaningful oracle headroom (`0.389125 -> 0.402894` on the
-  gated hybrid), but simple role/color flips regress. A narrow opposite-fighter
-  rival rule is weakly positive (`0.389125 -> 0.389672`) and saved only as an
-  ensemble micro-signal.
+  audit now shows meaningful oracle headroom (`0.416256` matched-fighter oracle
+  on the current best source), but simple role/color flips regress. A narrow
+  opposite-fighter rival rule is weakly positive on the current best source
+  (`0.401483 -> 0.401575`, 20 changed OOF rows) and saved only as an ensemble
+  micro-signal.
 - A fixed-row exchange/no-punch gate is now positive as a validation source:
   yolo26l base `0.365177 -> 0.370306`, sequence `0.379682 -> 0.383814`, and
   hybrid+rival `0.389672 -> 0.390962`. The validated test artifact only drops
