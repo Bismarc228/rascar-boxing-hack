@@ -172,9 +172,32 @@ total_clear=757
 However, because the validation gate underperforms the full new source and the
 test replacement touches multiple public-risk videos, this remains diagnostic.
 
+Using the stronger old attribute source as the base is slightly better:
+
+```text
+base old_attr=0.396329
+override seq_repeat_exchange_attr=0.400288
+gated hybrid=0.400603
+replace_keys=agn_004,agn_023,agn_024,agn_025,agn_056,agn_057,agn_058,agn_069,agn_070,agn_071
+```
+
+The analogous test artifact is valid:
+
+```text
+submissions/hybrid_attrall_seqrepeat_exchange_attr_gate_OFFLINE_CANDIDATE.csv
+replace_keys=agn_038,agn_047,agn_062,agn_063
+total_clear=757
+changed_vs_root=672
+```
+
+This is the best local splice so far, but it is still a private-risk artifact:
+it is based on an unsubmitted attribute base plus a sequence replacement that
+expands `agn_038` from the public-proven `81` clear rows to `99`.
+
 ## Decision
 
-- Keep as the current best local OOF branch and a strong ensemble source.
+- Keep as the current best local OOF branch/splice and a strong ensemble
+  source.
 - Do not upload automatically: public evidence already punished full sequence
   replacement, and this artifact rewrites many public-anchor rows.
 - If uploads resume, compare this only against a video-gated splice strategy,

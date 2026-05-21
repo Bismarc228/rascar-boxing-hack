@@ -95,9 +95,11 @@ next visible score   public=0.04481
   no upload was made.
 - Repeating the fixed sequence TCN snap4/rootcount088 configuration and stacking
   the already positive exchange/attribute postprocess produced a new best local
-  OOF source: `seq_repeat_exchange_attr_all=0.400288`. A validated offline test
-  CSV exists, but it changes `767` rows versus the public anchor and remains a
-  full-sequence-style private-risk artifact, not a default upload.
+  OOF source: `seq_repeat_exchange_attr_all=0.400288`. Gating that source over
+  the old attribute source reaches `0.400603`, the current best local splice.
+  Validated offline test CSVs exist, but the gated splice still changes `672`
+  rows versus the public anchor and remains a private-risk artifact, not a
+  default upload.
 - Row-level source stacking over saved base/seq/rival/exchange/attribute/motion
   CSVs was tested and killed as a submit path. The source oracle with
   attributes reaches `0.408357`, but the learned row stacker only scored
