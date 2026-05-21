@@ -157,6 +157,10 @@ next visible score   public=0.04481
   sequence model). A medium cap-400 run with two seeds reached `0.388112`;
   RGB helped that weaker sequence setup, but absolute OOF stayed below the
   current best `0.401483`, so no test CSV was generated.
+- New source-oracle diagnostics with `exchange_side` and `seq_bridge_cap400`
+  raise per-video oracle headroom to `0.420937`, but existing fight-level source
+  policies still fail to exploit it (`mean_global=0.395386`, `ridge=0.393753`),
+  below simply using the best single source.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is
