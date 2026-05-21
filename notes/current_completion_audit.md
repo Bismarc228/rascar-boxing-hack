@@ -150,8 +150,9 @@ current operative rule=no upload without explicit approval and strong evidence
 Leaderboard state:
 
 ```text
+кто убил бенчмарка   public=0.29887
 Los Pollos Hermanos  public=0.16461
-next visible score   public=0.04481
+next visible score   public=0.10431
 ```
 
 ## Remaining Gaps
@@ -178,6 +179,11 @@ next visible score   public=0.04481
   changes 195 effectiveness labels, and protected no-`agn_038` artifact changes
   165. It validates, but it is still attribute-only and does not remove sequence
   public-risk.
+- A stricter root-based splice using the latest RGB/audio-exchange source only
+  on previously public-neutral `agn_047,agn_062,agn_063` validates at
+  `submissions/hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv`.
+  It preserves `agn_038` and `agn_037`, changes 375 ids versus root, and is
+  still a private-risk artifact rather than a public-growth trigger.
 - RGB confidence-margin checks for `punch_type`, `hand`, and `target` all remain
   below the baseline, so the RGB attribute signal is limited to effectiveness.
 - Exchange-side fighter identity remains a micro-signal only

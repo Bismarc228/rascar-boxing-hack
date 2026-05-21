@@ -4,7 +4,7 @@ Context as of `2026-05-21T00:20Z`: quota reset happened and `8/30` submissions
 have been used today. User-imposed budget is now stricter than Kaggle quota:
 **at most 2 more submissions today, and only for a clear breakthrough**.
 
-Current public best:
+Current team public best:
 
 ```text
 0.16461  submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
@@ -13,9 +13,11 @@ Current public best:
 The root-level `submission.csv` is currently copied from this public-best file
 and passes `tools/validate_data.py`.
 
-Leaderboard check at `2026-05-21T00:40Z`: team `Los Pollos Hermanos` is listed
-with score `0.16461`; the next visible public score is `0.04481`. This supports
-holding the remaining attempts instead of probing blindly.
+Leaderboard check at `2026-05-21T13:09Z`: team `Los Pollos Hermanos` is listed
+with score `0.16461`; the visible leader is now `кто убил бенчмарка` at
+`0.29887`. Quota is still `8/30` used since UTC midnight, but the public gap now
+requires a real model improvement rather than another neutral/private-risk
+splice.
 
 This is a hybrid of the old public anchor plus sequence-TCN snap4 predictions
 only for `agn_038`. It beats the previous yolo26l public anchor:

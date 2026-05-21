@@ -133,6 +133,42 @@ agn_064:10
 The protected artifact changes 478 ids versus the public root anchor, mostly
 because it inherits the sequence/audio/exchange source on non-`agn_038` videos.
 
+## Public-Neutral Strict Splice
+
+After refreshing Kaggle state, the full/protected artifacts were still too broad
+because they touch `agn_037`, which is known sequence-bad on public. A stricter
+splice uses the RGB/audio-exchange source only on previously public-neutral
+videos:
+
+```text
+base=submission.csv
+override=submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_rgb_eff_m02_OFFLINE_CANDIDATE.csv
+replace_keys=agn_047,agn_062,agn_063
+output=submissions/hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv
+Validation passed.
+```
+
+Gate diagnostics:
+
+```text
+agn_047 base=112 override=116 delta=4  base_le15=0.8304 override_le15=0.9224
+agn_062 base=113 override=117 delta=4  base_le15=0.8673 override_le15=0.9145
+agn_063 base=107 override=119 delta=12 base_le15=0.9159 override_le15=0.9328
+```
+
+Diff versus root:
+
+```text
+changed_ids=375
+changed_by_video=agn_047:125, agn_062:125, agn_063:125
+clear_counts=agn_037:52, agn_038:81, agn_039:57, agn_047:116,
+             agn_048:44, agn_049:62, agn_062:117, agn_063:119, agn_064:75
+```
+
+This is the safest current private-risk splice, but not an upload trigger. The
+same videos were public-neutral before, and the visible leaderboard leader is
+now at `0.29887` versus our `0.16461`.
+
 ## Decision
 
 Keep these artifacts for ensemble/private-risk bookkeeping. The validation lift

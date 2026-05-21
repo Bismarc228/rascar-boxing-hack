@@ -8,7 +8,7 @@ candidate is worth spending one of the remaining attempts.
 
 | Candidate | Evidence | Risk | Decision |
 | --- | --- | --- | --- |
-| `submission.csv` / `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv` | Public best `0.16461`; validates. | Already submitted. | Keep as root fallback; do not resubmit. |
+| `submission.csv` / `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv` | Team public best `0.16461`; validates. Latest leaderboard check at `2026-05-21T13:09Z` shows visible leader at `0.29887`, with `8/30` submissions used today. | Already submitted; no longer overall leader. | Keep as root fallback; do not resubmit. |
 
 ## Plausible But Not Auto-Submit
 
@@ -28,7 +28,8 @@ candidate is worth spending one of the remaining attempts.
 | fixed-row audio gate on root no-`agn_038` splice | Same audio gate applied to the conservative root splice with `agn_038` protected; validates and drops 21 clear rows (`733 -> 712`). | `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_gate_noagn038_OFFLINE_CANDIDATE.csv` | Public-sensitive `agn_038` preserved, but this still changes private-risk sequence splice videos and has no direct public evidence. | Safer audio-gate artifact for future explicitly approved private-risk upload; do not auto-submit. |
 | audio-gate exchange-side identity micro | OOF gain is tiny (`0.404479 -> 0.404915`); generated full and protected test artifacts both validate and change only 11 fighter labels. | `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_OFFLINE_CANDIDATE.csv`; `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_exchange_side_noagn038_OFFLINE_CANDIDATE.csv` | Too small to justify an upload alone; useful only as a future ensemble/private-risk micro-signal. | Save; no automatic upload. |
 | tracklet-appearance fighter identity micro | OOF improves the audio-gate exchange-side source only `0.404915 -> 0.405200`, changing one validation fighter label. | No test CSV generated. | Useful as an ensemble diagnostic, but one-row validation gain is not upload evidence. | Save; no automatic upload and do not generate a Kaggle artifact unless it is part of a larger approved ensemble. |
-| RGB fixed-row effectiveness micro | OOF improves the current best source `0.405200 -> 0.407232` with confidence margin `0.2`, changing only `effectiveness` on 367 validation rows. | No test CSV generated. | Attribute-only, small local gain, margin/capacity sensitivity, and test-side RGB attribute generation is not yet implemented/validated. | Save as local best OOF source; no automatic upload. |
+| RGB fixed-row effectiveness micro | OOF improves the current best source `0.405200 -> 0.407232` with confidence margin `0.2`, changing only `effectiveness` on 367 validation rows. On the nearest test-capable source it improves `0.404915 -> 0.406939`. | Full and protected audio-exchange RGB artifacts validate: `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_rgb_eff_m02_OFFLINE_CANDIDATE.csv`, `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_exchange_side_rgb_eff_m02_noagn038_OFFLINE_CANDIDATE.csv`. | Attribute-only and still inherits sequence public-risk. | Save as local best OOF/test-capable micro-source; no automatic upload. |
+| strict public-neutral RGB/audio-exchange splice | Uses the latest RGB/audio-exchange source only on `agn_047,agn_062,agn_063`; preserves public-good `agn_038` and sequence-bad/public-risk `agn_037`; validates; `changed_vs_root=375`. | `submissions/hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv` | Expected public-neutral because the same videos were individually neutral before; not a reason to beat `0.16461`, let alone the new visible leader at `0.29887`. | Safest current private-risk artifact, but still no automatic upload. |
 
 ## Rejected For Upload
 
@@ -55,7 +56,8 @@ order is:
 
 1. Public-anchor `effectiveness` or `all_attrs` attribute-only probe if the goal
    is public safety.
-2. `hybrid_root_seqrepeat_exchange_attr_motion_gate_noagn038_OFFLINE_CANDIDATE.csv` if
-   the goal is private-risk with public-sensitive `agn_038` preserved.
+2. `hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv`
+   if the goal is the safest current private-risk splice with `agn_038` and
+   `agn_037` preserved.
 3. Avoid full sequence or `agn_038`-expanded variants unless the user explicitly
    accepts public-score risk.
