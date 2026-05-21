@@ -42,6 +42,7 @@ completion claim; it records concrete evidence and remaining gaps.
   - `tools/evaluate_deep_fighter_identity_calibration.py`
   - `tools/make_crop_motion_context_submission.py`
   - `tools/evaluate_row_source_ensemble.py`
+  - `tools/evaluate_row_source_stacker.py`
   - `tools/make_relaxed_capacity_submission.py`
   - `tools/build_fight_level_source_table.py`
   - `tools/evaluate_rgb_event_filter.py`
@@ -92,6 +93,14 @@ next visible score   public=0.04481
   hybrid+rival+exchange rows improve `0.390962 -> 0.396329`, mostly through
   effectiveness. Validated public-anchor and private-risk test CSVs exist, but
   no upload was made.
+- Row-level source stacking over saved base/seq/rival/exchange/attribute/motion
+  CSVs was tested and killed as a submit path. The source oracle with
+  attributes reaches `0.408357`, but the learned row stacker only scored
+  `0.368373`; fight-level learned policies with attribute sources also stayed
+  at or below simply using `attr_all=0.396329`.
+- The tabular yolo26l learned temporal selector was re-run with 16 CPU threads
+  and killed for the current feature/label setup: best local score was
+  `0.275094`, far below the heuristic and current ensemble sources.
 - A first RGB/deep crop embedding identity smoke was tested and regressed; no
   robust RGB/video embedding model has passed validation yet.
 - A first frozen RGB event-filter smoke also regressed

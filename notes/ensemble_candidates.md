@@ -33,3 +33,10 @@ today, only if offline evidence clearly beats the current public anchor.
 | yolo26x/yolo11s agreement | Good OOF before public, but public full submit was `0.10784`; may still be useful as an agreement/witness feature around selected events. | Do not use as row source unless a video-local gate proves it. |
 | audio onset features | Audio-only and hard snap are killed, but local onset max/distance can remain as weak features for a learned pose-dominant selector. | Do not generate audio-only rows or hard-shift selected frames to audio peaks. |
 | fighter identity visual embeddings | Existing HSV/bbox clustering and simple role/color flips failed; robust embeddings from pose-guided crops are still untested and independent from timing. | Keep only if fixed-timing validation improves fighter score without hurting time/count. |
+
+## Killed During Ensemble Audit
+
+| Branch | Evidence | Decision |
+| --- | --- | --- |
+| row-level source stacker over saved CSVs | `tools/evaluate_row_source_stacker.py` OOF best was only `0.368373` using the union of base/seq/rival/exchange/attr/motion rows, far below `attr_all=0.396329`. Source-policy retest with attributes produced `source_oracle=0.408357`, but learned policies were worse than simply choosing `attr_all`: `mean_root=0.391194`, `ridge=0.372111`, `hgb=0.366116`. | Keep the diagnostic tool, but do not use current row-source stacking as a submit or ensemble branch. |
+| learned tabular temporal selector on yolo26l candidates | `logs/yolo26l_learned_selector_20260521.log` best local score was `0.275094`, with high FP penalty `0.153317`, below the yolo26l heuristic and far below current attribute/exchange sources. | Killed without richer features; do not spend more cycles on the current label/features/postprocess setup. |
