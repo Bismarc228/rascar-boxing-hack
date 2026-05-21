@@ -18,6 +18,7 @@ candidate is worth spending one of the remaining attempts.
 | public-anchor attribute-only, all attrs | Fixed-row attribute OOF `0.396329`, stronger than effectiveness-only. | `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_all_OFFLINE_CANDIDATE.csv` | More attribute churn; timing/count unchanged. | Stronger but less conservative attribute probe. |
 | public-anchor RGB effectiveness | RGB ViT-B/16 effectiveness replacement improves the yolo26l validation anchor `0.365177 -> 0.371229` ungated and `0.369373` at margin `0.2`; only `effectiveness` changes. | `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_rgb_eff_m0_OFFLINE_CANDIDATE.csv`; `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_rgb_eff_m02_OFFLINE_CANDIDATE.csv`; both validate. | Attribute-only and unsubmitted, but timing/count/fighter are exactly preserved. | Superseded by stacked attr+RGB public-anchor artifacts; no automatic upload. |
 | stacked public-anchor attr+RGB, effectiveness-only | Attribute effectiveness base improves `0.395018 -> 0.397369` when stacked with RGB effectiveness margin `0`; final root diff is only `effectiveness` (`345` changed ids) and clear counts are unchanged. | `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_effectiveness_rgb_eff_m0_OFFLINE_CANDIDATE.csv`; validates. | Still an unsubmitted attribute model, but it preserves timing/count/fighter/hand/target/type. | Best current fixed-row public-safe candidate if an upload is explicitly allowed. |
+| stacked public-anchor attr+RGB, `agn_038` only | Same effectiveness-only stack, but spliced only onto known public-sensitive `agn_038`; validates and changes only 47 effectiveness labels with root counts unchanged. | `submissions/hybrid_root_attr_effectiveness_rgb_eff_m0_agn038_only_OFFLINE_CANDIDATE.csv`; validates. | Narrower public probe, but it may miss private lift and still changes the already public-good video. | Lowest-blast-radius public probe if an explicit single-video upload is approved. |
 | stacked public-anchor attr+RGB, all attrs | Attribute-all base improves `0.396329 -> 0.398315` with RGB effectiveness margin `0.3`; strongest local public-anchor attribute score. | `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_all_rgb_eff_m03_OFFLINE_CANDIDATE.csv`; validates. | Broader attribute churn versus root: `528` changed ids across effectiveness, punch type, hand, and target. | Stronger but less conservative than effectiveness-only; no automatic upload. |
 | old gated sequence private-risk | Previous gate OOF around `0.395013`; public expected mostly neutral beyond anchor. | `submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv` | Private-risk, not a public growth trigger. | Keep as older conservative private-risk baseline. |
 | new sequence branch, root base, no `agn_038` | Preserves public-proven `agn_038`; replaces only `agn_047,agn_062,agn_063`; validates; `changed_vs_root=375`. | `submissions/hybrid_root_seqrepeat_exchange_attr_gate_noagn038_OFFLINE_CANDIDATE.csv` | No fresh public evidence; public may be neutral if these videos are mostly private, but this is unknown. | Most public-conservative private-risk artifact from the new branch. |
@@ -57,10 +58,11 @@ candidate is worth spending one of the remaining attempts.
 Do not upload automatically. If an upload is explicitly approved, the least bad
 order is:
 
-1. Stacked public-anchor `attr_effectiveness_rgb_eff_m0` if the goal is public
-   safety with fixed timing/count/fighter and only `effectiveness` changes.
-   `attr_all_rgb_eff_m03` is the stronger but less conservative attribute
-   variant.
+1. Stacked public-anchor `attr_effectiveness_rgb_eff_m0` if the goal is fixed
+   timing/count/fighter and only `effectiveness` changes. Use the `agn_038`-only
+   splice for the lowest-blast-radius public probe; use the full artifact for a
+   broader public/private attribute probe. `attr_all_rgb_eff_m03` is stronger
+   locally but less conservative.
 2. `hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv`
    if the goal is the safest current private-risk splice with `agn_038` and
    `agn_037` preserved.

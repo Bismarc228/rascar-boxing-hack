@@ -127,6 +127,30 @@ columns=effectiveness:345
 effectiveness transitions: landed->blocked:146, landed->miss:199
 ```
 
+Public-sensitive `agn_038`-only splice for a lower-blast-radius public probe:
+
+```text
+submissions/hybrid_root_attr_effectiveness_rgb_eff_m0_agn038_only_OFFLINE_CANDIDATE.csv
+```
+
+Gate/validation summary:
+
+```text
+replace_keys=agn_038
+base_count=81
+override_count=81
+Validation passed.
+```
+
+Diff versus root:
+
+```text
+changed_ids=47
+columns=effectiveness:47
+videos=agn_038:47
+effectiveness transitions: landed->blocked:38, landed->miss:9
+```
+
 ## Decision
 
 This is a real stacked public-anchor attribute branch:
@@ -140,4 +164,6 @@ This is a real stacked public-anchor attribute branch:
 
 No automatic upload. Under the current submit guardrail, the effectiveness-only
 stack replaces the earlier raw RGB effectiveness probe as the best fixed-row
-public-safe candidate if an upload is explicitly approved.
+public-safe candidate if an upload is explicitly approved. The `agn_038`-only
+splice is the narrower public-probe version because previous submissions showed
+`agn_038` is public-sensitive.
