@@ -136,3 +136,29 @@ Save this as a separate fighter-identity micro-signal for future ensemble work.
 It is now the best local OOF row source, but the gain is only `+0.000285` over
 the previous best and comes from one validation flip, so it is not a standalone
 Kaggle upload trigger. No test CSV was generated from this branch.
+
+## Source-Oracle Check
+
+Within the audio-family source pool:
+
+```text
+audio_gate=0.404479
+audio_exchange=0.404915
+audio_tracklet=0.405200
+source_oracle=0.405380
+source_oracle_choices=agn_003:audio_tracklet,agn_004/025/057/072:audio_exchange
+```
+
+Against the broader saved source pool, `audio_tracklet` is the best pairwise
+audio-family source versus `seq_motion`:
+
+```text
+pairwise audio_tracklet=0.409500
+pairwise audio_exchange=0.409215
+pairwise audio_gate=0.409162
+```
+
+However, the full source oracle still prefers `old_attr` on `agn_003`, where
+the tracklet branch is uniquely helpful inside the audio-family pool. That means
+this source is worth keeping as a micro-signal, but it does not unlock the
+larger source-selection problem.
