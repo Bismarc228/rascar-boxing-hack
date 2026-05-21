@@ -150,6 +150,28 @@ total=752
 Compared with root `submission.csv`, the final CSV changes `767` rows. It is a
 full sequence-style private-risk artifact, not a public-safe candidate.
 
+Frame-consistency gating against the public anchor was also checked. On
+validation, replacing only videos that pass the existing base/override proximity
+gate scores below the full new source:
+
+```text
+base=0.365177
+override seq_repeat_exchange_attr=0.400288
+gated hybrid=0.398894
+replace_keys=agn_004,agn_023,agn_024,agn_025,agn_056,agn_057,agn_058,agn_069,agn_070,agn_071
+```
+
+The analogous test artifact is valid:
+
+```text
+submissions/hybrid_root_seq_repeat_exchange_attr_gate_OFFLINE_CANDIDATE.csv
+replace_keys=agn_038,agn_047,agn_062,agn_063
+total_clear=757
+```
+
+However, because the validation gate underperforms the full new source and the
+test replacement touches multiple public-risk videos, this remains diagnostic.
+
 ## Decision
 
 - Keep as the current best local OOF branch and a strong ensemble source.
