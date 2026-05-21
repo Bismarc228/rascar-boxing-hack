@@ -95,6 +95,12 @@ Revised queue:
    yolo26l base `0.365177`, full sequence `0.379682`, gated hybrid `0.389125`.
    Keep using the gate for private-risk candidates, but do not submit without a
    reason to move public above `0.16461`.
+10. Gate-threshold sweep improved validation to `0.395013` with
+    `max_count_delta=48`, `min_base15=0.85`, `min_override15=0.70`,
+    `max_median_gap=4..30`. On test it selects `agn_038,agn_062,agn_063` and
+    writes a validated candidate:
+    `hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv`.
+    This remains no-submit unless private-risk strategy is explicitly chosen.
 
 ## Offline Work Before More Submits
 

@@ -125,6 +125,25 @@ patch. It still does not justify another public upload by itself because the
 matching test gated candidate is expected to keep the same public score
 (`0.16461`) while changing likely-private videos.
 
+A threshold sweep with `tools/evaluate_gate_hybrid_rows.py` improved the OOF
+gate further:
+
+```text
+0.395013  max_count_delta=48, min_base15=0.85,
+          min_override15=0.70, max_median_gap=4..30
+```
+
+Applied to test, this gate selects `agn_038,agn_062,agn_063` and rejects the
+known-bad `agn_037`. The matching CSV is validated:
+
+```text
+submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv
+selected total=731
+```
+
+Do not upload this yet. It is a stronger private-risk candidate, but public is
+unlikely to rise because `agn_062/063` were individually public-neutral.
+
 `root_count=0.92` and `root_count=0.82` sequence variants were checked through
 the same gate. They select essentially the same safe video set. On `agn_038`,
 `root_count=0.88` and `0.92` have `98.8%` of selected frames within 3 frames of

@@ -38,6 +38,8 @@ Validation-row gating now has local support: yolo26l public-base rows scored
 `0.365177`, full sequence snap4 `root_count=0.88` OOF rows scored `0.379682`,
 and the gated yolo26l/sequence hybrid scored `0.389125`. This keeps the gated
 test candidate in the private-risk bucket, but not as a public-submit trigger.
+Sweeping gate thresholds improved OOF to `0.395013`; the matching validated
+test CSV selects sequence rows for `agn_038,agn_062,agn_063` only.
 
 Compact chronology and rationale for the path so far is recorded in
 `notes/experiment_path_summary_2026-05-20.md`.

@@ -178,6 +178,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `0.379682`, and the gated yolo26l/sequence hybrid scored `0.389125`. This
   makes gated sequence a plausible private-risk improvement, but not a public
   upload unless it can plausibly beat `0.16461`.
+- Sweeping gate thresholds improved OOF to `0.395013`. The corresponding test
+  gate selects `agn_038,agn_062,agn_063` and rejects `agn_037`; the CSV is
+  validated but not submitted because it is expected to be public-neutral beyond
+  the existing `agn_038` gain.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,
