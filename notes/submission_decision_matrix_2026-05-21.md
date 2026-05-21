@@ -40,6 +40,7 @@ candidate is worth spending one of the remaining attempts.
 | candidate-level RGB contact raw-pose branch | Improves same-pool raw pose OOF, but best smoke score `0.359641` is far below current best `0.401483`; no test CSV generated. |
 | sequence-TCN + RGB contact bridge cap-400 | Medium OOF `0.388112`, below current best `0.401483`; no test CSV generated. |
 | sequence-TCN + audio contact bridge cap-400 | Medium OOF `0.379792`, below current best `0.404915`; no test CSV generated. |
+| deep crop per-video fighter identity calibration | ResNet50 crop remapping regressed even with oracle cluster mapping (`0.361655 -> 0.342864`); no test CSV generated. |
 | learned exchange-side fighter flip | Best OOF `0.401720` is only `+0.000236` over current best; no test CSV generated. |
 | automatic row-source policy with RGB/exchange sources | Oracle headroom is high (`0.420937`), but policies stay below the best single source; no test CSV generated. |
 
