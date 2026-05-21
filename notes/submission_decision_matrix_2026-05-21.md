@@ -33,6 +33,7 @@ candidate is worth spending one of the remaining attempts.
 | full old sequence TCN | Public `0.12712`, already failed. |
 | full yolo26x/yolo11s agreement | Public `0.10784`, already failed. |
 | crop-motion direct submit | Local gain is weak and source oracle contribution is marginal. |
+| temporal frozen RGB contact fixed-row branch | Union and attacker/opponent ViT-B clip smokes both regressed below the current best OOF source; no test CSV generated. |
 
 ## Current Recommendation
 

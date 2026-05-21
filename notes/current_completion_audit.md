@@ -134,6 +134,13 @@ next visible score   public=0.04481
   more broadly.
 - CLIP timing-offset regression also regressed on both union (`0.390962 ->
   0.385621`) and attacker/opponent (`0.390962 -> 0.382356`) feature caches.
+- A temporal frozen ViT-B/16 fixed-row contact smoke was also tested on the
+  current best source with clip embeddings (`N x 8 x 768`) and a small OOF GRU
+  head. Union crop regressed to `0.385960` for keep/drop and `0.398441` for
+  offset-only; attacker/opponent crop regressed to `0.398062` for keep/drop and
+  `0.398528` for offset-only. This kills fixed-row frozen RGB contact as a
+  direct branch; future RGB work should move to candidate-level contact or
+  fine-tuning rather than another crop/mode sweep.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is
