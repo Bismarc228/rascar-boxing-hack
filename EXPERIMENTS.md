@@ -34,6 +34,11 @@ No more uploads unless a candidate has a concrete reason to beat `0.16461`.
 Leaderboard check at `2026-05-21T00:40Z` lists team `Los Pollos Hermanos` at
 `0.16461`, ahead of the next visible `0.04481` score.
 
+Validation-row gating now has local support: yolo26l public-base rows scored
+`0.365177`, full sequence snap4 `root_count=0.88` OOF rows scored `0.379682`,
+and the gated yolo26l/sequence hybrid scored `0.389125`. This keeps the gated
+test candidate in the private-risk bucket, but not as a public-submit trigger.
+
 Compact chronology and rationale for the path so far is recorded in
 `notes/experiment_path_summary_2026-05-20.md`.
 

@@ -110,6 +110,21 @@ GPU-1 smoke run confirmed it writes rows. The next non-submit validation step is
 to run a proper sequence OOF export, generate matching yolo26l-base validation
 rows, and score the gated hybrid locally.
 
+That validation step was run with the sequence snap4 `root_count=0.88` setup:
+
+```text
+0.365177  yolo26l same_sum w4 alpha=-0.2 root_rate=0.88 validation rows
+0.379682  full sequence snap4 root_count=0.88 OOF rows
+0.389125  gated yolo26l/sequence hybrid OOF rows
+```
+
+The gate selected tournament videos with local frame agreement and rejected the
+old `бокс` videos plus `agn_072`, where sequence had high count/FP risk. This
+supports the gate as a real validation improvement, not just a public-probe
+patch. It still does not justify another public upload by itself because the
+matching test gated candidate is expected to keep the same public score
+(`0.16461`) while changing likely-private videos.
+
 `root_count=0.92` and `root_count=0.82` sequence variants were checked through
 the same gate. They select essentially the same safe video set. On `agn_038`,
 `root_count=0.88` and `0.92` have `98.8%` of selected frames within 3 frames of

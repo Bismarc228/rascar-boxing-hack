@@ -20,6 +20,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ground-truth", type=Path, default=Path("data/raw/train/punches.csv"))
     parser.add_argument("--predictions", type=Path, required=True)
     parser.add_argument("--output-json", type=Path)
+    parser.add_argument("--video-keys", help="Optional comma-separated video keys to score")
+    parser.add_argument(
+        "--video-keys-from-predictions",
+        action="store_true",
+        help="Filter ground truth to video keys present in predictions",
+    )
     return parser.parse_args()
 
 
@@ -27,6 +33,14 @@ def main() -> int:
     args = parse_args()
     gt_rows = read_csv_rows(args.ground_truth)
     pred_rows = read_csv_rows(args.predictions)
+    video_keys = set()
+    if args.video_keys:
+        video_keys |= {value for value in args.video_keys.split(",") if value}
+    if args.video_keys_from_predictions:
+        video_keys |= {row["video_key"] for row in pred_rows}
+    if video_keys:
+        gt_rows = [row for row in gt_rows if row["video_key"] in video_keys]
+        pred_rows = [row for row in pred_rows if row["video_key"] in video_keys]
     result = score_predictions(gt_rows, pred_rows)
 
     print(f"macro_score={result['macro_score']:.6f}")

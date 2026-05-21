@@ -173,6 +173,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - The gate also explains the yolo26x agreement public failure on `agn_038`:
   agreement adds `+30..34` rows there and is rejected by count delta before
   considering timing. Keep yolo26x agreement out of the submit queue.
+- The gate has positive validation evidence now. On OOF validation rows,
+  yolo26l public-base rows scored `0.365177`, full sequence snap4 scored
+  `0.379682`, and the gated yolo26l/sequence hybrid scored `0.389125`. This
+  makes gated sequence a plausible private-risk improvement, but not a public
+  upload unless it can plausibly beat `0.16461`.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,

@@ -91,6 +91,10 @@ Revised queue:
    with `--write-best-rows`. A short GPU-1 smoke run (`CUDA_VISIBLE_DEVICES=1`,
    1 epoch, 10 chunks) wrote `data/processed/validation_rows/_smoke_seq_rows.csv`;
    this validates the export path, not model quality.
+9. Proper OOF row export plus validation scoring now supports the gate:
+   yolo26l base `0.365177`, full sequence `0.379682`, gated hybrid `0.389125`.
+   Keep using the gate for private-risk candidates, but do not submit without a
+   reason to move public above `0.16461`.
 
 ## Offline Work Before More Submits
 
