@@ -93,6 +93,12 @@ passes validation, but is not a submit candidate yet. Public already showed
 `agn_047/062/063` are neutral when added individually, so this is a possible
 private-risk candidate, not a public breakthrough.
 
+`root_count=0.92` and `root_count=0.82` sequence variants were checked through
+the same gate. They select essentially the same safe video set. On `agn_038`,
+`root_count=0.88` and `0.92` have `98.8%` of selected frames within 3 frames of
+each other; `0.92` mainly adds a couple of extra far events. This is not enough
+evidence to spend one of the two remaining submits.
+
 ## Local Base-vs-Sequence Diff
 
 Rough nearest-frame comparison between yolo26l public base and sequence snap4

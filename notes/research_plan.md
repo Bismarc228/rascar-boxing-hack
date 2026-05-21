@@ -82,6 +82,9 @@ Revised queue:
    hybrid. The first default gate selected `agn_038,agn_047,agn_062,agn_063`
    and rejected `agn_037,agn_039,agn_048,agn_049,agn_064`; the generated gated
    CSV is validated but not submitted.
+7. Do not spend a submit just to test sequence `root_count=0.92` or `0.82` on
+   `agn_038`. Their selected frames mostly overlap the public-good `0.88`
+   variant, and the extra/missing events are not a clear breakthrough.
 
 ## Offline Work Before More Submits
 
