@@ -41,6 +41,27 @@ test candidate in the private-risk bucket, but not as a public-submit trigger.
 Sweeping gate thresholds improved OOF to `0.395013`; the matching validated
 test CSV selects sequence rows for `agn_038,agn_062,agn_063` only.
 
+Independent local branches after the cap was tightened:
+
+```text
+0.368244  yolo26l public-base + raw crop-motion rescore
+          best motion_alpha=-0.04, motion_beta=0.08
+          weak positive ensemble feature; test CSV validates locally with
+          707 clear rows; not a direct submit
+
+0.319736  ResNet50 deep crop identity gated role map on agn_003/004
+          baseline was 0.322257, so killed on old boxing videos
+
+0.381589  ResNet50 deep crop identity gated role map on agn_023/024/069/070
+          baseline was 0.389548, so killed on tournament smoke too
+```
+
+New optional package environment: `.venv` was created with system site packages
+so existing CUDA `torch`/`torchvision` remain intact, and `timm`, `decord`,
+`av`, `transformers<5`, `huggingface-hub<1.0`, `accelerate`, `einops`,
+`librosa`, `soundfile`, and `open-clip-torch` are available for RGB/video/audio
+experiments. Use `.venv/bin/python` for those branches.
+
 Compact chronology and rationale for the path so far is recorded in
 `notes/experiment_path_summary_2026-05-20.md`.
 

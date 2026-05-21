@@ -207,6 +207,16 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   appearance clusters are not enough; future identity work needs pose-guided
   ROI quality and tracklet continuity/visual embeddings, not bbox color
   clustering.
+- A first deep crop embedding identity smoke is also killed as a direct
+  role-correction branch. ResNet50 ImageNet crops worsened fixed-timing fighter
+  labels on both old `бокс` videos (`0.322257 -> 0.319736` gated) and tournament
+  videos (`0.389548 -> 0.381589` gated); oracle cluster mapping was worse too,
+  so the clusters are capturing pose/background more than red/blue identity.
+- Crop-motion rescoring is weak but non-dead as an independent timing signal.
+  On the yolo26l public-base validation rows, full raw-frame crop-motion
+  context improved `0.365177 -> 0.368244` with `alpha=-0.04,beta=0.08`, mostly
+  through timing/fighter score but with higher FP. Keep it only for future
+  ensemble/rerank work, not as a direct submit.
 - External research reinforces the priority order: impact spotting and
   precision/`clear` calibration first, fighter identity second, attributes
   later.

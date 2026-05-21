@@ -14,8 +14,8 @@ completion claim; it records concrete evidence and remaining gaps.
 | Improve public score | Public moved from `0.00000` baselines to `0.16461` with `hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088`. | Done |
 | Respect GPU 0 constraint | GPU work was run with `CUDA_VISIBLE_DEVICES=1`; GPU UUID check confirmed physical GPU 1 (`GPU-ff3c1fe8...`). | Done |
 | Punch timing improvements | Larger pose models, sequence TCN snap4, and video-local gate are implemented and validated. Best OOF gated hybrid reached `0.395013`. | Strong progress |
-| Fighter identity improvements | Whole-video swaps, cached role models, and simple raw-frame ROI clustering are killed; no robust identity fix yet. | Open |
-| Audio/video feature research | Audio-only, hard snap, and direct audio rescore are killed; crop-motion smoke has weak signal but needs better cached-frame extractor. | Partially explored |
+| Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, and ResNet50 crop clustering are killed; no robust identity fix yet. | Open |
+| Audio/video feature research | Audio-only, hard snap, and direct audio rescore are killed; crop-motion has a weak independent validation gain and is saved for ensemble work. | Partially explored |
 | Submission budget control | Current rule: no default uploads, at most two more attempts today, only for a clear reason above public `0.16461`. | Active guardrail |
 
 ## Current Best Artifacts
@@ -30,6 +30,9 @@ completion claim; it records concrete evidence and remaining gaps.
   - `tools/evaluate_gate_hybrid_rows.py`
   - `tools/analyze_gate_oracle_features.py`
   - `tools/evaluate_gate_policy_model.py`
+- Identity/video tools:
+  - `tools/evaluate_deep_fighter_identity_calibration.py`
+  - `tools/make_crop_motion_context_submission.py`
 - Validation row tools:
   - `tools/make_pose_validation_rows.py`
   - `tools/evaluate_pose_sequence_spotter.py --write-best-rows`
@@ -60,8 +63,16 @@ next visible score   public=0.04481
 ## Remaining Gaps
 
 - No robust fighter identity correction has passed validation.
-- No RGB/video-embedding model has been tested yet; only pose, audio, and
-  light crop-motion branches were explored.
+- A first RGB/deep crop embedding identity smoke was tested and regressed; no
+  robust RGB/video embedding model has passed validation yet.
+- Raw crop-motion rescoring has a small independent validation gain
+  (`0.365177 -> 0.368244`) and is recorded in
+  `notes/ensemble_candidates.md`; the validated test artifact is
+  `submissions/yolo26l_cropmotion_samesum_w4_am02_thr085_same10_cross4_rootrate088_ma-004_mb008_OFFLINE_CANDIDATE.csv`.
+  It is not a direct submit branch.
+- `.venv` is available for RGB/video/audio branches with `timm`, `decord`,
+  `av`, `transformers`, `accelerate`, `librosa`, `soundfile`, and
+  `open-clip-torch`; use `.venv/bin/python` plus `CUDA_VISIBLE_DEVICES=1`.
 - The private-risk gated candidate has strong OOF support (`0.395013`) but is
   expected to be public-neutral beyond `0.16461`; do not upload without an
   explicit private-risk decision.
