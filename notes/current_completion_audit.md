@@ -104,6 +104,8 @@ next visible score   public=0.04481
 - A structured attacker/opponent CLIP crop follow-up also regressed
   (`0.390962 -> 0.389116`), so frozen still-image CLIP filtering is killed
   more broadly.
+- CLIP timing-offset regression also regressed on both union (`0.390962 ->
+  0.385621`) and attacker/opponent (`0.390962 -> 0.382356`) feature caches.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is

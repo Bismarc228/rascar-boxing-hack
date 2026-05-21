@@ -239,6 +239,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - The structured attacker/opponent still-image CLIP follow-up is also killed
   (`0.390962 -> 0.389116`), so frozen per-frame CLIP filtering is not a current
   path even with ordered fighter crops.
+- CLIP timing-offset regression is also killed: union features score
+  `0.385621`, attacker/opponent features score `0.382356`, both below
+  `0.390962`.
 - Fight-level source policy on current table features is killed. The source
   oracle is `0.403225`, but the best leave-one-fight policy reaches only
   `0.389690`, below the single-source `exchange` rows at `0.390962`; Ridge/HGB

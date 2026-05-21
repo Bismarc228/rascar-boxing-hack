@@ -108,3 +108,29 @@ Decision update:
   fixed-row clear/drop witness.
 - The remaining RGB path must use temporal contact modeling, not frozen
   per-frame CLIP embeddings.
+
+## Timing-Offset Follow-Up
+
+Used the cached CLIP features as timing-offset regressors:
+
+```bash
+.venv/bin/python tools/evaluate_rgb_timing_offset.py \
+  --predictions data/processed/validation_rows/hybrid_yolo26l_seq_tcn_snap4_gated_rival_exchange_hgb_p024_oof.csv \
+  --feature-cache data/processed/rgb_features/clip_vitb16_union_offsets_m8_0_p8_hybrid_rival_exchange_p024.npz \
+  --model ridge
+
+.venv/bin/python tools/evaluate_rgb_timing_offset.py \
+  --predictions data/processed/validation_rows/hybrid_yolo26l_seq_tcn_snap4_gated_rival_exchange_hgb_p024_oof.csv \
+  --feature-cache data/processed/rgb_features/clip_vitb16_attacker_opponent_offsets_m8_0_p8_hybrid_rival_exchange_p024.npz \
+  --model ridge
+```
+
+Results:
+
+- union CLIP timing: best `0.385621` versus baseline `0.390962`.
+- attacker/opponent CLIP timing: best `0.382356` versus baseline `0.390962`.
+
+Decision update:
+
+- Frozen CLIP still-image embeddings are killed for both fixed-row filtering
+  and timing-offset regression.
