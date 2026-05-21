@@ -247,6 +247,10 @@ next visible score   public=0.10431
   attributes reaches `0.408357`, but the learned row stacker only scored
   `0.368373`; fight-level learned policies with attribute sources also stayed
   at or below simply using `attr_all=0.396329`.
+- Learned per-video count control is killed for the current feature/pool setup:
+  direct yolo26x ridge/HGB count controllers tie but do not beat the best static
+  root-round count policy (`0.374335` vs `0.374359`), and yolo26x/yolo26l
+  agreement count control regresses to `0.339953`.
 - The tabular yolo26l learned temporal selector was re-run with 16 CPU threads
   and killed for the current feature/label setup: best local score was
   `0.275094`, far below the heuristic and current ensemble sources.
