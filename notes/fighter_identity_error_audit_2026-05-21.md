@@ -106,6 +106,36 @@ Validation passed.
 Changed rows: 7. Affected videos: `agn_038`, `agn_048`, `agn_049`,
 `agn_062`, `agn_063`.
 
+## Ensemble Check
+
+Generated validation row artifacts:
+
+- `data/processed/validation_rows/hybrid_yolo26l_seq_tcn_snap4_gated_rival_w0_samehand_r13_min1_fht.csv`
+- `data/processed/validation_rows/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088_rival_w4_samehandtarget_r13.csv`
+
+Source ensemble run:
+
+```bash
+python3 tools/evaluate_row_source_ensemble.py \
+  --source base=data/processed/validation_rows/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088.csv \
+  --source seq=data/processed/validation_rows/seq_tcn_snap4_rootcount088_oof.csv \
+  --source hybrid=data/processed/validation_rows/hybrid_yolo26l_seq_tcn_snap4_gated_oof.csv \
+  --source hybrid_rival=data/processed/validation_rows/hybrid_yolo26l_seq_tcn_snap4_gated_rival_w0_samehand_r13_min1_fht.csv \
+  --source motion=data/processed/validation_rows/yolo26l_cropmotion_samesum_w4_am02_thr085_same10_cross4_rootrate088_ma-004_mb008.csv
+```
+
+Result:
+
+- `hybrid_rival`: `0.389672` versus `hybrid`: `0.389125`.
+- Pairwise base+hybrid_rival oracle: `0.393859` versus base+hybrid oracle
+  `0.393346`.
+- Full source oracle across base/seq/hybrid_rival/motion: `0.402103`.
+- Best-source wins unique to `hybrid_rival`: `agn_024`, `agn_025`,
+  `agn_070`.
+
+This confirms the branch is a small independent identity/attribute signal, not
+just a duplicate of sequence or motion.
+
 ## Decision
 
 - Do not submit this branch directly. The OOF gain is too small for the current
