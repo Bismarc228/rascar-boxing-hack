@@ -77,6 +77,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--neighbor-frames", default="0,3,6,12")
     parser.add_argument("--min-track-obs", type=int, default=3)
     parser.add_argument("--prototype-purity", type=float, default=0.80)
+    parser.add_argument("--prototype-scope", choices=["video", "fight"], default="video")
     parser.add_argument("--crop-expand", type=float, default=0.08)
     parser.add_argument("--jobs", type=int, default=8)
     parser.add_argument("--models", default="logreg,hgb")
@@ -126,6 +127,8 @@ def main() -> int:
         max(1, args.jobs),
         args.quiet,
     )
+    if args.prototype_scope == "fight":
+        apply_fight_prototypes(appearances, video_by_key, args.prototype_purity)
     for key in keys:
         app = appearances[key]
         n_desc_tracks = sum(1 for item in app.summaries.values() if item.descriptor is not None)
@@ -240,6 +243,24 @@ def build_appearances(
             key = futures[future]
             output[key] = future.result()
     return output
+
+
+def apply_fight_prototypes(
+    appearances: dict[str, VideoAppearance],
+    video_by_key: dict[str, dict[str, str]],
+    prototype_purity: float,
+) -> None:
+    grouped: dict[str, dict[tuple[str, int], TrackSummary]] = defaultdict(dict)
+    for key, app in appearances.items():
+        group = fight_group(video_by_key[key])
+        for track_id, summary in app.summaries.items():
+            grouped[group][(key, track_id)] = summary
+    prototypes_by_group = {
+        group: build_role_prototypes(summaries, prototype_purity)
+        for group, summaries in grouped.items()
+    }
+    for key, app in appearances.items():
+        app.prototypes = prototypes_by_group[fight_group(video_by_key[key])]
 
 
 def load_video_appearance(

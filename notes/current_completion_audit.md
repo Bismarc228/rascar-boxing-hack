@@ -192,6 +192,9 @@ next visible score   public=0.10431
 - Tracklet-appearance fighter identity is also a micro-signal only
   (`0.404915 -> 0.405200`). The gain comes from one validation flip, so no test
   CSV was generated and it should not drive an upload alone.
+- Fight-level pooling of tracklet appearance prototypes was tested as an
+  identity follow-up and regressed (`0.404915 -> 0.404856` best), so it does not
+  unlock the remaining fighter oracle headroom.
 - Audio source-oracle headroom is real (`0.422619`, or `0.422744` with the
   exchange-side source), but current fight-level policies/stumps do not exploit
   it out of sample.

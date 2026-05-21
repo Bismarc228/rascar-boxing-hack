@@ -158,6 +158,28 @@ pairwise audio_exchange=0.409215
 pairwise audio_gate=0.409162
 ```
 
+## Fight-Level Prototype Follow-Up
+
+Added a comparison option:
+
+```text
+tools/evaluate_tracklet_appearance_fighter_model.py --prototype-scope video|fight
+```
+
+`fight` pools red/blue appearance prototypes across all rounds in the same
+fight, instead of building them per video. On the current `audio_exchange`
+source:
+
+```text
+baseline              0.404915
+best fight-scope hgb  0.404856  delta=-0.000059  changed=7
+best fight-scope logreg 0.403930 at threshold=0.98
+```
+
+Decision: fight-level prototype pooling does not recover the fighter-identity
+headroom. Keep the original per-video tracklet appearance result only as a
+micro-signal.
+
 However, the full source oracle still prefers `old_attr` on `agn_003`, where
 the tracklet branch is uniquely helpful inside the audio-family pool. That means
 this source is worth keeping as a micro-signal, but it does not unlock the
