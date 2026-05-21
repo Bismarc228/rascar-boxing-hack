@@ -151,6 +151,30 @@ videos=agn_038:47
 effectiveness transitions: landed->blocked:38, landed->miss:9
 ```
 
+Stronger but less conservative `agn_038`-only `attr_all` splice:
+
+```text
+submissions/hybrid_root_attr_all_rgb_eff_m03_agn038_only_OFFLINE_CANDIDATE.csv
+```
+
+Gate/validation summary:
+
+```text
+replace_keys=agn_038
+base_count=81
+override_count=81
+Validation passed.
+```
+
+Diff versus root:
+
+```text
+changed_ids=73
+columns=effectiveness:38, hand:2, punch_type:45, target:32
+videos=agn_038:73
+effectiveness transitions: landed->blocked:30, landed->miss:8
+```
+
 ## Decision
 
 This is a real stacked public-anchor attribute branch:
@@ -166,4 +190,6 @@ No automatic upload. Under the current submit guardrail, the effectiveness-only
 stack replaces the earlier raw RGB effectiveness probe as the best fixed-row
 public-safe candidate if an upload is explicitly approved. The `agn_038`-only
 splice is the narrower public-probe version because previous submissions showed
-`agn_038` is public-sensitive.
+`agn_038` is public-sensitive. The `attr_all` `agn_038`-only splice is bounded
+to the same video but changes punch type/hand/target too, so it is the stronger
+but less conservative public probe.

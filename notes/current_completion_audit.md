@@ -105,6 +105,7 @@ remaining gaps.
   - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_all_rgb_eff_m03_OFFLINE_CANDIDATE.csv`
   - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_effectiveness_rgb_eff_m0_OFFLINE_CANDIDATE.csv`
   - `submissions/hybrid_root_attr_effectiveness_rgb_eff_m0_agn038_only_OFFLINE_CANDIDATE.csv`
+  - `submissions/hybrid_root_attr_all_rgb_eff_m03_agn038_only_OFFLINE_CANDIDATE.csv`
 - Private-risk gated candidate:
   `submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv`.
 - Gate tools:
@@ -201,7 +202,9 @@ next visible score   public=0.10431
   effectiveness-only stacked test artifact validates, changes only
   `effectiveness` versus root, and keeps all per-video clear counts unchanged.
   An `agn_038`-only splice of the effectiveness stack also validates and changes
-  only 47 effectiveness labels on the known public-sensitive test video.
+  only 47 effectiveness labels on the known public-sensitive test video; the
+  matching `attr_all` `agn_038`-only splice validates with 73 broader attribute
+  changes on that same video.
 - A stricter root-based splice using the latest RGB/audio-exchange source only
   on previously public-neutral `agn_047,agn_062,agn_063` validates at
   `submissions/hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv`.
