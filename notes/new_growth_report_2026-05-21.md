@@ -255,7 +255,9 @@ rather than a direct upload.
 tested on the current hybrid+rival+exchange OOF rows with frames `t-8,t,t+8`.
 They regressed (`0.390962 -> 0.388244` best threshold), so direct still-image
 union-crop RGB filtering is killed. The remaining RGB direction must be a real
-short-clip/contact model or structured attacker/opponent crops.
+short-clip/contact model. A structured attacker/opponent still-image CLIP
+follow-up also regressed (`0.390962 -> 0.389116`), so ordered fighter crops do
+not rescue frozen per-frame CLIP.
 
 ### 6. Attribute Clip Classifier After Timing Stabilizes
 

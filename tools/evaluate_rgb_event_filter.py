@@ -42,6 +42,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--crop-expand", type=float, default=0.16)
+    parser.add_argument(
+        "--crop-mode",
+        choices=["union", "full", "attacker", "opponent", "attacker_opponent"],
+        default="union",
+    )
     parser.add_argument("--frame-offsets", default="0")
     parser.add_argument("--thresholds", default="0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.50,0.60,0.70")
     parser.add_argument("--quiet", action="store_true")
@@ -134,10 +139,12 @@ def load_or_extract_features(
                         tensor = image_to_tensor(
                             image,
                             records.get(frame),
+                            row,
                             args.image_size,
                             args.crop_expand,
                             mean,
                             std,
+                            args.crop_mode,
                         )
                     tensors.append(tensor)
                     metas.append((event_index, offset))
@@ -178,18 +185,45 @@ def load_model(
 def image_to_tensor(
     image: np.ndarray,
     record: dict[str, Any] | None,
+    row: dict[str, str],
     image_size: int,
     crop_expand: float,
     mean: np.ndarray,
     std: np.ndarray,
+    crop_mode: str,
 ) -> torch.Tensor:
-    crop = crop_union(image, record, crop_expand)
+    crop = crop_image(image, record, row, crop_expand, crop_mode)
     crop = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
     crop = cv2.resize(crop, (image_size, image_size), interpolation=cv2.INTER_AREA)
     arr = crop.astype(np.float32) / 255.0
     arr = np.transpose(arr, (2, 0, 1))
     arr = (arr - mean) / std
     return torch.from_numpy(arr.astype(np.float32))
+
+
+def crop_image(
+    image: np.ndarray,
+    record: dict[str, Any] | None,
+    row: dict[str, str],
+    expand: float,
+    mode: str,
+) -> np.ndarray:
+    if mode == "full":
+        return image
+    if mode == "union":
+        return crop_union(image, record, expand)
+    attacker = row["fighter"]
+    opponent = "blue" if attacker == "red" else "red"
+    if mode == "attacker":
+        return crop_role(image, record, attacker, expand)
+    if mode == "opponent":
+        return crop_role(image, record, opponent, expand)
+    if mode == "attacker_opponent":
+        return pair_crop(
+            crop_role(image, record, attacker, expand),
+            crop_role(image, record, opponent, expand),
+        )
+    raise ValueError(f"Unknown crop_mode: {mode}")
 
 
 def crop_union(image: np.ndarray, record: dict[str, Any] | None, expand: float) -> np.ndarray:
@@ -221,6 +255,44 @@ def crop_union(image: np.ndarray, record: dict[str, Any] | None, expand: float) 
     if xi2 - xi1 < 16 or yi2 - yi1 < 16:
         return image
     return image[yi1:yi2, xi1:xi2]
+
+
+def crop_role(
+    image: np.ndarray,
+    record: dict[str, Any] | None,
+    role: str,
+    expand: float,
+) -> np.ndarray:
+    if not record:
+        return image
+    fighter = record.get("fighters", {}).get(role, {})
+    bbox = fighter.get("bbox")
+    if not bbox or len(bbox) != 4:
+        return image
+    height, width = image.shape[:2]
+    x1, y1, x2, y2 = [float(value) for value in bbox]
+    bw = x2 - x1
+    bh = y2 - y1
+    x1 -= bw * expand
+    x2 += bw * expand
+    y1 -= bh * expand
+    y2 += bh * expand
+    xi1 = max(0, min(width - 1, int(round(x1))))
+    xi2 = max(0, min(width, int(round(x2))))
+    yi1 = max(0, min(height - 1, int(round(y1))))
+    yi2 = max(0, min(height, int(round(y2))))
+    if xi2 - xi1 < 16 or yi2 - yi1 < 16:
+        return image
+    return image[yi1:yi2, xi1:xi2]
+
+
+def pair_crop(left: np.ndarray, right: np.ndarray) -> np.ndarray:
+    height = max(left.shape[0], right.shape[0], 16)
+    left_width = max(16, round(left.shape[1] * height / max(1, left.shape[0])))
+    right_width = max(16, round(right.shape[1] * height / max(1, right.shape[0])))
+    left_resized = cv2.resize(left, (left_width, height), interpolation=cv2.INTER_AREA)
+    right_resized = cv2.resize(right, (right_width, height), interpolation=cv2.INTER_AREA)
+    return np.concatenate([left_resized, right_resized], axis=1)
 
 
 def run_batch(

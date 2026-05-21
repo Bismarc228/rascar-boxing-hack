@@ -236,6 +236,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `0.390962 -> 0.388244` at the best threshold. RGB is still a possible path,
   but it needs true short-clip/contact modeling or structured attacker/opponent
   crops, not still union-crop embeddings.
+- The structured attacker/opponent still-image CLIP follow-up is also killed
+  (`0.390962 -> 0.389116`), so frozen per-frame CLIP filtering is not a current
+  path even with ordered fighter crops.
 - Fight-level source policy on current table features is killed. The source
   oracle is `0.403225`, but the best leave-one-fight policy reaches only
   `0.389690`, below the single-source `exchange` rows at `0.390962`; Ridge/HGB

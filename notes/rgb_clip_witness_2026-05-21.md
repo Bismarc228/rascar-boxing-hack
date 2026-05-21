@@ -66,3 +66,45 @@ The filter keeps assigning high probabilities to negatives; for example
 - RGB is not fully dead, but the next RGB attempt must use a stronger event
   representation than union-crop still embeddings, such as short clip/contact
   modeling or explicit attacker/opponent crops.
+
+## Structured Crop Follow-Up
+
+Added `--crop-mode` to `tools/evaluate_rgb_event_filter.py`:
+
+- `union`
+- `full`
+- `attacker`
+- `opponent`
+- `attacker_opponent`
+
+Follow-up command:
+
+```bash
+CUDA_VISIBLE_DEVICES=1 .venv/bin/python tools/evaluate_rgb_event_filter.py \
+  --predictions data/processed/validation_rows/hybrid_yolo26l_seq_tcn_snap4_gated_rival_exchange_hgb_p024_oof.csv \
+  --tracks-dir data/processed/pose_tracks/val_yolo26x_conf035 \
+  --feature-cache data/processed/rgb_features/clip_vitb16_attacker_opponent_offsets_m8_0_p8_hybrid_rival_exchange_p024.npz \
+  --model-name vit_base_patch16_clip_224.openai \
+  --device auto \
+  --image-size 224 \
+  --batch-size 64 \
+  --frame-offsets=-8,0,8 \
+  --crop-mode attacker_opponent
+```
+
+Result:
+
+```text
+baseline=0.390962
+best_structured_clip=0.389116
+delta=-0.001846
+threshold=0.05
+dropped=11
+```
+
+Decision update:
+
+- Structured attacker/opponent still-image CLIP is also killed as a direct
+  fixed-row clear/drop witness.
+- The remaining RGB path must use temporal contact modeling, not frozen
+  per-frame CLIP embeddings.
