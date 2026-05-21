@@ -7,8 +7,8 @@ and remaining gaps.
 ## Latest Addendum - 2026-05-21
 
 - Current best local OOF source is
-  `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_gate_exchange_side_oof.csv`
-  at `0.404915`.
+  `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_appearance_oof.csv`
+  at `0.405200`.
 - The first useful audio result is the fixed-row pose+audio gate:
   `0.401483 -> 0.404479`. Audio-only was neutral, pose-only was only
   `0.401999`, so the saved gain requires the learned pose+audio interaction.
@@ -16,6 +16,10 @@ and remaining gaps.
   `0.404479 -> 0.404915` and changes 22 OOF rows / 11 protected test fighter
   labels. It is saved as an ensemble/private-risk micro-signal, not a direct
   upload trigger.
+- The tracklet-appearance identity micro-model adds a further tiny fixed-row
+  identity gain on top of that source (`0.404915 -> 0.405200`) by flipping one
+  OOF row (`agn_003 frame=2421 blue->red`). It is the new local best row source
+  but remains far too small for a standalone upload decision.
 - Validated full and protected test artifacts exist for both the audio gate and
   audio-gate exchange-side variants. The protected artifacts keep public-proven
   `agn_038` unchanged.
@@ -43,8 +47,8 @@ and remaining gaps.
 | Use Kaggle submissions/leaderboard | `notes/public_lb_strategy.md` and `EXPERIMENTS.md` record public submissions, current best `0.16461`, and leaderboard check. | Done |
 | Improve public score | Public moved from `0.00000` baselines to `0.16461` with `hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088`. | Done |
 | Respect GPU 0 constraint | GPU work was run with `CUDA_VISIBLE_DEVICES=1`; GPU UUID check confirmed physical GPU 1 (`GPU-ff3c1fe8...`). | Done |
-| Punch timing improvements | Larger pose models, sequence TCN snap4, video-local gates, crop-motion, and fixed-row pose+audio gating are implemented and validated. Current best local OOF is `0.404915`. | Strong progress |
-| Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, ResNet50 crop clustering, and unsupervised deep crop cluster remapping are killed. Exchange-side identity is saved as a tiny micro-signal (`0.404479 -> 0.404915`), but no robust identity fix exists yet. | Open |
+| Punch timing improvements | Larger pose models, sequence TCN snap4, video-local gates, crop-motion, and fixed-row pose+audio gating are implemented and validated. Current best local OOF is `0.405200`. | Strong progress |
+| Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, ResNet50 crop clustering, and unsupervised deep crop cluster remapping are killed. Exchange-side and tracklet-appearance identity are saved as micro-signals (`0.404479 -> 0.405200` together), but no robust identity fix exists yet. | Open |
 | Audio/video feature research | Audio-only, hard snap, direct audio rescore, and fixed-row frozen RGB contact are killed. Fixed-row pose+audio gating is positive; sequence audio/RGB contact bridges help weak settings but are still below the best source. | Partially explored |
 | Submission budget control | Current rule: no default uploads, at most two more attempts today, only for a clear reason above public `0.16461`. | Active guardrail |
 
@@ -54,6 +58,9 @@ and remaining gaps.
 - Public-best source:
   `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv`.
 - Current best local OOF rows:
+  `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_appearance_oof.csv`
+  (`0.405200`).
+- Previous local best identity source rows:
   `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_gate_exchange_side_oof.csv`
   (`0.404915`).
 - Current best local non-identity source rows:
@@ -92,6 +99,7 @@ and remaining gaps.
   - `tools/evaluate_fixed_row_audio_gate.py`
   - `tools/make_fixed_row_audio_gate_submission.py`
   - `tools/make_exchange_side_fighter_model_submission.py`
+  - `tools/evaluate_tracklet_appearance_fighter_model.py`
 - Validation row tools:
   - `tools/make_pose_validation_rows.py`
   - `tools/evaluate_pose_sequence_spotter.py --write-best-rows`
@@ -121,10 +129,10 @@ next visible score   public=0.04481
 
 ## Remaining Gaps
 
-- The current best local OOF source is now the audio-gate exchange-side variant
-  (`0.404915`), but this is not enough by itself to spend a submission. The
-  public-best root remains `0.16461`, and full sequence-derived branches have
-  prior public-transfer risk.
+- The current best local OOF source is now the audio-gate exchange-side plus
+  tracklet-appearance variant (`0.405200`), but this is not enough by itself to
+  spend a submission. The public-best root remains `0.16461`, and full
+  sequence-derived branches have prior public-transfer risk.
 - Fixed-row pose+audio gating is the strongest new independent signal
   (`0.401483 -> 0.404479`). It has validated full and protected test artifacts,
   but the full version drops `agn_038` rows and the protected version still
@@ -132,6 +140,9 @@ next visible score   public=0.04481
 - Exchange-side fighter identity remains a micro-signal only
   (`0.404479 -> 0.404915`). It is useful for a later ensemble, not for a solo
   upload.
+- Tracklet-appearance fighter identity is also a micro-signal only
+  (`0.404915 -> 0.405200`). The gain comes from one validation flip, so no test
+  CSV was generated and it should not drive an upload alone.
 - Audio source-oracle headroom is real (`0.422619`, or `0.422744` with the
   exchange-side source), but current fight-level policies/stumps do not exploit
   it out of sample.

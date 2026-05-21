@@ -27,6 +27,7 @@ candidate is worth spending one of the remaining attempts.
 | fixed-row audio gate on full current source | OOF improves current best `0.401483 -> 0.404479`; audio-only is neutral and pose-only is only `0.401999`, so this is a real auxiliary signal. | `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_gate_OFFLINE_CANDIDATE.csv` | Drops 29 clear test rows from full sequence source, including `agn_038`; still inherits sequence public-transfer risk. | Keep for ensemble/private-risk queue; no automatic upload. |
 | fixed-row audio gate on root no-`agn_038` splice | Same audio gate applied to the conservative root splice with `agn_038` protected; validates and drops 21 clear rows (`733 -> 712`). | `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_gate_noagn038_OFFLINE_CANDIDATE.csv` | Public-sensitive `agn_038` preserved, but this still changes private-risk sequence splice videos and has no direct public evidence. | Safer audio-gate artifact for future explicitly approved private-risk upload; do not auto-submit. |
 | audio-gate exchange-side identity micro | OOF gain is tiny (`0.404479 -> 0.404915`); generated full and protected test artifacts both validate and change only 11 fighter labels. | `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_OFFLINE_CANDIDATE.csv`; `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_exchange_side_noagn038_OFFLINE_CANDIDATE.csv` | Too small to justify an upload alone; useful only as a future ensemble/private-risk micro-signal. | Save; no automatic upload. |
+| tracklet-appearance fighter identity micro | OOF improves the current best source only `0.404915 -> 0.405200`, changing one validation fighter label. | No test CSV generated. | Useful as an ensemble diagnostic, but one-row validation gain is not upload evidence. | Save; no automatic upload and do not generate a Kaggle artifact unless it is part of a larger approved ensemble. |
 
 ## Rejected For Upload
 
@@ -40,8 +41,9 @@ candidate is worth spending one of the remaining attempts.
 | temporal frozen RGB contact fixed-row branch | Union and attacker/opponent ViT-B clip smokes both regressed below the current best OOF source; no test CSV generated. |
 | candidate-level RGB contact raw-pose branch | Improves same-pool raw pose OOF, but best smoke score `0.359641` is far below current best `0.401483`; no test CSV generated. |
 | sequence-TCN + RGB contact bridge cap-400 | Medium OOF `0.388112`, below current best `0.401483`; no test CSV generated. |
-| sequence-TCN + audio contact bridge cap-400 | Medium OOF `0.379792`, below current best `0.404915`; no test CSV generated. |
+| sequence-TCN + audio contact bridge cap-400 | Medium OOF `0.379792`, below current best `0.405200`; no test CSV generated. |
 | deep crop per-video fighter identity calibration | ResNet50 crop remapping regressed even with oracle cluster mapping (`0.361655 -> 0.342864`); no test CSV generated. |
+| tracklet-appearance fighter identity alone | Positive but only micro-sized (`+0.000285` over current best, one OOF flip); no test CSV generated. |
 | learned exchange-side fighter flip | Best OOF `0.401720` is only `+0.000236` over current best; no test CSV generated. |
 | automatic row-source policy with RGB/exchange sources | Oracle headroom is high (`0.420937`), but policies stay below the best single source; no test CSV generated. |
 
