@@ -110,6 +110,11 @@ Revised queue:
     features, and oracle deltas. It shows the key tournament miss is `agn_056`:
     overlap/count features look safe, but sequence is worse. Therefore
     replacing `agn_062/063` on test remains private-risk, not a submit trigger.
+13. A small Ridge per-video policy over gate features and metadata was tested
+    with `tools/evaluate_gate_policy_model.py`. It underperformed the threshold
+    gate (`0.381635` fight-CV, `0.380425` video-CV versus `0.395013`), so do
+    not use learned video-policy selection with only the current 13 validation
+    videos.
 
 ## Offline Work Before More Submits
 

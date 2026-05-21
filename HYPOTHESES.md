@@ -190,6 +190,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   gates but sequence is worse. Test replacements for `agn_062/063` are still
   plausible private improvements, but not strong enough to spend a public
   attempt under the current cap.
+- A learned per-video Ridge policy over gate features is not reliable with this
+  tiny validation set. It scored `0.381635` in fight-CV and `0.380425` in
+  video-CV, below the threshold gate's `0.395013`.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,
