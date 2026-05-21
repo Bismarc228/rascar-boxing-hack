@@ -202,6 +202,13 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,
   candidate features, and track majority do not improve. Next identity work
   must extract per-video ROI/tracklet appearance from raw frames.
+- Fixed-row identity audit on current row sources confirms the same pattern:
+  yolo26l base oracle `0.365177 -> 0.382242`, sequence oracle
+  `0.379682 -> 0.398103`, and gated hybrid oracle `0.389125 -> 0.402894`.
+  Track role/color/frame-color flips regress. A narrow opposite-fighter rival
+  candidate rule is only weakly positive on the gated hybrid
+  (`0.389125 -> 0.389672`), so keep it as an ensemble micro-signal, not as a
+  submit branch.
 - A first raw-frame bbox ROI clustering attempt also failed: even oracle
   cluster-to-fighter mapping regressed to `0.368859`. Simple per-video
   appearance clusters are not enough; future identity work needs pose-guided

@@ -31,6 +31,9 @@ completion claim; it records concrete evidence and remaining gaps.
   - `tools/analyze_gate_oracle_features.py`
   - `tools/evaluate_gate_policy_model.py`
 - Identity/video tools:
+  - `tools/analyze_fighter_identity_errors.py`
+  - `tools/evaluate_fighter_rival_flip.py`
+  - `tools/make_fighter_rival_flip_submission.py`
   - `tools/evaluate_deep_fighter_identity_calibration.py`
   - `tools/make_crop_motion_context_submission.py`
   - `tools/evaluate_row_source_ensemble.py`
@@ -67,7 +70,11 @@ next visible score   public=0.04481
 
 ## Remaining Gaps
 
-- No robust fighter identity correction has passed validation.
+- No robust fighter identity correction has passed validation. A fixed-row
+  audit now shows meaningful oracle headroom (`0.389125 -> 0.402894` on the
+  gated hybrid), but simple role/color flips regress. A narrow opposite-fighter
+  rival rule is weakly positive (`0.389125 -> 0.389672`) and saved only as an
+  ensemble micro-signal.
 - A first RGB/deep crop embedding identity smoke was tested and regressed; no
   robust RGB/video embedding model has passed validation yet.
 - A first frozen RGB event-filter smoke also regressed

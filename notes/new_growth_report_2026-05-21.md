@@ -208,6 +208,16 @@ and need high precision.
 **Bad version.** More global HSV thresholds or per-video keep/swap. Already
 killed.
 
+**2026-05-21 audit update.** A fixed-row fighter audit confirms the identity
+headroom but kills simple role/color correction again. On the gated
+yolo26l/sequence hybrid, matched-fighter oracle improves `0.389125 -> 0.402894`,
+while track role/color/frame-color flips regress or stay neutral. A narrow
+opposite-fighter rival-candidate rule is weakly positive across row sources
+(`+0.00027` yolo26l, `+0.00044` sequence, `+0.00055` gated hybrid) and is saved
+as an ensemble micro-signal, not a submit branch. The next real identity branch
+should classify exchange side or build persistent mask/tracklet identity; do
+not spend more cycles on global equipment-color flips without new features.
+
 ### 5. Exchange-State / No-Punch Negative Gate
 
 **Hypothesis.** The model needs to know when no real exchange is happening:
