@@ -1,94 +1,101 @@
 # Public LB Strategy
 
-Context as of 2026-05-20: public leaderboard is roughly `66%` of test and
-private is roughly `34%`, so public movement is informative but still noisy.
-Current best known public anchor is `yolo26l same_sum w4 alpha=-0.2` with
-`root_rate=0.88`, public `0.13849`. Do not use GPU 0 for future extraction; any
-GPU run should target GPU 1 explicitly with `--cuda-visible-devices 1` and a
-quick `nvidia-smi` check. As of 2026-05-20 20:34 UTC the daily quota is
-exhausted (`30/30`) and reset is `2026-05-21T00:00:00Z`; do not submit before
-that reset.
+Context as of `2026-05-20T23:57:51Z`: daily quota is still exhausted
+(`30/30`) and the Kaggle helper reports reset at `2026-05-21T00:00:00Z`.
+Do not submit before reset. Public leaderboard is roughly `66%` of test by
+insider signal, so public movement is useful, but not a complete proxy for the
+private `34%`.
 
-## Next Experiments
+Current public best:
 
-1. Count calibration around `yolo26l`.
-   Treat `root_rate=0.88` as the local public anchor, not the center of a wide
-   blind sweep. Try a narrow CPU-only rescore grid around completed caches:
-   `root_rate=0.84,0.86,0.88,0.90,0.92`, plus per-root rates if validation/root
-   diagnostics show systematic over/under-counting. Track public-risk proxies:
-   `n_pred`, counts per minute, counts by test root/template, and FP penalty on
-   validation. Prefer a smaller count change that preserves timing score over a
-   public-only count bump.
+```text
+0.13849  submissions/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
+```
 
-2. Threshold and context variants on `yolo26l`.
-   Keep model/cache fixed and vary only candidate scoring. Start from the best
-   `yolo26l` threshold/NMS/count setting, then test tight threshold shifts,
-   same-group NMS `8,10,12`, cross-group NMS `2,4,6`, and temporal context
-   features already used in the repo (`same_sum`, `dominance`, small windows).
-   Reject variants whose gain disappears under fixed per-video counts; the next
-   useful result should improve local timing or FP behavior, not just select
-   more rows.
+The public probes showed that at least `agn_038` affects public score. Zeroing
+`agn_038` dropped the public score to `0.06940`; zeroing `agn_039`, `agn_047`,
+`agn_049`, `agn_062`, `agn_063`, or `agn_064` did not move the checked score
+for that probe baseline. Do not spend more quota on mask probes until the main
+candidate queue is tested.
 
-3. `yolo11s` / `yolo26l` fusion with `yolo26l` primary.
-   Since `yolo26l` now beats the older `yolo11s` public anchor, use it as the
-   primary source but keep `yolo11s` as a conservative witness. First test
-   count-fixed timing snap: for each selected `yolo26l` event, snap frame only
-   when `yolo11s` has the same `(fighter, hand)` within `+/-4` or `+/-6`
-   frames and the normalized score is credible. Then test agreement boosts that
-   keep `yolo26l`-only events alive but slightly demote them when `yolo11s`
-   strongly disagrees nearby.
+## Post-Reset Submit Queue
 
-4. Asymmetric union/intersection ensemble.
-   Build a narrow CPU fusion grid over cached `yolo11s` and `yolo26l` candidate
-   pools using per-video score normalization. Candidate policy should be
-   asymmetric: `yolo26l` events survive on their own score; `yolo11s`-only
-   events need stronger normalized score or spare count budget; shared events
-   get a boost inside `2/4/6` frames. Compare fixed-`yolo26l` counts,
-   `root_rate=0.88`, and a slightly lower count mode such as `0.86` to avoid
-   union-driven FP inflation.
+Submit only after quota is fresh and only one candidate at a time, with
+`submissions` checked after each upload.
 
-5. `yolo26x` as the next post-reset candidate.
-   The validation cache is complete and the first useful config is
-   `same_count w10 alpha=-0.2`, threshold `0.65`, same-NMS `8`, cross-NMS `4`.
-   It scores `0.374335` offline with no tournament-root risk flags. The test
-   cache is complete and validated CSVs are ready for post-reset review:
-   threshold-count (`844` rows), `root_rate=0.88` (`678` rows), and raw
-   `root_round_rate=0.78` (`727` rows). Wait for the UTC quota reset before any
-   upload.
+1. First submit:
+   `submissions/yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088_OFFLINE_CANDIDATE.csv`
+   - Offline `0.377949`, time `0.533478`, FP `0.086935`, wins `10/13`.
+   - Root audit has no risk flags: `Турнир Бокс +0.032473`,
+     `Турнир Бокс 2 +0.038638`, `бокс +0.037968`.
+   - Test selected rows: `727`.
+   - Reason: safest materially new candidate, lower FP than yolo26x+yolo26l
+     agreement, and less count-risky than direct threshold-count yolo26x.
 
-6. yolo26x agreement/fusion generator.
-   Offline agreement is stronger than direct yolo26x: `0.377949` for yolo26x
-   primary plus yolo11s secondary, and `0.377090` for yolo26x plus yolo26l.
-   The current script only evaluates validation, so implement a matching test
-   submission generator before spending reset-day uploads on fusion.
+2. If the first submit does not regress badly, submit:
+   `submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088_OFFLINE_CANDIDATE.csv`
+   - First sweep offline `0.389963`, repeat audit `0.387039`.
+   - Test selected rows: `744`.
+   - Reason: strongest learned spotter with lower test count than the older
+     sequence `root_count=0.92` candidate.
 
-7. Fighter identity calibration.
-   Audit wrong-fighter near misses around the `yolo26l root_rate=0.88` selected
-   set with timing/count fixed. Then test per-video identity smoothing or
-   `yolo11s`/`yolo26l` role agreement: keep the event frame and hand unchanged,
-   but allow fighter label changes only when track continuity and color/role
-   evidence agree. Report fighter score, red/blue confusion, and per-root
-   deltas; do not mix identity changes with new counts.
+3. If the safer sequence TCN transfers, submit:
+   `submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount092_OFFLINE_CANDIDATE.csv`
+   - Offline `0.390013`, FP `0.101781`, test selected rows `765`.
+   - Reason: highest local score, but only after public confirms sequence
+     family is not over-counting.
 
-8. Timing snap with audio as a weak local feature.
-   Use audio only near existing pose candidates. For selected `yolo26l` events,
-   add features such as nearest onset peak within `+/-3/+/-6/+/-12`, local
-   prominence, and peak rank, then test small rerank/snap policies under fixed
-   counts. No audio-only rows, no hard global shift, and no submit unless timing
-   score improves locally without FP regression.
+4. If public likes sequence timing but punishes count, submit:
+   `submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross4_snap4_rootcount082_OFFLINE_CANDIDATE.csv`
+   - Offline `0.382612`, FP `0.073716`, test selected rows `712`.
+   - Reason: defensive low-count sequence fallback.
 
-9. Public/private robustness audit before spending submissions.
-   Because public is large but not complete, any candidate should beat the
-   `yolo26l root_rate=0.88` anchor on validation in at least one count-fixed or
-   timing-specific check, be non-negative on tournament roots, and have plausible
-   counts for high-capacity test videos. Avoid repeated public probing of tiny
-   threshold changes; bundle only materially different hypotheses such as
-   count-calibrated `yolo26l`, `yolo26l+yolo11s` agreement, identity-fixed, or
-   timing-snap variants.
+5. If sequence TCN regresses, submit the alternative agreement branch:
+   `submissions/yolo26x_yolo26l_agree_w4_a10_pw10_sw08_thr14_nms10_cross2_rootcount084_OFFLINE_CANDIDATE.csv`
+   - Offline `0.377090`, FP `0.091709`, wins `12/13`, no root risk flags.
+   - Reason: checks whether public prefers large-model agreement over the
+     conservative yolo11s witness.
 
-## Minimal Logging
+6. Direct yolo26x precision variants are lower priority:
+   - `yolo26x_samecount_w10_am02_thr065_same8_cross4_rootrate088`: offline
+     `0.372166`, total `678`.
+   - `yolo26x_raw_thr065_same8_cross6_rootroundrate078`: offline `0.371622`,
+     total `727`.
+   - `yolo26x_samecount_w10_am02_thr065_same8_cross4_threshold`: offline
+     `0.374335`, total `844`, but high count makes it risky after the
+     yolo26l threshold-count public failure.
 
-For every future candidate, record: source cache, threshold/context settings,
-count policy, `n_pred`, validation macro/time/FP, per-root deltas, public score
-if later submitted by request, and whether GPU 0 stayed unused during any
-extraction.
+## Do Not Submit From Current Evidence
+
+- Any dense threshold-count branch just because it wins local macro. Public
+  already punished `yolo26l` threshold-count (`0.10260`).
+- Audio-only, hard audio snap, global audio offset, or direct local onset
+  multiplicative rescoring. On the current yolo26x anchor, nonzero audio
+  rescoring regressed from `0.374335` to `0.365845`.
+- Whole-video fighter swaps or current cached fighter keep/flip classifiers.
+  The fighter oracle still has headroom, but the tested signals do not recover
+  it.
+- Simple raw-frame bbox ROI color clustering. Even oracle cluster mapping
+  regressed to `0.368859`.
+- More small yolo26l public threshold/root-rate tweaks before testing the
+  materially different yolo26x/sequence candidates.
+
+## Public Readout Rules
+
+- If the first yolo26x+yolo11s agreement submit beats or roughly matches the
+  `0.13849` anchor, proceed to the safer snap4 sequence TCN.
+- If it drops hard, stop the queue and use `agn_038` hybrids to isolate whether
+  the public hit is video-specific rather than replacing likely-private videos.
+- Use at most two post-reset mask/hybrid probes unless a probe creates an
+  obvious public jump.
+- Always record: file, message, public score, selected rows by video, and
+  whether the result changes the queue.
+
+## Operational Guardrails
+
+- GPU 0 stays unused. Any future GPU job must use physical GPU 1:
+  `CUDA_VISIBLE_DEVICES=1` or the repo's `--cuda-visible-devices 1` wrapper.
+- Verify long GPU jobs with:
+  `nvidia-smi --query-compute-apps=gpu_uuid,pid,process_name,used_memory --format=csv,noheader`.
+- Every CSV must pass `tools/validate_data.py` before upload.
+- Do not submit while quota says `remaining_today=0`.

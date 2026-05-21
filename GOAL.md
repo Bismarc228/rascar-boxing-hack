@@ -181,3 +181,43 @@ This baseline should be converted into a reproducible local pipeline that emits 
 - Baseline submission uses `clear=false` for unused rows and passes Kaggle format validation.
 - Iteration loop exists: extract features -> train/evaluate -> generate submit.
 
+## Current Implementation State - 2026-05-20
+
+The initial success criteria are done. The working solution now has local
+validation, cached pose features, submission generators, public-score tracking,
+and a post-reset candidate queue.
+
+Current public best is `0.13849` from the yolo26l temporal-context/root-rate
+branch:
+
+```text
+submissions/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
+```
+
+The next ready submit after quota reset is the yolo26x+yolo11s agreement
+candidate:
+
+```text
+submissions/yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088_OFFLINE_CANDIDATE.csv
+offline=0.377949, fp=0.086935, rows=727, risk_flags=none
+```
+
+The strongest learned branch is the pose-sequence TCN with snap-to-local-score
+postprocess:
+
+```text
+seq_tcn snap4 root_count=0.88: offline=0.389963 first sweep, 0.387039 repeat, rows=744
+seq_tcn snap4 root_count=0.92: offline=0.390013, rows=765
+seq_tcn snap4 root_count=0.82: offline=0.382612, rows=712
+```
+
+The active research direction is no longer the original baseline notebook.
+Current priorities are:
+
+- yolo26x agreement and sequence-TCN spotters for punch timing.
+- Conservative per-video count and `clear=true` calibration, because public
+  punished dense recall.
+- Video-local fighter identity with pose-guided tracklet/appearance evidence,
+  not whole-video swaps or simple bbox color clustering.
+- Audio only as weak local features near pose candidates; audio-only and hard
+  audio snapping are killed.

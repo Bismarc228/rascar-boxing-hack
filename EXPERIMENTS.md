@@ -1,5 +1,45 @@
 # Experiments
 
+## Current Runbook - 2026-05-20 23:57 UTC
+
+Kaggle quota is exhausted (`30/30`) until `2026-05-21T00:00:00Z`; submit gate
+is closed until the helper reports fresh quota. GPU 0 is reserved; any future
+GPU work must use physical GPU 1 with `CUDA_VISIBLE_DEVICES=1` or
+`--cuda-visible-devices 1`.
+
+Current public anchor:
+
+```text
+0.13849  yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088
+```
+
+Ready post-reset queue, in order:
+
+```text
+1. yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088
+   offline=0.377949, fp=0.086935, rows=727, risk_flags=none
+
+2. seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088
+   offline=0.389963 first sweep / 0.387039 repeat audit, rows=744
+
+3. seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount092
+   offline=0.390013, fp=0.101781, rows=765
+
+4. seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross4_snap4_rootcount082
+   offline=0.382612, fp=0.073716, rows=712, defensive count fallback
+
+5. yolo26x_yolo26l_agree_w4_a10_pw10_sw08_thr14_nms10_cross2_rootcount084
+   offline=0.377090, fp=0.091709, rows=731, alternative agreement branch
+```
+
+All listed CSVs passed local submission validation. Submit them one at a time
+and check `submissions` after each result. If the first yolo26x agreement
+candidate drops hard on public, stop the sequence queue and use `agn_038`
+hybrids to isolate whether the miss is public-video-specific.
+
+Compact chronology and rationale for the path so far is recorded in
+`notes/experiment_path_summary_2026-05-20.md`.
+
 ## Kaggle Submission Policy
 
 The competition limit is 30 submissions/day. Do not submit small threshold

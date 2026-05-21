@@ -1,8 +1,9 @@
 # Research Plan
 
-Status as of 2026-05-20: Kaggle quota is exhausted (`30/30`) until
+Status as of `2026-05-20T23:57:51Z`: Kaggle quota is exhausted (`30/30`) until
 `2026-05-21T00:00:00Z`. Do not submit before reset. GPU 0 must stay unused;
-all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`.
+all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`. No heavy
+training, pose extraction, ffmpeg, or GPU compute jobs are currently running.
 
 ## Current Anchor
 

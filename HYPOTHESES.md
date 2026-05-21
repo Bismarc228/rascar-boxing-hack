@@ -45,6 +45,14 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   limit was exhausted before yolo26x test tracks were ready.
 - Kaggle quota on 2026-05-20 is exhausted (`30/30`). Reset is
   `2026-05-21T00:00:00Z`. Do not submit before reset.
+- Current post-reset runbook is no longer a yolo26l tweak sweep. The next live
+  test is the validated yolo26x+yolo11s agreement CSV
+  (`0.377949` offline, FP `0.086935`, `727` test rows), followed by sequence
+  TCN snap4 candidates only if the agreement branch does not publicly regress.
+- Ready validated sequence CSVs are:
+  `root_count=0.88` snap4 (`0.389963` first sweep, `0.387039` repeat audit,
+  `744` rows), `root_count=0.92` snap4 (`0.390013`, `765` rows), and defensive
+  `root_count=0.82` snap4 (`0.382612`, `712` rows).
 - Generated but not submitted candidates include the grouped-NMS, grouped-count,
   and temporal-context CSVs listed in `EXPERIMENTS.md`.
 - The task rewards timing most heavily. The metric weights time at `50%`,
@@ -159,16 +167,15 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 
 - Expand temporal-context scoring around pose candidates, not single-frame
   scoring. The current best signal is local same `(fighter, hand)` dominance.
-- Prepare yolo26x test candidates after its test cache completes, but do not
-  submit before the UTC reset. The cache is complete and three validated CSVs
-  are ready: context threshold-count (`844` rows), context `root_rate=0.88`
-  (`678` rows), and raw `root_round_rate=0.78` (`727` rows). Priority configs
-  are `same_count w10 alpha=-0.2` with threshold count and `root_rate=0.88`;
-  both have positive tournament-root validation deltas.
-- Build a submission generator for normalized yolo26x agreement before spending
-  reset-day submissions on fusion. Offline top is `0.377949` for yolo26x
-  primary plus yolo11s secondary agreement; a matching test generator now
-  exists in `tools/make_pose_agreement_submission.py`.
+- Keep direct yolo26x test candidates as fallback, not the first upload. The
+  cache is complete and three validated CSVs are ready: context
+  threshold-count (`844` rows), context `root_rate=0.88` (`678` rows), and raw
+  `root_round_rate=0.78` (`727` rows). Because public punished dense recall,
+  prefer agreement and lower-count yolo26x variants before threshold-count.
+- Use normalized yolo26x agreement as the first post-reset branch. Offline top
+  is `0.377949` for yolo26x primary plus yolo11s secondary agreement; the
+  matching test generator exists in `tools/make_pose_agreement_submission.py`
+  and the validated test CSV is ready.
 - Root/video audit for agreement candidates now exists in
   `tools/audit_pose_agreement_candidate.py`. Both yolo26x+yolo11s and
   yolo26x+yolo26l pass tournament-root audit; yolo26x+yolo11s is the cleaner
