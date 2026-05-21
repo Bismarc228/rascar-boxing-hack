@@ -53,6 +53,16 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `root_count=0.88` snap4 (`0.389963` first sweep, `0.387039` repeat audit,
   `744` rows), `root_count=0.92` snap4 (`0.390013`, `765` rows), and defensive
   `root_count=0.82` snap4 (`0.382612`, `712` rows).
+- Post-reset public results changed the active strategy: the yolo26x+yolo11s
+  agreement full submit scored only `0.10784`, and the full sequence snap4
+  `root_count=0.88` submit scored only `0.12712`. The useful public gain is
+  video-local: yolo26l public best plus sequence snap4 only on `agn_038` scored
+  `0.16461`.
+- Adding sequence replacements for `agn_047`, `agn_062`, or `agn_063` to the
+  `agn_038` hybrid did not change public (`0.16461`), while adding `agn_037`
+  dropped to `0.12712`. Treat `agn_037` as public-impact and sequence-bad.
+- New submission budget rule: no more uploads by default; at most two remaining
+  attempts today, only for a clear candidate above the `0.16461` hybrid.
 - Generated but not submitted candidates include the grouped-NMS, grouped-count,
   and temporal-context CSVs listed in `EXPERIMENTS.md`.
 - The task rewards timing most heavily. The metric weights time at `50%`,
@@ -149,6 +159,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   sequence scores have some training/CUDA noise but remain above agreement.
   The defensive `root_count=0.82` snap4 variant scored `0.382612` with only
   `712` test rows.
+- Public transfer nuance: sequence snap4 is not safe as a full replacement. It
+  is excellent on `agn_038` but bad on `agn_037`; future sequence use should be
+  video-local and agreement-gated.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,
@@ -172,10 +185,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   threshold-count (`844` rows), context `root_rate=0.88` (`678` rows), and raw
   `root_round_rate=0.78` (`727` rows). Because public punished dense recall,
   prefer agreement and lower-count yolo26x variants before threshold-count.
-- Use normalized yolo26x agreement as the first post-reset branch. Offline top
-  is `0.377949` for yolo26x primary plus yolo11s secondary agreement; the
-  matching test generator exists in `tools/make_pose_agreement_submission.py`
-  and the validated test CSV is ready.
+- Do not use normalized yolo26x agreement as a submit branch without a new
+  explanation. The first full post-reset public check scored only `0.10784`,
+  and `agn_038`-only agreement hybrid scored only `0.12888`.
 - Root/video audit for agreement candidates now exists in
   `tools/audit_pose_agreement_candidate.py`. Both yolo26x+yolo11s and
   yolo26x+yolo26l pass tournament-root audit; yolo26x+yolo11s is the cleaner
@@ -183,9 +195,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - Public/private hybrid generation now exists in `tools/splice_submission_videos.py`.
   Use it to tune confirmed-public `agn_038` without disturbing likely-private
   videos when public probing is needed after reset.
-- Follow the concrete research queue in `notes/research_plan.md`: yolo26x
-  agreement after reset, then the sequence TCN candidates, then direct yolo26x
-  precision variants.
+- Follow the concrete research queue in `notes/research_plan.md`: preserve the
+  `agn_038` sequence hybrid, diagnose `agn_037`, and only consider at most two
+  further submissions if a local/video-specific check gives a strong reason.
 - The event-selector path is now sequence/anchor spotting, not flat candidate
   ranking. Keep the direct yolo26x/agreement heuristic as fallback; do not
   revisit simple candidate-level rankers on the current feature set.

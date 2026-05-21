@@ -1,95 +1,77 @@
 # Public LB Strategy
 
-Context as of `2026-05-20T23:57:51Z`: daily quota is still exhausted
-(`30/30`) and the Kaggle helper reports reset at `2026-05-21T00:00:00Z`.
-Do not submit before reset. Public leaderboard is roughly `66%` of test by
-insider signal, so public movement is useful, but not a complete proxy for the
-private `34%`.
+Context as of `2026-05-21T00:20Z`: quota reset happened and `8/30` submissions
+have been used today. User-imposed budget is now stricter than Kaggle quota:
+**at most 2 more submissions today, and only for a clear breakthrough**.
 
 Current public best:
+
+```text
+0.16461  submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
+```
+
+This is a hybrid of the old public anchor plus sequence-TCN snap4 predictions
+only for `agn_038`. It beats the previous yolo26l public anchor:
 
 ```text
 0.13849  submissions/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
 ```
 
-The public probes showed that at least `agn_038` affects public score. Zeroing
-`agn_038` dropped the public score to `0.06940`; zeroing `agn_039`, `agn_047`,
-`agn_049`, `agn_062`, `agn_063`, or `agn_064` did not move the checked score
-for that probe baseline. Do not spend more quota on mask probes until the main
-candidate queue is tested.
+## Post-Reset Public Results
 
-## Post-Reset Submit Queue
+```text
+0.16461  hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088
+0.16461  hybrid_yolo26l_best_agn038_agn047_seq_tcn_snap4_rootcount088
+0.16461  hybrid_yolo26l_best_agn038_agn062_seq_tcn_snap4_rootcount088
+0.16461  hybrid_yolo26l_best_agn038_agn063_seq_tcn_snap4_rootcount088
+0.12888  hybrid_yolo26l_best_agn038_yolo26x_yolo11s_agree
+0.12712  seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088
+0.12712  hybrid_yolo26l_best_agn038_agn037_seq_tcn_snap4_rootcount088
+0.10784  yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088
+```
 
-Submit only after quota is fresh and only one candidate at a time, with
-`submissions` checked after each upload.
+Readout:
 
-1. First submit:
-   `submissions/yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088_OFFLINE_CANDIDATE.csv`
-   - Offline `0.377949`, time `0.533478`, FP `0.086935`, wins `10/13`.
-   - Root audit has no risk flags: `Турнир Бокс +0.032473`,
-     `Турнир Бокс 2 +0.038638`, `бокс +0.037968`.
-   - Test selected rows: `727`.
-   - Reason: safest materially new candidate, lower FP than yolo26x+yolo26l
-     agreement, and less count-risky than direct threshold-count yolo26x.
+- Sequence-TCN snap4 is strong on `agn_038`; it lifted public from `0.13849`
+  to `0.16461` when applied only there.
+- Full sequence-TCN is not public-safe. It dropped to `0.12712`.
+- yolo26x+yolo11s agreement is not public-safe. Full submit scored `0.10784`,
+  and even `agn_038`-only hybrid scored only `0.12888`.
+- Adding sequence replacements for `agn_047`, `agn_062`, or `agn_063` did not
+  move public from `0.16461`; these are likely private or neutral for public.
+- Adding sequence replacement for `agn_037` dropped to `0.12712` even with the
+  same selected count (`52`). Local CSV comparison shows a large timing
+  distribution shift on `agn_037`, so treat it as public and sequence-bad.
 
-2. If the first submit does not regress badly, submit:
-   `submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088_OFFLINE_CANDIDATE.csv`
-   - First sweep offline `0.389963`, repeat audit `0.387039`.
-   - Test selected rows: `744`.
-   - Reason: strongest learned spotter with lower test count than the older
-     sequence `root_count=0.92` candidate.
+## Stop Rule
 
-3. If the safer sequence TCN transfers, submit:
-   `submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount092_OFFLINE_CANDIDATE.csv`
-   - Offline `0.390013`, FP `0.101781`, test selected rows `765`.
-   - Reason: highest local score, but only after public confirms sequence
-     family is not over-counting.
+No more uploads by default. The remaining Kaggle quota is not the operative
+limit; the operative limit is the user's cap of at most two more attempts.
 
-4. If public likes sequence timing but punishes count, submit:
-   `submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross4_snap4_rootcount082_OFFLINE_CANDIDATE.csv`
-   - Offline `0.382612`, FP `0.073716`, test selected rows `712`.
-   - Reason: defensive low-count sequence fallback.
+A new submit must satisfy all of:
 
-5. If sequence TCN regresses, submit the alternative agreement branch:
-   `submissions/yolo26x_yolo26l_agree_w4_a10_pw10_sw08_thr14_nms10_cross2_rootcount084_OFFLINE_CANDIDATE.csv`
-   - Offline `0.377090`, FP `0.091709`, wins `12/13`, no root risk flags.
-   - Reason: checks whether public prefers large-model agreement over the
-     conservative yolo11s witness.
+- It is not a full yolo26x agreement or full sequence-TCN replacement.
+- It preserves the known-good `agn_038` sequence snap4 replacement.
+- It does not alter `agn_037` unless a local/video-specific fix explains the
+  timing failure.
+- It has a concrete reason to beat `0.16461`, not just another blind hybrid.
+- The CSV passes `tools/validate_data.py`.
 
-6. Direct yolo26x precision variants are lower priority:
-   - `yolo26x_samecount_w10_am02_thr065_same8_cross4_rootrate088`: offline
-     `0.372166`, total `678`.
-   - `yolo26x_raw_thr065_same8_cross6_rootroundrate078`: offline `0.371622`,
-     total `727`.
-   - `yolo26x_samecount_w10_am02_thr065_same8_cross4_threshold`: offline
-     `0.374335`, total `844`, but high count makes it risky after the
-     yolo26l threshold-count public failure.
+## Next Work Without Submits
 
-## Do Not Submit From Current Evidence
-
-- Any dense threshold-count branch just because it wins local macro. Public
-  already punished `yolo26l` threshold-count (`0.10260`).
-- Audio-only, hard audio snap, global audio offset, or direct local onset
-  multiplicative rescoring. On the current yolo26x anchor, nonzero audio
-  rescoring regressed from `0.374335` to `0.365845`.
-- Whole-video fighter swaps or current cached fighter keep/flip classifiers.
-  The fighter oracle still has headroom, but the tested signals do not recover
-  it.
-- Simple raw-frame bbox ROI color clustering. Even oracle cluster mapping
-  regressed to `0.368859`.
-- More small yolo26l public threshold/root-rate tweaks before testing the
-  materially different yolo26x/sequence candidates.
-
-## Public Readout Rules
-
-- If the first yolo26x+yolo11s agreement submit beats or roughly matches the
-  `0.13849` anchor, proceed to the safer snap4 sequence TCN.
-- If it drops hard, stop the queue and use `agn_038` hybrids to isolate whether
-  the public hit is video-specific rather than replacing likely-private videos.
-- Use at most two post-reset mask/hybrid probes unless a probe creates an
-  obvious public jump.
-- Always record: file, message, public score, selected rows by video, and
-  whether the result changes the queue.
+1. Audit `agn_038` sequence rows versus yolo26l base to understand why it wins:
+   count, frame snapping, fighter label, or attribute changes.
+2. Audit `agn_037` sequence rows versus yolo26l base to isolate the timing
+   collapse. Count is unchanged, so compare frame distribution and candidate
+   source confidence.
+3. Test `agn_048`, `agn_039`, `agn_049`, and `agn_064` locally by diffing frame
+   movement before considering a public hybrid. These videos have equal counts
+   between yolo26l base and sequence, so timing/identity changes dominate.
+4. Build a safer hybrid generator that only replaces a video if sequence and
+   yolo26l agree on frame neighborhoods, or if the sequence replacement matches
+   the `agn_038` improvement pattern.
+5. Keep full sequence and yolo26x agreement as offline research artifacts, not
+   submission candidates.
 
 ## Operational Guardrails
 
@@ -97,5 +79,5 @@ Submit only after quota is fresh and only one candidate at a time, with
   `CUDA_VISIBLE_DEVICES=1` or the repo's `--cuda-visible-devices 1` wrapper.
 - Verify long GPU jobs with:
   `nvidia-smi --query-compute-apps=gpu_uuid,pid,process_name,used_memory --format=csv,noheader`.
+- Use 10-second polling waits for Kaggle status checks.
 - Every CSV must pass `tools/validate_data.py` before upload.
-- Do not submit while quota says `remaining_today=0`.

@@ -112,14 +112,21 @@ what it is.
 
 ## 10. Current Queue
 
-1. Wait for quota reset.
-2. Submit yolo26x+yolo11s agreement.
-3. If public does not regress badly, submit sequence TCN snap4 `root_count=0.88`.
-4. If sequence transfers, try snap4 `root_count=0.92`.
-5. If public punishes count, try snap4 `root_count=0.82`.
-6. If sequence fails, switch to yolo26x+yolo26l agreement or direct yolo26x
-   `root_rate=0.88`.
-7. Keep public probes to at most two high-value videos after reset.
+Post-reset results supersede the original queue:
+
+1. yolo26x+yolo11s agreement was submitted and scored only `0.10784`; killed
+   as a submit branch.
+2. sequence TCN snap4 `root_count=0.88` was submitted and scored only
+   `0.12712`; killed as a full-test replacement.
+3. yolo26l public best plus sequence TCN snap4 only on `agn_038` scored
+   `0.16461`; this is the new public best.
+4. Adding sequence replacements for `agn_047`, `agn_062`, or `agn_063` to the
+   `agn_038` hybrid did not move public from `0.16461`.
+5. Adding sequence replacement for `agn_037` dropped to `0.12712`; `agn_037`
+   is public-impact and sequence-bad.
+6. Current queue is no default submissions. Diagnose video-local differences
+   offline and use at most two more uploads today only for a clear candidate
+   above `0.16461`.
 
 ## 11. Resource Notes
 

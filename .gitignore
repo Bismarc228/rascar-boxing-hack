@@ -20,6 +20,7 @@ venv/
 
 # Runtime outputs and experiment artifacts.
 logs/
+archives/
 submissions/
 submission.csv
 data/processed/

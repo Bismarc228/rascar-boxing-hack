@@ -1,41 +1,36 @@
 # Experiments
 
-## Current Runbook - 2026-05-20 23:57 UTC
+## Current Runbook - 2026-05-21 00:20 UTC
 
-Kaggle quota is exhausted (`30/30`) until `2026-05-21T00:00:00Z`; submit gate
-is closed until the helper reports fresh quota. GPU 0 is reserved; any future
-GPU work must use physical GPU 1 with `CUDA_VISIBLE_DEVICES=1` or
-`--cuda-visible-devices 1`.
+Kaggle quota reset happened. `8/30` submissions were used after reset, but the
+working cap is now stricter: at most two more submissions today, and only for a
+clear breakthrough. GPU 0 is reserved; any future GPU work must use physical
+GPU 1 with `CUDA_VISIBLE_DEVICES=1` or `--cuda-visible-devices 1`.
 
 Current public anchor:
 
 ```text
-0.13849  yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088
+0.16461  hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088
 ```
 
-Ready post-reset queue, in order:
+Post-reset readout:
 
 ```text
-1. yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088
-   offline=0.377949, fp=0.086935, rows=727, risk_flags=none
-
-2. seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088
-   offline=0.389963 first sweep / 0.387039 repeat audit, rows=744
-
-3. seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount092
-   offline=0.390013, fp=0.101781, rows=765
-
-4. seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross4_snap4_rootcount082
-   offline=0.382612, fp=0.073716, rows=712, defensive count fallback
-
-5. yolo26x_yolo26l_agree_w4_a10_pw10_sw08_thr14_nms10_cross2_rootcount084
-   offline=0.377090, fp=0.091709, rows=731, alternative agreement branch
+0.16461  yolo26l public best + sequence snap4 on agn_038
+0.16461  same + agn_047 sequence replacement
+0.16461  same + agn_062 sequence replacement
+0.16461  same + agn_063 sequence replacement
+0.12888  yolo26l public best + yolo26x/yolo11s agreement on agn_038
+0.12712  full sequence snap4 rootcount088
+0.12712  sequence snap4 on agn_038 + agn_037
+0.10784  full yolo26x/yolo11s agreement
 ```
 
-All listed CSVs passed local submission validation. Submit them one at a time
-and check `submissions` after each result. If the first yolo26x agreement
-candidate drops hard on public, stop the sequence queue and use `agn_038`
-hybrids to isolate whether the miss is public-video-specific.
+The key result is video-local: sequence snap4 is strong on `agn_038`, but full
+sequence and yolo26x agreement do not transfer. Adding `agn_037` sequence rows
+erases the `agn_038` gain even though selected count is unchanged (`52`), so
+the failure is likely timing/identity/attribute movement rather than count.
+No more uploads unless a candidate has a concrete reason to beat `0.16461`.
 
 Compact chronology and rationale for the path so far is recorded in
 `notes/experiment_path_summary_2026-05-20.md`.
@@ -51,12 +46,20 @@ candidate is meaningfully different from already submitted variants.
 Best public score so far:
 
 ```text
+0.16461  submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
 0.13849  submissions/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
 ```
 
 Other checked variants:
 
 ```text
+0.16461  submissions/hybrid_yolo26l_best_agn038_agn047_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
+0.16461  submissions/hybrid_yolo26l_best_agn038_agn062_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
+0.16461  submissions/hybrid_yolo26l_best_agn038_agn063_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
+0.12888  submissions/hybrid_yolo26l_best_agn038_yolo26x_yolo11s_agree_OFFLINE_CANDIDATE.csv
+0.12712  submissions/seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088_OFFLINE_CANDIDATE.csv
+0.12712  submissions/hybrid_yolo26l_best_agn038_agn037_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
+0.10784  submissions/yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088_OFFLINE_CANDIDATE.csv
 0.13664  submissions/yolo26l_context_samesum_w6_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
 0.13664  submissions/yolo26l_samesum_w6_am02_thr085_same10_cross4_rootrate084_OFFLINE_CANDIDATE.csv
 0.13664  submissions/yolo26l_samesum_w6_am02_thr085_same10_cross4_rootrate086_OFFLINE_CANDIDATE.csv
@@ -90,9 +93,12 @@ Conclusions from public checks:
   same-group NMS `10`, cross-NMS `4`, `root_rate=0.88`: public `0.13849`.
 - Dense threshold-count on the same `yolo26l` pool failed hard (`0.10260`), so
   public currently rewards precision/count control more than raw recall.
-- The daily budget was exhausted at `30/30` submissions on 2026-05-20. The
-  helper reports reset at `2026-05-21T00:00:00Z`; do not submit again before
-  that reset.
+- The daily budget was exhausted at `30/30` submissions on 2026-05-20 and reset
+  at `2026-05-21T00:00:00Z`. After reset, the yolo26x agreement and full
+  sequence candidates were tested; both failed publicly. The current useful
+  public improvement is only the sequence snap4 replacement on `agn_038`.
+- User-imposed budget after the first reset tests is at most two more submits
+  today, only for a clear breakthrough.
 - Global fighter swap is bad.
 - Frame offset `+3` is neutral/slightly worse; `-3` is worse.
 - Around the initial pose heuristic, recall helped up to `thr=1.15`; overly

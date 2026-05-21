@@ -1,13 +1,17 @@
 # Research Plan
 
-Status as of `2026-05-20T23:57:51Z`: Kaggle quota is exhausted (`30/30`) until
-`2026-05-21T00:00:00Z`. Do not submit before reset. GPU 0 must stay unused;
-all long GPU jobs use physical GPU 1 via `CUDA_VISIBLE_DEVICES=1`. No heavy
-training, pose extraction, ffmpeg, or GPU compute jobs are currently running.
+Status as of `2026-05-21T00:20Z`: Kaggle quota reset happened; `8/30`
+submissions were used after reset. The user-imposed limit is now stricter:
+at most two more submissions today, and only for a clear breakthrough. GPU 0
+must stay unused; all long GPU jobs use physical GPU 1 via
+`CUDA_VISIBLE_DEVICES=1`. No heavy training, pose extraction, ffmpeg, or GPU
+compute jobs are currently running.
 
 ## Current Anchor
 
-- Public best: `0.13849` from
+- Public best: `0.16461` from
+  `hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088`.
+- Previous public anchor: `0.13849` from
   `yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088`.
 - Strongest ready post-reset direct candidates:
   - `yolo26x_samecount_w10_am02_thr065_same8_cross4_threshold`, validation
@@ -45,36 +49,32 @@ training, pose extraction, ffmpeg, or GPU compute jobs are currently running.
 
 ## Immediate Queue After Reset
 
-1. Submit one yolo26x agreement candidate first if quota is fresh:
-   `yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088`.
-   It has the best offline score among ready CSVs and lower FP than the
-   yolo26x+yolo26l agreement candidate.
-2. If public does not regress badly, submit the safer snap4 sequence TCN
-   candidate:
-   `seq_tcn_yolo26x_witness_3seed_thr06_nms10_cross2_snap4_rootcount088`.
-   It is the strongest low-row learned spotter so far (`0.389963`, 744 test
-   rows, `agn_038=81`).
-3. If the safer sequence TCN transfers, submit the higher-offline snap4
-   `root_count=0.92` variant (`0.390013`, 765 rows). If public punishes count,
-   skip it.
-4. If public likes the model family but punishes count, use the defensive snap4
-   `root_count=0.82` CSV (`712` rows) before abandoning sequence.
-5. If sequence TCN regresses, submit the yolo26x+yolo26l agreement candidate
-   next. This checks whether public prefers large-model agreement or yolo11s
-   conservative witness without changing model family as much.
-6. Submit direct yolo26x `root_rate=0.88` before threshold-count if public
-   remains precision-sensitive. The threshold-count candidate is locally best
-   but has `844` test rows, so it is riskier after the yolo26l threshold-count
-   public failure.
-7. Use no more than two public-mask probes after reset, and only for unknown
-   high-value videos (`agn_037`, `agn_048`). Do not burn probes on videos
-   already showing no public effect.
-8. If the first full yolo26x agreement submit is noisy, switch to `agn_038`
-   hybrids instead of changing likely-private videos. Ready hybrid CSVs replace
-   only `agn_038` on top of the yolo26l public best with:
-   - yolo26x+yolo11s agreement (`agn_038=108`, total `680`),
-   - yolo26x+yolo26l agreement (`agn_038=104`, total `676`),
-   - yolo26x context `root_rate=0.88` (`agn_038=63`, total `635`).
+The original reset queue was executed and revised by public evidence:
+
+```text
+0.10784  full yolo26x+yolo11s agreement                 killed
+0.12888  agn_038-only yolo26x+yolo11s agreement hybrid  killed
+0.16461  agn_038-only sequence snap4 hybrid             new public best
+0.12712  full sequence snap4 rootcount088               killed as full replace
+0.12712  agn_038 + agn_037 sequence snap4 hybrid        agn_037 is bad/public
+0.16461  agn_038 + agn_047/062/063 sequence hybrids     public-neutral adds
+```
+
+Revised queue:
+
+1. No default submissions. Preserve the `0.16461` `agn_038` sequence hybrid as
+   the active public best.
+2. Diagnose `agn_037` locally. Count is unchanged between base and sequence
+   (`52` rows), but frame distribution shifts hard; do not alter `agn_037`
+   without a specific timing fix.
+3. Compare `agn_048`, `agn_039`, `agn_049`, and `agn_064` locally before any
+   upload. They have equal counts between base and sequence, so risk is timing
+   and fighter/attribute drift.
+4. Use at most two more submissions today, and only if a candidate has a
+   concrete reason to beat `0.16461`. Blind hybrids are stopped.
+5. Do not submit full yolo26x agreement, full sequence-TCN, or sequence
+   `root_count=0.92/0.82` unless a video-local gate first explains public
+   transfer.
 
 ## Offline Work Before More Submits
 
@@ -187,12 +187,13 @@ becomes another threshold/NMS sweep. The active research branches are:
   selection. This prevents a fighter or RGB idea from hiding FP inflation.
 - Track `score_time`, `score_fighter`, FP penalty, selected row count, and wins
   across the 13 validation videos.
-- Submit only after quota reset and only for a candidate that is materially new
-  and passes the validation gate. No public probing while quota is exhausted.
+- Submit only for a candidate that is materially new and passes the validation
+  gate. After the post-reset checks, the live cap is at most two more attempts
+  today and only for a clear reason to beat `0.16461`.
 
 ## Submit Gates
 
-- Do not submit before quota reset.
+- Do not use remaining Kaggle quota just because it exists.
 - Every CSV must pass `tools/validate_data.py`.
 - Prefer candidates with positive tournament-root validation deltas and
   plausible test counts.

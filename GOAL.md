@@ -187,19 +187,26 @@ The initial success criteria are done. The working solution now has local
 validation, cached pose features, submission generators, public-score tracking,
 and a post-reset candidate queue.
 
-Current public best is `0.13849` from the yolo26l temporal-context/root-rate
+Current public best is `0.16461` from a video-local hybrid: keep the yolo26l
+public anchor everywhere except `agn_038`, where sequence-TCN snap4 is better.
+
+```text
+submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
+```
+
+Previous public best was `0.13849` from the yolo26l temporal-context/root-rate
 branch:
 
 ```text
 submissions/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088_OFFLINE_CANDIDATE.csv
 ```
 
-The next ready submit after quota reset is the yolo26x+yolo11s agreement
-candidate:
+The first post-reset yolo26x+yolo11s agreement submit did not transfer and is
+killed as a submit branch:
 
 ```text
 submissions/yolo26x_yolo11s_agree_w4_a02_pw10_sw08_thr14_nms10_cross2_rootcount088_OFFLINE_CANDIDATE.csv
-offline=0.377949, fp=0.086935, rows=727, risk_flags=none
+offline=0.377949, public=0.10784
 ```
 
 The strongest learned branch is the pose-sequence TCN with snap-to-local-score
@@ -211,6 +218,10 @@ seq_tcn snap4 root_count=0.92: offline=0.390013, rows=765
 seq_tcn snap4 root_count=0.82: offline=0.382612, rows=712
 ```
 
+Public transfer is video-local: `agn_038` sequence hybrid scores `0.16461`, but
+the full `root_count=0.88` sequence submit scores only `0.12712`, and adding
+`agn_037` sequence rows to the good hybrid also scores `0.12712`.
+
 The active research direction is no longer the original baseline notebook.
 Current priorities are:
 
@@ -221,3 +232,5 @@ Current priorities are:
   not whole-video swaps or simple bbox color clustering.
 - Audio only as weak local features near pose candidates; audio-only and hard
   audio snapping are killed.
+- Submission budget is now capped at at most two more attempts today, only for
+  a clear candidate above `0.16461`.
