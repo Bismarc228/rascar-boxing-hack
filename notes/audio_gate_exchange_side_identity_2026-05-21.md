@@ -93,5 +93,45 @@ agn_025, agn_057, agn_072
 ## Decision
 
 Keep as an identity micro-signal for future ensemble experiments. Do not create
-a test submission or upload from this branch alone: the lift is only `+0.000436`
-over the audio gate and does not meet the promotion bar.
+a Kaggle upload from this branch alone: the lift is only `+0.000436` over the
+audio gate and does not meet the promotion bar.
+
+## Test Artifacts
+
+Added:
+
+```text
+tools/make_exchange_side_fighter_model_submission.py
+```
+
+Full audio-gate source:
+
+```text
+input=submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_gate_OFFLINE_CANDIDATE.csv
+output=submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_OFFLINE_CANDIDATE.csv
+changed=11
+Validation passed.
+```
+
+Conservative root-splice source with `agn_038` protected:
+
+```text
+input=submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_gate_noagn038_OFFLINE_CANDIDATE.csv
+output=submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_exchange_side_noagn038_OFFLINE_CANDIDATE.csv
+protected=agn_038
+changed=11
+Validation passed.
+```
+
+Changed videos for the protected artifact:
+
+```text
+agn_037:1
+agn_047:3
+agn_048:1
+agn_049:2
+agn_062:2
+agn_063:2
+```
+
+These artifacts are saved for ensemble/private-risk bookkeeping only.
