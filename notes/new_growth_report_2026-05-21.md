@@ -139,6 +139,12 @@ sequence failures like `agn_056`.
 was already worse than threshold gate. The new value must come from new
 fight-level features, not a different regressor.
 
+**2026-05-21 audit update.** Re-tested source policy after adding `rival` and
+`exchange` sources. The source oracle is `0.403225`, but learned/table policies
+still do not transfer in leave-one-fight validation: best simple policy is
+`mean_root=0.389690`, below single-source `exchange=0.390962`; Ridge and HGB
+regress. This kills current count/overlap-only source policy as a submit path.
+
 ### 3. RGB/Video Event Spotter
 
 **Hypothesis.** Pose-only misses contact, guard/feint distinction, glove impact,

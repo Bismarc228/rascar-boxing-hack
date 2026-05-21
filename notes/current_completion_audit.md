@@ -36,6 +36,7 @@ completion claim; it records concrete evidence and remaining gaps.
   - `tools/make_fighter_rival_flip_submission.py`
   - `tools/evaluate_exchange_state_gate.py`
   - `tools/make_exchange_state_gate_submission.py`
+  - `tools/evaluate_fight_source_policy.py`
   - `tools/evaluate_deep_fighter_identity_calibration.py`
   - `tools/make_crop_motion_context_submission.py`
   - `tools/evaluate_row_source_ensemble.py`
@@ -82,6 +83,9 @@ next visible score   public=0.04481
   hybrid+rival `0.389672 -> 0.390962`. The validated test artifact only drops
   one row at the OOF-selected threshold, so this remains an ensemble/source
   feature rather than a direct submit trigger.
+- Fight-level source policy over the current table features was tested and
+  killed as a submit path. Best OOF policy (`mean_root=0.389690`) stays below
+  simply using `exchange=0.390962`; Ridge/HGB policies regress.
 - A first RGB/deep crop embedding identity smoke was tested and regressed; no
   robust RGB/video embedding model has passed validation yet.
 - A first frozen RGB event-filter smoke also regressed

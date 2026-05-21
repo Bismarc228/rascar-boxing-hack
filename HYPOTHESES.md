@@ -231,6 +231,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   with base/seq/motion/hybrid-rival/exchange reaches `0.403225`, but the test
   artifact at the OOF-selected threshold drops only one row, so do not submit
   directly.
+- Fight-level source policy on current table features is killed. The source
+  oracle is `0.403225`, but the best leave-one-fight policy reaches only
+  `0.389690`, below the single-source `exchange` rows at `0.390962`; Ridge/HGB
+  policies regress. Future source policy needs stronger clip/tracklet features,
+  not count/overlap diagnostics alone.
 - Relaxed row/id capacity is now technically audited but not submit-approved.
   `tools/make_relaxed_capacity_submission.py` produced a 1594-row diagnostic
   that reallocates 20 spare `agn_062` filler ids to extra `agn_037` predictions.
