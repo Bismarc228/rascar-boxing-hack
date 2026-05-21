@@ -1,8 +1,8 @@
 # Current Completion Audit
 
-Status as of 2026-05-21 after the audio-gate and exchange-side identity
-iterations. This is not a goal completion claim; it records concrete evidence
-and remaining gaps.
+Status as of 2026-05-21 after the audio-gate, identity, and RGB-contact bridge
+iterations. This is not a goal completion claim; it records concrete evidence and
+remaining gaps.
 
 ## Latest Addendum - 2026-05-21
 
@@ -30,6 +30,10 @@ and remaining gaps.
 - Sequence audio-contact bridge infrastructure is implemented in
   `tools/evaluate_pose_sequence_spotter.py`, but the medium cap-400 run reached
   only `0.379792`; no test CSV was generated from that branch.
+- Sequence RGB-contact bridge infrastructure is implemented in the same spotter.
+  The full pool-1800 A/B confirms RGB helps the sequence scorer
+  (`0.386043 -> 0.391237`), but the absolute source remains below the current
+  best `0.405200`; no test CSV was generated from that branch.
 - Deep crop fighter identity calibration with ResNet50 crop embeddings regressed
   even under oracle cluster mapping, so the current unsupervised crop-cluster
   mapping path is killed.
@@ -49,7 +53,7 @@ and remaining gaps.
 | Respect GPU 0 constraint | GPU work was run with `CUDA_VISIBLE_DEVICES=1`; GPU UUID check confirmed physical GPU 1 (`GPU-ff3c1fe8...`). | Done |
 | Punch timing improvements | Larger pose models, sequence TCN snap4, video-local gates, crop-motion, and fixed-row pose+audio gating are implemented and validated. Current best local OOF is `0.405200`. | Strong progress |
 | Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, ResNet50 crop clustering, and unsupervised deep crop cluster remapping are killed. Exchange-side and tracklet-appearance identity are saved as micro-signals (`0.404479 -> 0.405200` together), but no robust identity fix exists yet. | Open |
-| Audio/video feature research | Audio-only, hard snap, direct audio rescore, and fixed-row frozen RGB contact are killed. Fixed-row pose+audio gating is positive; sequence audio/RGB contact bridges help weak settings but are still below the best source. | Partially explored |
+| Audio/video feature research | Audio-only, hard snap, direct audio rescore, and fixed-row frozen RGB contact are killed. Fixed-row pose+audio gating is positive; sequence audio/RGB contact bridges help their own weaker settings but are still below the best source. | Partially explored |
 | Submission budget control | Current rule: no default uploads, at most two more attempts today, only for a clear reason above public `0.16461`. | Active guardrail |
 
 ## Current Best Artifacts
@@ -150,6 +154,9 @@ next visible score   public=0.04481
   medium scored `0.379792`, below the current best. Future work should focus on
   per-video sync/latency, better candidate pools, and full validation rather
   than audio-only or global-offset submissions.
+- The sequence RGB-contact bridge is also infrastructure, not a candidate. A
+  full pool-1800 A/B improved its own no-RGB control (`0.386043 -> 0.391237`),
+  but stayed far below the current best `0.405200`; no test CSV was generated.
 - Deep crop identity calibration is killed for the current unsupervised mapping
   design because ResNet50 crop remapping regressed even with oracle cluster
   assignment.
@@ -224,7 +231,7 @@ next visible score   public=0.04481
 - Candidate-level RGB contact was tested before final NMS on a bounded raw
   yolo26x pose pool. It improves the same-pool pose baseline
   (`0.330787 -> 0.359641`) and reduces FP penalty (`0.156681 -> 0.110506`),
-  but remains far below the current best local source (`0.401483`). This keeps
+  but remains far below the current best local source (`0.405200`). This keeps
   RGB contact alive as an auxiliary pre-NMS signal, but not as a direct
   raw-pose row source.
 - An optional RGB-contact bridge was added to `tools/evaluate_pose_sequence_spotter.py`
@@ -232,8 +239,9 @@ next visible score   public=0.04481
   NMS/count. A short infrastructure smoke passed (`rgb_alpha=1.0` scored
   `0.312313` vs `0.309016` for `rgb_alpha=0.0` under a deliberately undertrained
   sequence model). A medium cap-400 run with two seeds reached `0.388112`;
-  RGB helped that weaker sequence setup, but absolute OOF stayed below the
-  current best `0.401483`, so no test CSV was generated.
+  full pool-1800 A/B reached `0.391237` with `rgb_alpha=0.25` versus `0.386043`
+  for `rgb_alpha=0.0`. RGB helped both weaker sequence setups, but absolute OOF
+  stayed below the current best `0.405200`, so no test CSV was generated.
 - New source-oracle diagnostics with `exchange_side` and `seq_bridge_cap400`
   raise per-video oracle headroom to `0.420937`, but existing fight-level source
   policies still fail to exploit it (`mean_global=0.395386`, `ridge=0.393753`),

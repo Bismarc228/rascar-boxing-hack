@@ -39,8 +39,8 @@ candidate is worth spending one of the remaining attempts.
 | full yolo26x/yolo11s agreement | Public `0.10784`, already failed. |
 | crop-motion direct submit | Local gain is weak and source oracle contribution is marginal. |
 | temporal frozen RGB contact fixed-row branch | Union and attacker/opponent ViT-B clip smokes both regressed below the current best OOF source; no test CSV generated. |
-| candidate-level RGB contact raw-pose branch | Improves same-pool raw pose OOF, but best smoke score `0.359641` is far below current best `0.401483`; no test CSV generated. |
-| sequence-TCN + RGB contact bridge cap-400 | Medium OOF `0.388112`, below current best `0.401483`; no test CSV generated. |
+| candidate-level RGB contact raw-pose branch | Improves same-pool raw pose OOF, but best smoke score `0.359641` is far below current best `0.405200`; no test CSV generated. |
+| sequence-TCN + RGB contact bridge | Full pool-1800 A/B confirms RGB helps the sequence scorer (`0.386043 -> 0.391237`), but the final source is still below current best `0.405200`; no test CSV generated. |
 | sequence-TCN + audio contact bridge cap-400 | Medium OOF `0.379792`, below current best `0.405200`; no test CSV generated. |
 | deep crop per-video fighter identity calibration | ResNet50 crop remapping regressed even with oracle cluster mapping (`0.361655 -> 0.342864`); no test CSV generated. |
 | tracklet-appearance fighter identity alone | Positive but only micro-sized (`+0.000285` over current best, one OOF flip); no test CSV generated. |

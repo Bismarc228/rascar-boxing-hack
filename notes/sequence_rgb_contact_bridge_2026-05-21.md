@@ -90,7 +90,7 @@ that previously produced the strong local source, but add the cached RGB bridge:
 ```
 
 Stop unless the full OOF result approaches or beats the current best local
-source (`0.401483`). Do not create a test CSV or upload from the sanity smoke.
+source (`0.405200`). Do not create a test CSV or upload from the sanity smoke.
 
 ## Medium Run
 
@@ -164,7 +164,7 @@ macro_score=0.388112
 Within this medium run, RGB helps the sequence scorer: the best `rgb_alpha=0.0`
 configuration in the printed grid was `0.376648`, while `rgb_alpha=0.25`
 reached `0.388112`. The absolute score is still below the current best local
-source (`0.401483`) and below the postprocessed sequence-repeat branch, so this
+source (`0.405200`) and below the postprocessed sequence-repeat branch, so this
 does not justify generating a test CSV.
 
 ## Medium Decision
@@ -173,3 +173,82 @@ Do not promote the cap-400 RGB bridge branch. The bridge is technically working
 and RGB provides useful ranking signal inside a weaker sequence setup, but the
 OOF score is not close enough to the current best to spend more submissions or
 create a test artifact.
+
+## Full Pool-1800 A/B
+
+This run tested the full repeated sequence recipe with the RGB bridge as a
+minimal A/B: `rgb_alpha=0.0` versus `rgb_alpha=0.25`. It used GPU 1 via
+`CUDA_VISIBLE_DEVICES=1`.
+
+Command shape:
+
+```text
+HF_HUB_OFFLINE=1 CUDA_VISIBLE_DEVICES=1 PYTHONUNBUFFERED=1 .venv/bin/python tools/evaluate_pose_sequence_spotter.py \
+  --tracks-dir data/processed/pose_tracks/val_yolo26x_conf035 \
+  --witness-tracks-dirs data/processed/pose_tracks/val_yolo11s_conf035,data/processed/pose_tracks/val_yolo26l_conf035 \
+  --max-candidates-per-video 1800 \
+  --seeds 41,42,43 \
+  --epochs 8 \
+  --chunks-per-epoch 1600 \
+  --hidden 96 \
+  --layers 6 \
+  --threads 16 \
+  --thresholds 0.6 \
+  --nms-frames 10 \
+  --cross-nms-frames 2 \
+  --snap-windows 4 \
+  --count-modes root_count \
+  --count-multipliers 0.88 \
+  --pose-priors 0.0 \
+  --rgb-contact-feature-cache data/processed/rgb_features/seq_bridge_contact_vitb16_union_clip4_stride2_pool1800_ab.npz \
+  --rgb-contact-clip-len 4 \
+  --rgb-contact-frame-stride 2 \
+  --rgb-contact-crop-modes union \
+  --rgb-contact-epochs 12 \
+  --rgb-contact-hidden 128 \
+  --rgb-contact-blend-alphas 0.0,0.25 \
+  --top-k 20 \
+  --write-best-rows data/processed/validation_rows/seq_rgb_contact_bridge_pool1800_ab_oof.csv \
+  --quiet
+```
+
+Artifacts:
+
+```text
+logs/seq_rgb_contact_bridge_pool1800_ab_20260521.log
+data/processed/rgb_features/seq_bridge_contact_vitb16_union_clip4_stride2_pool1800_ab.npz
+data/processed/validation_rows/seq_rgb_contact_bridge_pool1800_ab_oof.csv
+```
+
+Feature/cache summary:
+
+```text
+ready=13
+rgb_contact_labels n=22691 pos=4520 pos_rate=0.1992 offset_mae=4.753
+rgb_contact_features shape=(22691, 4, 768)
+```
+
+Result:
+
+```text
+rgb_alpha=0.25 score=0.391237 time=0.538784 fp=0.079461 wins=11 n=1233
+rgb_alpha=0.0  score=0.386043 time=0.533637 fp=0.078862 wins=11 n=1226
+delta=+0.005194
+```
+
+Verification:
+
+```text
+.venv/bin/python tools/score_predictions.py \
+  --predictions data/processed/validation_rows/seq_rgb_contact_bridge_pool1800_ab_oof.csv \
+  --video-keys-from-predictions
+
+macro_score=0.391237
+```
+
+Decision:
+
+RGB is a real pre-NMS witness in this setup (`+0.005194` over the no-RGB A/B
+control), but the full pool-1800 row source is still below the continuation gate
+and far below the current best local OOF source (`0.405200`). Keep the cache and
+bridge as infrastructure; do not generate a test CSV or upload from this branch.
