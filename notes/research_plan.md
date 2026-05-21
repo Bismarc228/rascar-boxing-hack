@@ -87,6 +87,10 @@ Revised queue:
 7. Do not spend a submit just to test sequence `root_count=0.92` or `0.82` on
    `agn_038`. Their selected frames mostly overlap the public-good `0.88`
    variant, and the extra/missing events are not a clear breakthrough.
+8. `tools/evaluate_pose_sequence_spotter.py` can now write the best OOF rows
+   with `--write-best-rows`. A short GPU-1 smoke run (`CUDA_VISIBLE_DEVICES=1`,
+   1 epoch, 10 chunks) wrote `data/processed/validation_rows/_smoke_seq_rows.csv`;
+   this validates the export path, not model quality.
 
 ## Offline Work Before More Submits
 

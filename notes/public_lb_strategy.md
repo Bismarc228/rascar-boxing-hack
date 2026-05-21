@@ -104,6 +104,12 @@ The helper now has two output modes: `--row-mode sample` for fixed Kaggle
 submission rows and `--row-mode video_rows` for validation prediction rows.
 Both modes were smoke-tested on the `agn_038` sequence replacement.
 
+Sequence validation-row export is now wired in
+`tools/evaluate_pose_sequence_spotter.py` via `--write-best-rows`; a short
+GPU-1 smoke run confirmed it writes rows. The next non-submit validation step is
+to run a proper sequence OOF export, generate matching yolo26l-base validation
+rows, and score the gated hybrid locally.
+
 `root_count=0.92` and `root_count=0.82` sequence variants were checked through
 the same gate. They select essentially the same safe video set. On `agn_038`,
 `root_count=0.88` and `0.92` have `98.8%` of selected frames within 3 frames of

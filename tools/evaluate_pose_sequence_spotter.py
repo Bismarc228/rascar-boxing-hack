@@ -28,8 +28,8 @@ from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
 
-from rascar_boxing.constants import FPS
-from rascar_boxing.io import read_csv_rows
+from rascar_boxing.constants import FPS, SUBMISSION_COLUMNS
+from rascar_boxing.io import read_csv_rows, write_csv_rows
 from rascar_boxing.metric import score_predictions
 from rascar_boxing.pose_heuristic import (
     PoseHeuristicConfig,
@@ -114,6 +114,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pose-priors", default="0.0,0.1,0.2,0.4")
     parser.add_argument("--top-k", type=int, default=50)
     parser.add_argument("--quiet", action="store_true")
+    parser.add_argument("--write-best-rows", type=Path)
     return parser.parse_args()
 
 
@@ -338,8 +339,9 @@ def main() -> int:
             f"{result[4]},{result[5]},{result[6]},{result[7]},{result[8]},"
             f"{result[9]},{result[10]},{result[11]}"
         )
-    print_best_detail(
-        sorted(results, reverse=True)[0],
+    best_result = sorted(results, reverse=True)[0]
+    best_rows = build_result_rows(
+        best_result,
         ready_keys,
         video_by_key,
         scored_by_key,
@@ -347,9 +349,18 @@ def main() -> int:
         train_videos,
         train_counts,
         gt_counts,
-        gt,
         stream_scores_by_key_group,
     )
+    print_best_detail(
+        best_result,
+        ready_keys,
+        video_by_key,
+        gt,
+        best_rows,
+    )
+    if args.write_best_rows:
+        write_csv_rows(args.write_best_rows, best_rows, SUBMISSION_COLUMNS)
+        print(f"wrote_best_rows={args.write_best_rows}", flush=True)
     return 0
 
 
@@ -762,13 +773,8 @@ def print_best_detail(
     result: tuple[float, float, float, int, int, float, float, int, int, int, str, float],
     ready_keys: list[str],
     video_by_key: dict[str, dict[str, str]],
-    scored_by_key: dict[str, list[PunchCandidate]],
-    attr_priors: dict[str, object],
-    train_videos: list[dict[str, str]],
-    train_counts: Counter[str],
-    gt_counts: Counter[str],
     gt: list[dict[str, str]],
-    stream_scores_by_key_group: dict[tuple[str, int], np.ndarray],
+    rows: list[dict[str, str]],
 ) -> None:
     (
         _score,
@@ -784,27 +790,6 @@ def print_best_detail(
         count_mode,
         count_multiplier,
     ) = result
-    reranked = {
-        key: [apply_pose_prior(candidate, pose_prior) for candidate in candidates]
-        for key, candidates in scored_by_key.items()
-    }
-    rows = build_rows(
-        ready_keys,
-        video_by_key,
-        reranked,
-        attr_priors,
-        train_videos,
-        train_counts,
-        gt_counts,
-        threshold,
-        nms_frames,
-        cross_nms,
-        count_mode,
-        count_multiplier,
-        pose_prior=0.0,
-        snap_window=snap_window,
-        stream_scores_by_key_group=stream_scores_by_key_group,
-    )
     score = score_predictions(gt, rows)
     selected_counts = Counter(row["video_key"] for row in rows)
     print(
@@ -836,6 +821,54 @@ def print_best_detail(
             f"{item['score_time']:.6f},{item['fp_penalty']:.6f},{selected_counts[key]}",
             flush=True,
         )
+
+
+def build_result_rows(
+    result: tuple[float, float, float, int, int, float, float, int, int, int, str, float],
+    ready_keys: list[str],
+    video_by_key: dict[str, dict[str, str]],
+    scored_by_key: dict[str, list[PunchCandidate]],
+    attr_priors: dict[str, object],
+    train_videos: list[dict[str, str]],
+    train_counts: Counter[str],
+    gt_counts: Counter[str],
+    stream_scores_by_key_group: dict[tuple[str, int], np.ndarray],
+) -> list[dict[str, str]]:
+    (
+        _score,
+        _time,
+        _fp,
+        _wins,
+        _n_pred,
+        pose_prior,
+        threshold,
+        nms_frames,
+        cross_nms,
+        snap_window,
+        count_mode,
+        count_multiplier,
+    ) = result
+    reranked = {
+        key: [apply_pose_prior(candidate, pose_prior) for candidate in candidates]
+        for key, candidates in scored_by_key.items()
+    }
+    return build_rows(
+        ready_keys,
+        video_by_key,
+        reranked,
+        attr_priors,
+        train_videos,
+        train_counts,
+        gt_counts,
+        threshold,
+        nms_frames,
+        cross_nms,
+        count_mode,
+        count_multiplier,
+        pose_prior=0.0,
+        snap_window=snap_window,
+        stream_scores_by_key_group=stream_scores_by_key_group,
+    )
 
 
 def resolve_device(value: str) -> torch.device:
