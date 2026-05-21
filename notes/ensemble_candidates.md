@@ -36,6 +36,7 @@ today, only if offline evidence clearly beats the current public anchor.
 | audio onset features | Audio-only and hard snap are killed, but local onset max/distance can remain as weak features for a learned pose-dominant selector. | Do not generate audio-only rows or hard-shift selected frames to audio peaks. |
 | fighter identity visual embeddings | Existing HSV/bbox clustering and simple role/color flips failed; robust embeddings from pose-guided crops are still untested and independent from timing. | Keep only if fixed-timing validation improves fighter score without hurting time/count. |
 | candidate-level RGB contact | A first ViT-B/16 temporal clip smoke over a raw yolo26x pose candidate pool improves same-pool OOF `0.330787 -> 0.359641` and reduces FP penalty, so RGB has real pre-NMS signal. Absolute score remains far below the current best `0.401483`. | Do not submit as a raw-pose branch. Next useful test is adding RGB contact to sequence-TCN candidate scores before final NMS/count. |
+| sequence-TCN + RGB contact bridge | `tools/evaluate_pose_sequence_spotter.py` now has an optional RGB-contact blend before final selection. A tiny infrastructure smoke passed, but it used an intentionally undertrained sequence model and is not competitive evidence. | Run only with the full repeated sequence-TCN recipe and stop unless OOF approaches/beats `0.401483`. |
 
 ## Killed During Ensemble Audit
 

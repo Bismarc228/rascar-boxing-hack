@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import random
 import sys
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -40,6 +41,10 @@ from rascar_boxing.pose_heuristic import (
     select_candidates,
 )
 from tools.evaluate_pose_selection_variants import estimate_count, score_summary, video_wins
+from tools.evaluate_rgb_contact_clip import (
+    fit_oof_temporal_heads as fit_rgb_contact_heads,
+    load_or_extract_features as load_or_extract_rgb_contact_features,
+)
 
 
 GROUPS = [("red", "left"), ("red", "right"), ("blue", "left"), ("blue", "right")]
@@ -115,6 +120,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=50)
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--write-best-rows", type=Path)
+    parser.add_argument("--rgb-contact-feature-cache", type=Path)
+    parser.add_argument("--rgb-contact-model-name", default="vit_base_patch16_clip_224.openai")
+    parser.add_argument("--rgb-contact-image-size", type=int, default=224)
+    parser.add_argument("--rgb-contact-batch-size", type=int, default=96)
+    parser.add_argument("--rgb-contact-clip-len", type=int, default=4)
+    parser.add_argument("--rgb-contact-frame-stride", type=int, default=2)
+    parser.add_argument("--rgb-contact-crop-modes", default="union")
+    parser.add_argument("--rgb-contact-crop-expand", type=float, default=0.16)
+    parser.add_argument("--rgb-contact-decode-mode", choices=["sequential", "seek"], default="sequential")
+    parser.add_argument("--rgb-contact-epochs", type=int, default=12)
+    parser.add_argument("--rgb-contact-head-batch-size", type=int, default=256)
+    parser.add_argument("--rgb-contact-hidden", type=int, default=128)
+    parser.add_argument("--rgb-contact-dropout", type=float, default=0.15)
+    parser.add_argument("--rgb-contact-lr", type=float, default=2e-3)
+    parser.add_argument("--rgb-contact-weight-decay", type=float, default=2e-3)
+    parser.add_argument("--rgb-contact-offset-loss-weight", type=float, default=0.10)
+    parser.add_argument("--rgb-contact-offset-scale", type=float, default=12.0)
+    parser.add_argument("--rgb-contact-label-window", type=int, default=12)
+    parser.add_argument("--rgb-contact-blend-alphas", default="0.0")
     return parser.parse_args()
 
 
@@ -244,6 +268,15 @@ def main() -> int:
     if set(scored_by_key) != set(ready_keys):
         print(f"Missing OOF predictions for {sorted(set(ready_keys) - set(scored_by_key))}")
         return 2
+    rgb_contact_by_key = None
+    if args.rgb_contact_feature_cache:
+        rgb_contact_by_key = compute_rgb_contact_probabilities(
+            args,
+            ready_keys,
+            video_by_key,
+            packs,
+            gt_by_key,
+        )
 
     train_gt = [row for row in clear_gt if row["video_key"] not in set(ready_keys)]
     gt = [row for row in clear_gt if row["video_key"] in set(ready_keys)]
@@ -282,62 +315,66 @@ def main() -> int:
     pose_priors = parse_floats(args.pose_priors)
 
     for pose_prior in pose_priors:
-        reranked = {
+        pose_reranked = {
             key: [apply_pose_prior(candidate, pose_prior) for candidate in candidates]
             for key, candidates in scored_by_key.items()
         }
-        for threshold in thresholds:
-            for nms_frames in nms_values:
-                for cross_nms in cross_values:
-                    for snap_window in snap_windows:
-                        for count_mode in count_modes:
-                            mode_multipliers = [1.0] if count_mode == "threshold" else multipliers
-                            for count_multiplier in mode_multipliers:
-                                rows = build_rows(
-                                    ready_keys,
-                                    video_by_key,
-                                    reranked,
-                                    attr_priors,
-                                    train_videos,
-                                    train_counts,
-                                    gt_counts,
-                                    threshold,
-                                    nms_frames,
-                                    cross_nms,
-                                    count_mode,
-                                    count_multiplier,
-                                    pose_prior=0.0,
-                                    snap_window=snap_window,
-                                    stream_scores_by_key_group=stream_scores_by_key_group,
-                                )
-                                score = score_predictions(gt, rows)
-                                summary = score_summary(score)
-                                results.append(
-                                    (
-                                        score["macro_score"],
-                                        summary["time"],
-                                        summary["fp_penalty"],
-                                        video_wins(score, baseline_score),
-                                        len(rows),
-                                        pose_prior,
+        rgb_alphas = [0.0] if rgb_contact_by_key is None else parse_floats(args.rgb_contact_blend_alphas)
+        for rgb_alpha in rgb_alphas:
+            reranked = apply_rgb_contact_prior(pose_reranked, rgb_contact_by_key, rgb_alpha)
+            for threshold in thresholds:
+                for nms_frames in nms_values:
+                    for cross_nms in cross_values:
+                        for snap_window in snap_windows:
+                            for count_mode in count_modes:
+                                mode_multipliers = [1.0] if count_mode == "threshold" else multipliers
+                                for count_multiplier in mode_multipliers:
+                                    rows = build_rows(
+                                        ready_keys,
+                                        video_by_key,
+                                        reranked,
+                                        attr_priors,
+                                        train_videos,
+                                        train_counts,
+                                        gt_counts,
                                         threshold,
                                         nms_frames,
                                         cross_nms,
-                                        snap_window,
                                         count_mode,
                                         count_multiplier,
+                                        pose_prior=0.0,
+                                        snap_window=snap_window,
+                                        stream_scores_by_key_group=stream_scores_by_key_group,
                                     )
-                                )
+                                    score = score_predictions(gt, rows)
+                                    summary = score_summary(score)
+                                    results.append(
+                                        (
+                                            score["macro_score"],
+                                            summary["time"],
+                                            summary["fp_penalty"],
+                                            video_wins(score, baseline_score),
+                                            len(rows),
+                                            pose_prior,
+                                            rgb_alpha,
+                                            threshold,
+                                            nms_frames,
+                                            cross_nms,
+                                            snap_window,
+                                            count_mode,
+                                            count_multiplier,
+                                        )
+                                    )
 
     print(
-        "score,time,fp_penalty,wins,n_pred,pose_prior,threshold,nms,cross_nms,snap_window,"
+        "score,time,fp_penalty,wins,n_pred,pose_prior,rgb_alpha,threshold,nms,cross_nms,snap_window,"
         "count_mode,count_multiplier"
     )
     for result in sorted(results, reverse=True)[: args.top_k]:
         print(
             f"{result[0]:.6f},{result[1]:.6f},{result[2]:.6f},{result[3]},"
             f"{result[4]},{result[5]},{result[6]},{result[7]},{result[8]},"
-            f"{result[9]},{result[10]},{result[11]}"
+            f"{result[9]},{result[10]},{result[11]},{result[12]}"
         )
     best_result = sorted(results, reverse=True)[0]
     best_rows = build_result_rows(
@@ -350,6 +387,7 @@ def main() -> int:
         train_counts,
         gt_counts,
         stream_scores_by_key_group,
+        rgb_contact_by_key,
     )
     print_best_detail(
         best_result,
@@ -770,7 +808,7 @@ def print_score(label: str, score: dict[str, object], n_rows: int, wins: int) ->
 
 
 def print_best_detail(
-    result: tuple[float, float, float, int, int, float, float, int, int, int, str, float],
+    result: tuple[float, float, float, int, int, float, float, float, int, int, int, str, float],
     ready_keys: list[str],
     video_by_key: dict[str, dict[str, str]],
     gt: list[dict[str, str]],
@@ -783,6 +821,7 @@ def print_best_detail(
         _wins,
         _n_pred,
         pose_prior,
+        rgb_alpha,
         threshold,
         nms_frames,
         cross_nms,
@@ -794,7 +833,7 @@ def print_best_detail(
     selected_counts = Counter(row["video_key"] for row in rows)
     print(
         "best_detail: "
-        f"score={score['macro_score']:.6f},pose_prior={pose_prior},threshold={threshold},"
+        f"score={score['macro_score']:.6f},pose_prior={pose_prior},rgb_alpha={rgb_alpha},threshold={threshold},"
         f"nms={nms_frames},cross_nms={cross_nms},count_mode={count_mode},"
         f"count_multiplier={count_multiplier},snap_window={snap_window},n={len(rows)}",
         flush=True,
@@ -824,7 +863,7 @@ def print_best_detail(
 
 
 def build_result_rows(
-    result: tuple[float, float, float, int, int, float, float, int, int, int, str, float],
+    result: tuple[float, float, float, int, int, float, float, float, int, int, int, str, float],
     ready_keys: list[str],
     video_by_key: dict[str, dict[str, str]],
     scored_by_key: dict[str, list[PunchCandidate]],
@@ -833,6 +872,7 @@ def build_result_rows(
     train_counts: Counter[str],
     gt_counts: Counter[str],
     stream_scores_by_key_group: dict[tuple[str, int], np.ndarray],
+    rgb_contact_by_key: dict[str, np.ndarray] | None,
 ) -> list[dict[str, str]]:
     (
         _score,
@@ -841,6 +881,7 @@ def build_result_rows(
         _wins,
         _n_pred,
         pose_prior,
+        rgb_alpha,
         threshold,
         nms_frames,
         cross_nms,
@@ -852,6 +893,7 @@ def build_result_rows(
         key: [apply_pose_prior(candidate, pose_prior) for candidate in candidates]
         for key, candidates in scored_by_key.items()
     }
+    reranked = apply_rgb_contact_prior(reranked, rgb_contact_by_key, rgb_alpha)
     return build_rows(
         ready_keys,
         video_by_key,
@@ -869,6 +911,151 @@ def build_result_rows(
         snap_window=snap_window,
         stream_scores_by_key_group=stream_scores_by_key_group,
     )
+
+
+def compute_rgb_contact_probabilities(
+    args: argparse.Namespace,
+    ready_keys: list[str],
+    video_by_key: dict[str, dict[str, str]],
+    packs: dict[str, VideoPack],
+    gt_by_key: dict[str, list[dict[str, str]]],
+) -> dict[str, np.ndarray]:
+    candidates = [candidate for key in ready_keys for candidate in packs[key].candidates]
+    rows = rgb_candidate_feature_rows(candidates, video_by_key)
+    labels, offsets = rgb_candidate_labels_offsets(candidates, gt_by_key, args.rgb_contact_label_window)
+    groups = np.asarray([fight_group(video_by_key[candidate.video_key]) for candidate in candidates])
+    rgb_args = SimpleNamespace(
+        data_root=args.data_root,
+        tracks_dir=args.tracks_dir,
+        feature_cache=args.rgb_contact_feature_cache,
+        model_name=args.rgb_contact_model_name,
+        pretrained=True,
+        device=args.device,
+        image_size=args.rgb_contact_image_size,
+        batch_size=args.rgb_contact_batch_size,
+        clip_len=args.rgb_contact_clip_len,
+        frame_stride=args.rgb_contact_frame_stride,
+        crop_modes=args.rgb_contact_crop_modes,
+        crop_expand=args.rgb_contact_crop_expand,
+        decode_mode=args.rgb_contact_decode_mode,
+        epochs=args.rgb_contact_epochs,
+        head_batch_size=args.rgb_contact_head_batch_size,
+        hidden=args.rgb_contact_hidden,
+        dropout=args.rgb_contact_dropout,
+        lr=args.rgb_contact_lr,
+        weight_decay=args.rgb_contact_weight_decay,
+        offset_loss_weight=args.rgb_contact_offset_loss_weight,
+        offset_scale=args.rgb_contact_offset_scale,
+        seed=args.seed + 777,
+        quiet=args.quiet,
+    )
+    print(
+        f"rgb_contact_labels n={len(candidates)} pos={int(labels.sum())} "
+        f"pos_rate={float(labels.mean()):.4f} offset_mae={float(np.nanmean(np.abs(offsets))):.3f}",
+        flush=True,
+    )
+    features = load_or_extract_rgb_contact_features(rgb_args, rows, video_by_key)
+    if len(features) != len(candidates):
+        raise ValueError(f"RGB feature count {len(features)} != candidate count {len(candidates)}")
+    print(f"rgb_contact_features shape={features.shape}", flush=True)
+    probabilities, _pred_offsets = fit_rgb_contact_heads(rgb_args, features, labels, offsets, groups)
+    output = {}
+    offset = 0
+    print("rgb_contact_video,video_key,n,pos_rate,mean_p,pos_mean_p,neg_mean_p", flush=True)
+    for key in ready_keys:
+        n_items = len(packs[key].candidates)
+        current = probabilities[offset : offset + n_items]
+        y = labels[offset : offset + n_items]
+        output[key] = current
+        pos_p = current[y > 0.5]
+        neg_p = current[y <= 0.5]
+        print(
+            f"rgb_contact_video,{key},{n_items},{float(y.mean()):.4f},"
+            f"{float(current.mean()):.4f},"
+            f"{float(pos_p.mean()) if len(pos_p) else 0.0:.4f},"
+            f"{float(neg_p.mean()) if len(neg_p) else 0.0:.4f}",
+            flush=True,
+        )
+        offset += n_items
+    return output
+
+
+def rgb_candidate_feature_rows(
+    candidates: list[PunchCandidate],
+    video_by_key: dict[str, dict[str, str]],
+) -> list[dict[str, str]]:
+    rows = []
+    for index, candidate in enumerate(candidates, start=1):
+        video = video_by_key[candidate.video_key]
+        rows.append(
+            {
+                "id": str(index),
+                "video_id": video["video_id"],
+                "agn_index": video["agn_index"],
+                "video_key": candidate.video_key,
+                "frame": str(candidate.frame),
+                "fighter": candidate.fighter,
+                "hand": candidate.hand,
+                "target": candidate.target,
+                "punch_type": "",
+                "effectiveness": "",
+                "clear": "true",
+            }
+        )
+    return rows
+
+
+def rgb_candidate_labels_offsets(
+    candidates: list[PunchCandidate],
+    gt_by_key: dict[str, list[dict[str, str]]],
+    window: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    labels = np.zeros(len(candidates), dtype=np.float32)
+    offsets = np.full(len(candidates), np.nan, dtype=np.float32)
+    for index, candidate in enumerate(candidates):
+        best: tuple[int, dict[str, str]] | None = None
+        for row in gt_by_key.get(candidate.video_key, []):
+            if row["fighter"] != candidate.fighter or row["hand"] != candidate.hand:
+                continue
+            distance = abs(candidate.frame - int(row["frame"]))
+            if best is None or distance < best[0]:
+                best = (distance, row)
+        if best is not None and best[0] <= window:
+            labels[index] = 1.0
+            offsets[index] = float(int(best[1]["frame"]) - candidate.frame)
+    return labels, offsets
+
+
+def apply_rgb_contact_prior(
+    candidates_by_key: dict[str, list[PunchCandidate]],
+    rgb_contact_by_key: dict[str, np.ndarray] | None,
+    alpha: float,
+) -> dict[str, list[PunchCandidate]]:
+    if rgb_contact_by_key is None or alpha == 0.0:
+        return candidates_by_key
+    all_probs = np.concatenate([rgb_contact_by_key[key] for key in sorted(rgb_contact_by_key)])
+    mean_prob = float(all_probs.mean()) if len(all_probs) else 0.0
+    output = {}
+    for key, candidates in candidates_by_key.items():
+        probs = rgb_contact_by_key[key]
+        rows = []
+        for candidate, probability in zip(candidates, probs):
+            score = candidate.score * max(0.01, 1.0 + alpha * (float(probability) - mean_prob))
+            features = dict(candidate.features)
+            features["rgb_contact_prob"] = float(probability)
+            rows.append(
+                PunchCandidate(
+                    candidate.video_key,
+                    candidate.frame,
+                    candidate.fighter,
+                    candidate.hand,
+                    candidate.target,
+                    float(score),
+                    features,
+                )
+            )
+        output[key] = rows
+    return output
 
 
 def resolve_device(value: str) -> torch.device:

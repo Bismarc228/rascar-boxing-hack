@@ -147,6 +147,11 @@ next visible score   public=0.04481
   but remains far below the current best local source (`0.401483`). This keeps
   RGB contact alive as an auxiliary pre-NMS signal, but not as a direct
   raw-pose row source.
+- An optional RGB-contact bridge was added to `tools/evaluate_pose_sequence_spotter.py`
+  so RGB contact can be blended into sequence-TCN candidate scores before final
+  NMS/count. A short infrastructure smoke passed (`rgb_alpha=1.0` scored
+  `0.312313` vs `0.309016` for `rgb_alpha=0.0` under a deliberately undertrained
+  sequence model), but this is not yet a competitive OOF run.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is
