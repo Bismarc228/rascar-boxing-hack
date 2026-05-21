@@ -170,6 +170,9 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   Default thresholds select `agn_038,agn_047,agn_062,agn_063` and reject the
   risky equal-count rewrites. The resulting gated CSV validates locally but is
   not a public-submit breakthrough by itself.
+- The gate also explains the yolo26x agreement public failure on `agn_038`:
+  agreement adds `+30..34` rows there and is rejected by count delta before
+  considering timing. Keep yolo26x agreement out of the submit queue.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,

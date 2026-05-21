@@ -102,6 +102,11 @@ the same gate. They select essentially the same safe video set. On `agn_038`,
 each other; `0.92` mainly adds a couple of extra far events. This is not enough
 evidence to spend one of the two remaining submits.
 
+The same gate also rejects yolo26x agreement on `agn_038` because it adds too
+many rows there (`+34` for yolo26x+yolo11s, `+30` for yolo26x+yolo26l). This
+matches the public failure of the `agn_038` agreement hybrid (`0.12888`), so
+there is no gated yolo26x public candidate right now.
+
 ## Local Base-vs-Sequence Diff
 
 Rough nearest-frame comparison between yolo26l public base and sequence snap4
