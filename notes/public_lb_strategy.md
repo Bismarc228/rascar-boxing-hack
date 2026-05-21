@@ -13,6 +13,10 @@ Current public best:
 The root-level `submission.csv` is currently copied from this public-best file
 and passes `tools/validate_data.py`.
 
+Leaderboard check at `2026-05-21T00:40Z`: team `Los Pollos Hermanos` is listed
+with score `0.16461`; the next visible public score is `0.04481`. This supports
+holding the remaining attempts instead of probing blindly.
+
 This is a hybrid of the old public anchor plus sequence-TCN snap4 predictions
 only for `agn_038`. It beats the previous yolo26l public anchor:
 

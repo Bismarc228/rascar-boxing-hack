@@ -31,6 +31,8 @@ sequence and yolo26x agreement do not transfer. Adding `agn_037` sequence rows
 erases the `agn_038` gain even though selected count is unchanged (`52`), so
 the failure is likely timing/identity/attribute movement rather than count.
 No more uploads unless a candidate has a concrete reason to beat `0.16461`.
+Leaderboard check at `2026-05-21T00:40Z` lists team `Los Pollos Hermanos` at
+`0.16461`, ahead of the next visible `0.04481` score.
 
 Compact chronology and rationale for the path so far is recorded in
 `notes/experiment_path_summary_2026-05-20.md`.
