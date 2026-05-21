@@ -31,10 +31,10 @@ remaining gaps.
   exchange-side micro-source raises it only to `0.422744`. Learned source
   policies and stumps still fail to convert that oracle headroom into a robust
   OOF gain.
-- Retesting the source table with the latest `audio_tracklet` and full RGB
-  bridge rows raises oracle headroom further to `0.429550`, but fight-level
-  selectors still stay below that single-source base (`stumps=0.396653`,
-  `hgb=0.403028` vs `audio_tracklet=0.405200`).
+- Retesting the source table with the latest `rgb_eff`, `audio_tracklet`, and
+  full RGB bridge rows raises oracle headroom to `0.429715`, but fight-level
+  selectors still stay below the best single source (`stumps=0.396887`,
+  `hgb=0.403410` vs `rgb_eff=0.406345`).
 - Sequence audio-contact bridge infrastructure is implemented in
   `tools/evaluate_pose_sequence_spotter.py`, but the medium cap-400 run reached
   only `0.379792`; no test CSV was generated from that branch.
@@ -169,9 +169,10 @@ next visible score   public=0.04481
 - Audio source-oracle headroom is real (`0.422619`, or `0.422744` with the
   exchange-side source), but current fight-level policies/stumps do not exploit
   it out of sample.
-- The latest source-oracle retest with `audio_tracklet` and full RGB bridge rows
-  reaches `0.429550`; however, group OOF stumps regress to `0.396653` and learned
-  policies top out at `0.403028`, so this remains diagnostic headroom only.
+- The latest source-oracle retest with `rgb_eff`, `audio_tracklet`, and full RGB
+  bridge rows reaches `0.429715`; however, group OOF stumps regress to `0.396887`
+  and learned policies top out at `0.403410`, so this remains diagnostic
+  headroom only.
 - The new audio-contact bridge is infrastructure, not a candidate yet: cap-400
   medium scored `0.379792`, below the current best. Future work should focus on
   per-video sync/latency, better candidate pools, and full validation rather
@@ -268,9 +269,9 @@ next visible score   public=0.04481
   raise per-video oracle headroom to `0.420937`, but existing fight-level source
   policies still fail to exploit it (`mean_global=0.395386`, `ridge=0.393753`),
   below simply using the best single source.
-- Updating that source-policy audit with `audio_tracklet` and `rgb_full` raises
-  oracle headroom to `0.429550`, but policy OOF remains below its
-  `audio_tracklet` base (`hgb=0.403028` vs `0.405200`).
+- Updating that source-policy audit with `rgb_eff`, `audio_tracklet`, and
+  `rgb_full` raises oracle headroom to `0.429715`, but policy OOF remains below
+  base (`hgb=0.403410` vs `0.406345`).
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is

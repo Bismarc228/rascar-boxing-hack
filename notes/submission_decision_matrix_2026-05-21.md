@@ -46,7 +46,7 @@ candidate is worth spending one of the remaining attempts.
 | deep crop per-video fighter identity calibration | ResNet50 crop remapping regressed even with oracle cluster mapping (`0.361655 -> 0.342864`); no test CSV generated. |
 | tracklet-appearance fighter identity alone | Positive but only micro-sized (`+0.000285` over current best, one OOF flip); no test CSV generated. |
 | learned exchange-side fighter flip | Best OOF `0.401720` is only `+0.000236` over current best; no test CSV generated. |
-| automatic row-source policy with RGB/audio/tracklet sources | Oracle headroom is high (`0.429550`), but current policies stay below the `audio_tracklet` base (`hgb=0.403028` vs `0.405200`); no test CSV generated. |
+| automatic row-source policy with RGB/audio/tracklet sources | Oracle headroom is high (`0.429715`), but current policies stay below the best single source (`hgb=0.403410` vs `0.406345`); no test CSV generated. |
 
 ## Current Recommendation
 

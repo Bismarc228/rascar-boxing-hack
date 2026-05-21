@@ -3,7 +3,7 @@
 Goal: retest source-oracle and automatic fight-level source selection after the
 latest saved row sources:
 
-- `audio_tracklet`: current best local OOF source at `0.405200`.
+- `audio_tracklet`: then-best local OOF source at `0.405200`.
 - `rgb_full`: full pool-1800 RGB bridge A/B rows at `0.391237`.
 - older sequence, attribute, yolo26l, exchange, and RGB cap-400 sources.
 
@@ -74,7 +74,8 @@ Generated:
 data/processed/diagnostics/source_table_current_audio_tracklet_rgbfull_20260521.csv
 ```
 
-Table summary confirmed `audio_tracklet=0.405200` as the best mean source.
+Table summary confirmed `audio_tracklet=0.405200` as the best mean source at
+that stage.
 Several weak global sources still win individual videos against the base, which
 explains the oracle headroom.
 
@@ -135,3 +136,49 @@ sources is killed as a submit path. The oracle headroom is real, but the present
 fight-level features do not recover it out of sample. Keep `rgb_full` and
 `old_attr` as diagnostic sources only; any future source selector needs new
 out-of-sample features, not another threshold sweep on this table.
+
+## RGB Effectiveness Follow-Up
+
+After the RGB fixed-row effectiveness witness became the best single source:
+
+```text
+rgb_eff=data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_oof.csv
+score=0.406345
+```
+
+Re-running the same source audit with `rgb_eff` as the base gives:
+
+```text
+source_oracle=0.429715
+delta_vs_rgb_eff=+0.023370
+```
+
+Best pairwise oracles:
+
+```text
+old_attr    0.417202  +0.010856
+rgb_full    0.416243  +0.009898
+yolo26l     0.413454  +0.007108
+rgb_cap400  0.410862  +0.004516
+seq_motion  0.410255  +0.003909
+```
+
+Generated updated diagnostic table:
+
+```text
+data/processed/diagnostics/source_table_current_rgb_eff_20260521.csv
+```
+
+Selectors still fail:
+
+```text
+stumps_oof  0.396887
+mean_global 0.406345
+ridge       0.403028
+hgb         0.403410
+base        0.406345
+```
+
+Decision update: the new RGB effectiveness source raises the base and leaves
+oracle headroom, but current fight-level source selection remains below the best
+single source. Do not create a source-policy test CSV or upload.
