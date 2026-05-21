@@ -78,6 +78,10 @@ Revised queue:
 5. Do not submit full yolo26x agreement, full sequence-TCN, or sequence
    `root_count=0.92/0.82` unless a video-local gate first explains public
    transfer.
+6. Use `tools/gate_submission_hybrid.py` for any future video-local sequence
+   hybrid. The first default gate selected `agn_038,agn_047,agn_062,agn_063`
+   and rejected `agn_037,agn_039,agn_048,agn_049,agn_064`; the generated gated
+   CSV is validated but not submitted.
 
 ## Offline Work Before More Submits
 

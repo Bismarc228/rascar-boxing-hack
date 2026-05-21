@@ -166,6 +166,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   `agn_038` has `85%` of base events within 15 frames of a sequence event, but
   `agn_037` only `42%`. `agn_048` and `agn_049` look similarly risky; `agn_039`
   and `agn_064` have large timing tails. Do not submit those blind hybrids.
+- `tools/gate_submission_hybrid.py` now turns this into a reproducible gate.
+  Default thresholds select `agn_038,agn_047,agn_062,agn_063` and reject the
+  risky equal-count rewrites. The resulting gated CSV validates locally but is
+  not a public-submit breakthrough by itself.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,

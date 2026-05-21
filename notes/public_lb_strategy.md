@@ -73,6 +73,26 @@ A new submit must satisfy all of:
 5. Keep full sequence and yolo26x agreement as offline research artifacts, not
    submission candidates.
 
+Implemented helper: `tools/gate_submission_hybrid.py`. With default gates
+(`count_delta<=20`, base/override `<=15f` overlap at least `0.80`, median gap
+at most `15f`), it selects only:
+
+```text
+agn_038,agn_047,agn_062,agn_063
+```
+
+It rejects:
+
+```text
+agn_037,agn_039,agn_048,agn_049,agn_064
+```
+
+The generated local candidate
+`submissions/hybrid_yolo26l_best_seq_tcn_snap4_gated_local_OFFLINE_CANDIDATE.csv`
+passes validation, but is not a submit candidate yet. Public already showed
+`agn_047/062/063` are neutral when added individually, so this is a possible
+private-risk candidate, not a public breakthrough.
+
 ## Local Base-vs-Sequence Diff
 
 Rough nearest-frame comparison between yolo26l public base and sequence snap4
