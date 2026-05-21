@@ -7,12 +7,12 @@ remaining gaps.
 ## Latest Addendum - 2026-05-21
 
 - Current best local OOF source is
-  `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_oof.csv`
-  at `0.406345`.
+  `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_margin02_oof.csv`
+  at `0.407232`.
 - The RGB fixed-row attribute witness improves only `effectiveness` on top of the
-  previous `audio_tracklet` best (`0.405200 -> 0.406345`). It uses cached ViT-B/16
-  clip features, changes 566 validation effectiveness labels, and has no test CSV
-  or upload approval.
+  previous `audio_tracklet` best (`0.405200 -> 0.407232`) with confidence margin
+  `0.2`. It uses cached ViT-B/16 clip features, changes 367 validation
+  effectiveness labels, and has no test CSV or upload approval.
 - The first useful audio result is the fixed-row pose+audio gate:
   `0.401483 -> 0.404479`. Audio-only was neutral, pose-only was only
   `0.401999`, so the saved gain requires the learned pose+audio interaction.
@@ -31,10 +31,11 @@ remaining gaps.
   exchange-side micro-source raises it only to `0.422744`. Learned source
   policies and stumps still fail to convert that oracle headroom into a robust
   OOF gain.
-- Retesting the source table with the latest `rgb_eff`, `audio_tracklet`, and
-  full RGB bridge rows raises oracle headroom to `0.429715`, but fight-level
-  selectors still stay below the best single source (`stumps=0.396887`,
-  `hgb=0.403410` vs `rgb_eff=0.406345`).
+- Retesting the source table with the latest `rgb_eff_m02`, `rgb_eff`,
+  `audio_tracklet`, and full RGB bridge rows raises oracle headroom to `0.430014`,
+  but fight-level
+  selectors still stay below the best single source (`stumps=0.397342`,
+  `hgb=0.404206` vs `rgb_eff_m02=0.407232`).
 - Sequence audio-contact bridge infrastructure is implemented in
   `tools/evaluate_pose_sequence_spotter.py`, but the medium cap-400 run reached
   only `0.379792`; no test CSV was generated from that branch.
@@ -59,7 +60,7 @@ remaining gaps.
 | Use Kaggle submissions/leaderboard | `notes/public_lb_strategy.md` and `EXPERIMENTS.md` record public submissions, current best `0.16461`, and leaderboard check. | Done |
 | Improve public score | Public moved from `0.00000` baselines to `0.16461` with `hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088`. | Done |
 | Respect GPU 0 constraint | GPU work was run with `CUDA_VISIBLE_DEVICES=1`; GPU UUID check confirmed physical GPU 1 (`GPU-ff3c1fe8...`). | Done |
-| Punch timing improvements | Larger pose models, sequence TCN snap4, video-local gates, crop-motion, and fixed-row pose+audio gating are implemented and validated. Current best local OOF is `0.406345`, though the latest lift is attribute-only. | Strong progress |
+| Punch timing improvements | Larger pose models, sequence TCN snap4, video-local gates, crop-motion, and fixed-row pose+audio gating are implemented and validated. Current best local OOF is `0.407232`, though the latest lift is attribute-only. | Strong progress |
 | Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, ResNet50 crop clustering, and unsupervised deep crop cluster remapping are killed. Exchange-side and tracklet-appearance identity are saved as micro-signals (`0.404479 -> 0.405200` together), but no robust identity fix exists yet. | Open |
 | Audio/video feature research | Audio-only, hard snap, direct audio rescore, and fixed-row frozen RGB contact are killed. Fixed-row pose+audio gating is positive; sequence audio/RGB contact bridges help their own weaker settings but are still below the best source. Cached RGB clip features now add a small fixed-row effectiveness gain. | Partially explored |
 | Submission budget control | Current rule: no default uploads, at most two more attempts today, only for a clear reason above public `0.16461`. | Active guardrail |
@@ -70,6 +71,9 @@ remaining gaps.
 - Public-best source:
   `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv`.
 - Current best local OOF rows:
+  `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_margin02_oof.csv`
+  (`0.407232`).
+- Previous ungated RGB effectiveness rows:
   `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_oof.csv`
   (`0.406345`).
 - Previous local best identity source rows:
@@ -146,7 +150,7 @@ next visible score   public=0.04481
 
 - The current best local OOF source is now the audio-gate exchange-side plus
   tracklet-appearance source with RGB fixed-row effectiveness replacement
-  (`0.406345`), but the latest gain is small and attribute-only. The public-best
+  (`0.407232`), but the latest gain is small and attribute-only. The public-best
   root remains `0.16461`, and full sequence-derived branches have prior
   public-transfer risk.
 - Fixed-row pose+audio gating is the strongest new independent signal
@@ -158,8 +162,9 @@ next visible score   public=0.04481
   `hand_target=0.405045` versus the `0.405200` baseline.
 - A new RGB fixed-row attribute witness using cached ViT-B/16 clip features
   improves the previous best only through `effectiveness`
-  (`0.405200 -> 0.406345`). It is saved as an OOF diagnostic/source but has no
-  test artifact and should not drive an upload alone.
+  (`0.405200 -> 0.407232` with confidence margin `0.2`). It is saved as an OOF
+  diagnostic/source but has no test artifact and should not drive an upload
+  alone.
 - Exchange-side fighter identity remains a micro-signal only
   (`0.404479 -> 0.404915`). It is useful for a later ensemble, not for a solo
   upload.
@@ -169,17 +174,17 @@ next visible score   public=0.04481
 - Audio source-oracle headroom is real (`0.422619`, or `0.422744` with the
   exchange-side source), but current fight-level policies/stumps do not exploit
   it out of sample.
-- The latest source-oracle retest with `rgb_eff`, `audio_tracklet`, and full RGB
-  bridge rows reaches `0.429715`; however, group OOF stumps regress to `0.396887`
-  and learned policies top out at `0.403410`, so this remains diagnostic
-  headroom only.
+- The latest source-oracle retest with `rgb_eff_m02`, `rgb_eff`,
+  `audio_tracklet`, and full RGB bridge rows reaches `0.430014`; however, group
+  OOF stumps regress to `0.397342` and learned policies top out at `0.404206`,
+  so this remains diagnostic headroom only.
 - The new audio-contact bridge is infrastructure, not a candidate yet: cap-400
   medium scored `0.379792`, below the current best. Future work should focus on
   per-video sync/latency, better candidate pools, and full validation rather
   than audio-only or global-offset submissions.
 - The sequence RGB-contact bridge is also infrastructure, not a candidate. A
   full pool-1800 A/B improved its own no-RGB control (`0.386043 -> 0.391237`),
-  but stayed far below the current best `0.406345`; no test CSV was generated.
+  but stayed far below the current best `0.407232`; no test CSV was generated.
 - Deep crop identity calibration is killed for the current unsupervised mapping
   design because ResNet50 crop remapping regressed even with oracle cluster
   assignment.
@@ -254,7 +259,7 @@ next visible score   public=0.04481
 - Candidate-level RGB contact was tested before final NMS on a bounded raw
   yolo26x pose pool. It improves the same-pool pose baseline
   (`0.330787 -> 0.359641`) and reduces FP penalty (`0.156681 -> 0.110506`),
-  but remains far below the current best local source (`0.406345`). This keeps
+  but remains far below the current best local source (`0.407232`). This keeps
   RGB contact alive as an auxiliary pre-NMS signal, but not as a direct
   raw-pose row source.
 - An optional RGB-contact bridge was added to `tools/evaluate_pose_sequence_spotter.py`
@@ -264,7 +269,7 @@ next visible score   public=0.04481
   sequence model). A medium cap-400 run with two seeds reached `0.388112`;
   full pool-1800 A/B reached `0.391237` with `rgb_alpha=0.25` versus `0.386043`
   for `rgb_alpha=0.0`. RGB helped both weaker sequence setups, but absolute OOF
-  stayed below the current best `0.406345`, so no test CSV was generated.
+  stayed below the current best `0.407232`, so no test CSV was generated.
 - New source-oracle diagnostics with `exchange_side` and `seq_bridge_cap400`
   raise per-video oracle headroom to `0.420937`, but existing fight-level source
   policies still fail to exploit it (`mean_global=0.395386`, `ridge=0.393753`),
@@ -272,6 +277,8 @@ next visible score   public=0.04481
 - Updating that source-policy audit with `rgb_eff`, `audio_tracklet`, and
   `rgb_full` raises oracle headroom to `0.429715`, but policy OOF remains below
   base (`hgb=0.403410` vs `0.406345`).
+- Updating again with `rgb_eff_m02` raises oracle headroom to `0.430014`, but
+  policy OOF remains below base (`hgb=0.404206` vs `0.407232`).
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is

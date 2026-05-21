@@ -28,7 +28,7 @@ candidate is worth spending one of the remaining attempts.
 | fixed-row audio gate on root no-`agn_038` splice | Same audio gate applied to the conservative root splice with `agn_038` protected; validates and drops 21 clear rows (`733 -> 712`). | `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_gate_noagn038_OFFLINE_CANDIDATE.csv` | Public-sensitive `agn_038` preserved, but this still changes private-risk sequence splice videos and has no direct public evidence. | Safer audio-gate artifact for future explicitly approved private-risk upload; do not auto-submit. |
 | audio-gate exchange-side identity micro | OOF gain is tiny (`0.404479 -> 0.404915`); generated full and protected test artifacts both validate and change only 11 fighter labels. | `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_OFFLINE_CANDIDATE.csv`; `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_exchange_side_noagn038_OFFLINE_CANDIDATE.csv` | Too small to justify an upload alone; useful only as a future ensemble/private-risk micro-signal. | Save; no automatic upload. |
 | tracklet-appearance fighter identity micro | OOF improves the audio-gate exchange-side source only `0.404915 -> 0.405200`, changing one validation fighter label. | No test CSV generated. | Useful as an ensemble diagnostic, but one-row validation gain is not upload evidence. | Save; no automatic upload and do not generate a Kaggle artifact unless it is part of a larger approved ensemble. |
-| RGB fixed-row effectiveness micro | OOF improves the current best source `0.405200 -> 0.406345`, changing only `effectiveness` on 566 validation rows. | No test CSV generated. | Attribute-only, small local gain, and test-side RGB attribute generation is not yet implemented/validated. | Save as local best OOF source; no automatic upload. |
+| RGB fixed-row effectiveness micro | OOF improves the current best source `0.405200 -> 0.407232` with confidence margin `0.2`, changing only `effectiveness` on 367 validation rows. | No test CSV generated. | Attribute-only, small local gain, margin/capacity sensitivity, and test-side RGB attribute generation is not yet implemented/validated. | Save as local best OOF source; no automatic upload. |
 
 ## Rejected For Upload
 
@@ -40,13 +40,13 @@ candidate is worth spending one of the remaining attempts.
 | full yolo26x/yolo11s agreement | Public `0.10784`, already failed. |
 | crop-motion direct submit | Local gain is weak and source oracle contribution is marginal. |
 | temporal frozen RGB contact fixed-row branch | Union and attacker/opponent ViT-B clip smokes both regressed below the current best OOF source; no test CSV generated. |
-| candidate-level RGB contact raw-pose branch | Improves same-pool raw pose OOF, but best smoke score `0.359641` is far below current best `0.406345`; no test CSV generated. |
-| sequence-TCN + RGB contact bridge | Full pool-1800 A/B confirms RGB helps the sequence scorer (`0.386043 -> 0.391237`), but the final source is still below current best `0.406345`; no test CSV generated. |
-| sequence-TCN + audio contact bridge cap-400 | Medium OOF `0.379792`, below current best `0.406345`; no test CSV generated. |
+| candidate-level RGB contact raw-pose branch | Improves same-pool raw pose OOF, but best smoke score `0.359641` is far below current best `0.407232`; no test CSV generated. |
+| sequence-TCN + RGB contact bridge | Full pool-1800 A/B confirms RGB helps the sequence scorer (`0.386043 -> 0.391237`), but the final source is still below current best `0.407232`; no test CSV generated. |
+| sequence-TCN + audio contact bridge cap-400 | Medium OOF `0.379792`, below current best `0.407232`; no test CSV generated. |
 | deep crop per-video fighter identity calibration | ResNet50 crop remapping regressed even with oracle cluster mapping (`0.361655 -> 0.342864`); no test CSV generated. |
 | tracklet-appearance fighter identity alone | Positive but only micro-sized (`+0.000285` over current best, one OOF flip); no test CSV generated. |
 | learned exchange-side fighter flip | Best OOF `0.401720` is only `+0.000236` over current best; no test CSV generated. |
-| automatic row-source policy with RGB/audio/tracklet sources | Oracle headroom is high (`0.429715`), but current policies stay below the best single source (`hgb=0.403410` vs `0.406345`); no test CSV generated. |
+| automatic row-source policy with RGB/audio/tracklet sources | Oracle headroom is high (`0.430014`), but current policies stay below the best single source (`hgb=0.404206` vs `0.407232`); no test CSV generated. |
 
 ## Current Recommendation
 

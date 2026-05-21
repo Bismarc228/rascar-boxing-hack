@@ -182,3 +182,48 @@ base        0.406345
 Decision update: the new RGB effectiveness source raises the base and leaves
 oracle headroom, but current fight-level source selection remains below the best
 single source. Do not create a source-policy test CSV or upload.
+
+## RGB Effectiveness Margin Follow-Up
+
+The confidence-gated effectiveness source is now the best single source:
+
+```text
+rgb_eff_m02=data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_margin02_oof.csv
+score=0.407232
+```
+
+Re-running the source audit with `rgb_eff_m02` as base:
+
+```text
+source_oracle=0.430014
+delta_vs_rgb_eff_m02=+0.022782
+```
+
+Best pairwise oracles:
+
+```text
+old_attr    0.418053  +0.010821
+rgb_full    0.416978  +0.009746
+yolo26l     0.414046  +0.006815
+rgb_cap400  0.411821  +0.004590
+seq_attr    0.410684  +0.003453
+```
+
+Generated updated diagnostic table:
+
+```text
+data/processed/diagnostics/source_table_current_rgb_eff_margin02_20260521.csv
+```
+
+Selectors still fail:
+
+```text
+stumps_oof  0.397342
+mean_global 0.407232
+ridge       0.403667
+hgb         0.404206
+base        0.407232
+```
+
+Decision update: source-policy remains diagnostic only. The best learned policy
+is still below simply using `rgb_eff_m02`.

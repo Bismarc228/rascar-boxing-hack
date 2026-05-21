@@ -40,7 +40,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--label-window", type=int, default=12)
     parser.add_argument("--pca-components", type=int, default=64)
     parser.add_argument("--logreg-c", type=float, default=0.35)
+    parser.add_argument("--effectiveness-margins", default="0.0,0.1,0.2,0.3")
     parser.add_argument("--write-oof-rows", type=Path)
+    parser.add_argument("--write-effectiveness-margin", type=float)
     parser.add_argument(
         "--write-variant",
         choices=["punch_type", "effectiveness", "ptype_eff", "hand_target", "all_attrs"],
@@ -78,7 +80,7 @@ def main() -> int:
         flush=True,
     )
 
-    predictions = oof_attribute_predictions(args, x, labels, groups, pred_rows, matched)
+    predictions, probabilities = oof_attribute_predictions(args, x, labels, groups, pred_rows, matched)
     variants = {
         "punch_type": ["punch_type"],
         "effectiveness": ["effectiveness"],
@@ -100,11 +102,29 @@ def main() -> int:
             f"{video_wins(score, baseline)},{changed}",
             flush=True,
         )
+    for margin in parse_floats(args.effectiveness_margins):
+        name = f"effectiveness_margin_{margin:g}"
+        rows, changed = apply_effectiveness_margin(pred_rows, predictions, probabilities, margin)
+        rows_by_variant[name] = rows
+        score = score_predictions(gt_rows, rows)
+        summary = attr_summary(score)
+        print(
+            f"{name},{score['macro_score']:.6f},{score['macro_score'] - baseline['macro_score']:.6f},"
+            f"{summary['punch_type']:.6f},{summary['effectiveness']:.6f},"
+            f"{summary['hand']:.6f},{summary['target']:.6f},"
+            f"{video_wins(score, baseline)},{changed}",
+            flush=True,
+        )
     if args.write_oof_rows:
-        write_csv_rows(args.write_oof_rows, rows_by_variant[args.write_variant], SUBMISSION_COLUMNS)
+        variant_name = args.write_variant
+        if args.write_effectiveness_margin is not None:
+            variant_name = f"effectiveness_margin_{args.write_effectiveness_margin:g}"
+        if variant_name not in rows_by_variant:
+            raise KeyError(f"variant {variant_name} was not evaluated")
+        write_csv_rows(args.write_oof_rows, rows_by_variant[variant_name], SUBMISSION_COLUMNS)
         print(
             f"wrote_oof_rows={args.write_oof_rows} "
-            f"variant={args.write_variant} n_rows={len(rows_by_variant[args.write_variant])}",
+            f"variant={variant_name} n_rows={len(rows_by_variant[variant_name])}",
             flush=True,
         )
     print_label_counts(labels)
@@ -244,8 +264,12 @@ def oof_attribute_predictions(
     groups: np.ndarray,
     pred_rows: list[dict[str, str]],
     matched: np.ndarray,
-) -> dict[str, np.ndarray]:
+) -> tuple[dict[str, np.ndarray], dict[str, list[dict[str, float]]]]:
     output = {column: np.asarray([row[column] for row in pred_rows], dtype=object) for column in ATTR_COLUMNS}
+    probabilities = {
+        column: [{row[column]: 1.0} for row in pred_rows]
+        for column in ATTR_COLUMNS
+    }
     trainable = np.asarray([label is not None for label in labels], dtype=bool) & matched
     for group in sorted(set(groups.tolist())):
         valid = groups == group
@@ -260,6 +284,8 @@ def oof_attribute_predictions(
             y = encoder.fit_transform(values)
             if len(encoder.classes_) == 1:
                 output[column][valid_predict] = encoder.classes_[0]
+                for index in np.where(valid_predict)[0]:
+                    probabilities[column][index] = {str(encoder.classes_[0]): 1.0}
                 continue
             n_components = min(args.pca_components, train.sum() - 1, x.shape[1])
             model = make_pipeline(
@@ -273,9 +299,18 @@ def oof_attribute_predictions(
                 ),
             )
             model.fit(x[train], y)
-            output[column][valid_predict] = encoder.inverse_transform(model.predict(x[valid_predict]))
+            pred_encoded = model.predict(x[valid_predict])
+            pred_values = encoder.inverse_transform(pred_encoded)
+            output[column][valid_predict] = pred_values
+            proba = model.predict_proba(x[valid_predict])
+            class_values = [str(value) for value in encoder.classes_]
+            for index, row_probs in zip(np.where(valid_predict)[0], proba):
+                probabilities[column][index] = {
+                    class_value: float(prob)
+                    for class_value, prob in zip(class_values, row_probs)
+                }
         print(f"fold={group} train={int(train.sum())} valid={int(valid_predict.sum())}", flush=True)
-    return output
+    return output, probabilities
 
 
 def apply_predictions(
@@ -290,6 +325,28 @@ def apply_predictions(
         for column in columns:
             item[column] = str(predictions[column][index])
         if any(item[column] != row[column] for column in columns):
+            changed += 1
+        output.append(item)
+    return output, changed
+
+
+def apply_effectiveness_margin(
+    rows: list[dict[str, str]],
+    predictions: dict[str, np.ndarray],
+    probabilities: dict[str, list[dict[str, float]]],
+    margin: float,
+) -> tuple[list[dict[str, str]], int]:
+    output = []
+    changed = 0
+    for index, row in enumerate(rows):
+        item = {col: row.get(col, "") for col in SUBMISSION_COLUMNS}
+        pred_value = str(predictions["effectiveness"][index])
+        current_value = row["effectiveness"]
+        probs = probabilities["effectiveness"][index]
+        pred_prob = float(probs.get(pred_value, 0.0))
+        current_prob = float(probs.get(current_value, 0.0))
+        if pred_value != current_value and pred_prob - current_prob >= margin:
+            item["effectiveness"] = pred_value
             changed += 1
         output.append(item)
     return output, changed
@@ -323,6 +380,10 @@ def print_label_counts(labels: list[dict[str, str] | None]) -> None:
         for label in usable:
             counts[label[column]] = counts.get(label[column], 0) + 1
         print("labels_" + column + "=" + ",".join(f"{key}:{value}" for key, value in sorted(counts.items())))
+
+
+def parse_floats(text: str) -> list[float]:
+    return [float(value) for value in text.split(",") if value]
 
 
 def fight_group(video: dict[str, str]) -> str:

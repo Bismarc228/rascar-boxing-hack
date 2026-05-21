@@ -52,8 +52,10 @@ Command:
   --label-window 12 \
   --pca-components 64 \
   --logreg-c 0.35 \
+  --effectiveness-margins 0.0,0.1,0.2,0.3 \
   --write-variant effectiveness \
-  --write-oof-rows data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_oof.csv
+  --write-effectiveness-margin 0.2 \
+  --write-oof-rows data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_margin02_oof.csv
 ```
 
 Cache alignment:
@@ -70,27 +72,30 @@ Result:
 
 ```text
 variant        score     delta      wins  n_changed
-punch_type     0.402006  -0.003194  4     780
+punch_type     0.401541  -0.003659  3     782
 effectiveness  0.406345  +0.001145  10    566
-ptype_eff      0.403061  -0.002139  4     976
-hand_target    0.385482  -0.019719  0     820
-all_attrs      0.383342  -0.021858  0     1141
+ptype_eff      0.402687  -0.002514  4     963
+hand_target    0.385520  -0.019680  0     821
+all_attrs      0.383006  -0.022194  0     1137
+eff_margin_0.1 0.406567  +0.001366  10    453
+eff_margin_0.2 0.407232  +0.002031  10    367
+eff_margin_0.3 0.406304  +0.001103  8     271
 ```
 
 Scorer verification:
 
 ```text
 .venv/bin/python tools/score_predictions.py \
-  --predictions data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_oof.csv \
+  --predictions data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_margin02_oof.csv \
   --video-keys-from-predictions
 
-macro_score=0.406345
+macro_score=0.407232
 ```
 
 The saved OOF rows are:
 
 ```text
-data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_oof.csv
+data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_margin02_oof.csv
 ```
 
 ## Stability Checks
@@ -98,22 +103,22 @@ data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_m
 Two small preselected controls:
 
 ```text
-pca=64, C=0.15: effectiveness=0.406345, delta=+0.001145
-pca=32, C=0.35: effectiveness=0.405445, delta=+0.000244
+pca=64, C=0.15: margin_0.2=0.407232, ungated=0.406345
+pca=32, C=0.35: margin_0.2=0.405830, margin_0.3=0.406302, ungated=0.405445
 ```
 
 The effect is real enough to save, but not strong enough to justify a standalone
-upload. It is sensitive to RGB head capacity and changes many effectiveness
-labels.
+upload. The confidence margin reduces churn and improves the main setting, but
+the best margin is still somewhat sensitive to RGB head capacity.
 
 ## Decision
 
-This is the new best local OOF row source at `0.406345`, but it is an attribute
+This is the new best local OOF row source at `0.407232`, but it is an attribute
 micro-signal only:
 
 - timing, count, fighter, hand, target, and punch type are unchanged for the
   saved `effectiveness` variant;
-- 566 validation rows change `effectiveness`;
+- 367 validation rows change `effectiveness`;
 - no test generator or test CSV was created;
 - no Kaggle upload should be made from this branch without explicit approval and
   a validated test-side generation plan.
