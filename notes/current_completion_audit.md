@@ -145,6 +145,9 @@ next visible score   public=0.04481
   (`0.401483 -> 0.404479`). It has validated full and protected test artifacts,
   but the full version drops `agn_038` rows and the protected version still
   changes sequence-splice videos without fresh public evidence.
+- Reapplying the fixed-row attribute model on the current `audio_tracklet` best
+  source regresses every variant; the best re-audit result is
+  `hand_target=0.405045` versus the `0.405200` baseline.
 - Exchange-side fighter identity remains a micro-signal only
   (`0.404479 -> 0.404915`). It is useful for a later ensemble, not for a solo
   upload.

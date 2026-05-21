@@ -128,3 +128,37 @@ Validation passed.
   against the current public best and submit budget.
 - The branch is independent from timing/fighter work and should remain saved
   for future ensemble/splice experiments.
+
+## Current Best Re-Audit
+
+After the later audio gate, exchange-side identity, and tracklet-appearance
+micro-source, the current best fixed rows are:
+
+```text
+data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_appearance_oof.csv
+baseline=0.405200
+```
+
+Re-running the fixed-row attribute evaluator on these rows:
+
+```text
+.venv/bin/python tools/evaluate_fixed_row_attribute_model.py \
+  --predictions data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_appearance_oof.csv \
+  --tracks-dir data/processed/pose_tracks/val_yolo26x_conf035 \
+  --label-window 12
+```
+
+Result:
+
+```text
+variant        score     delta      n_changed
+punch_type     0.404153  -0.001047  351
+effectiveness  0.404679  -0.000521  123
+ptype_eff      0.403632  -0.001568  439
+hand_target    0.405045  -0.000155  106
+all_attrs      0.403477  -0.001723  503
+```
+
+Decision update: the attribute model remains useful as an older independent
+branch and public-anchor candidate, but it should not be reapplied on top of the
+current `audio_tracklet` best source without new features or labels.
