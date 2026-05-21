@@ -105,6 +105,23 @@ Per-video oracle selected `seq_repeat_attr` on `agn_010`, `agn_024`,
 `agn_025`, and `agn_057`; old attribute/effectiveness sources still won
 several other videos.
 
+After including `seq_repeat_exchange_attr` itself in the fight-level diagnostic
+table, the source oracle reaches `0.418678`, but current learned/rule policies
+still do not beat the best single source:
+
+```text
+single seq_repeat_exchange_attr=0.400288
+ridge policy=0.394629
+mean_root policy=0.389437
+mean_global policy=0.385617
+mean_round policy=0.383276
+mean_root_round policy=0.382539
+hgb policy=0.381433
+```
+
+The extra oracle headroom is real, but the current fight/round feature policies
+do not recover it.
+
 ## Test Artifacts
 
 Generated and validated:
