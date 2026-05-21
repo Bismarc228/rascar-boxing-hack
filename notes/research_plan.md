@@ -115,6 +115,9 @@ Revised queue:
     gate (`0.381635` fight-CV, `0.380425` video-CV versus `0.395013`), so do
     not use learned video-policy selection with only the current 13 validation
     videos.
+14. Attribute transfer from nearest yolo26l-base rows to sequence rows is not
+    worth a submit. It gives only tiny local gains (`+0.0006` full sequence,
+    `+0.0004` gated), while fighter/hand transfer hurts.
 
 ## Offline Work Before More Submits
 

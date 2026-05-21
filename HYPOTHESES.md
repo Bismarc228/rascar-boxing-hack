@@ -193,6 +193,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - A learned per-video Ridge policy over gate features is not reliable with this
   tiny validation set. It scored `0.381635` in fight-CV and `0.380425` in
   video-CV, below the threshold gate's `0.395013`.
+- Copying attributes from nearest yolo26l-base rows into sequence rows is not a
+  meaningful path. Best full-sequence transfer was only `0.379682 -> 0.380298`;
+  best gated transfer was `0.389125 -> 0.389537`, and fighter/hand transfer
+  consistently hurt.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,

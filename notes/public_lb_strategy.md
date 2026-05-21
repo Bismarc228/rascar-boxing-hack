@@ -162,6 +162,11 @@ the same features. It was worse than the threshold gate (`0.381635` fight-CV and
 `0.380425` video-CV versus `0.395013`), so learned per-video policy is not a
 submit path with only the current 13 validation videos.
 
+Nearest-row attribute transfer from yolo26l base into sequence rows was also
+checked. It is too small: best full-sequence gain is about `+0.0006`, best gated
+gain about `+0.0004`, and fighter/hand transfer hurts. Do not spend submissions
+on this branch.
+
 `root_count=0.92` and `root_count=0.82` sequence variants were checked through
 the same gate. They select essentially the same safe video set. On `agn_038`,
 `root_count=0.88` and `0.92` have `98.8%` of selected frames within 3 frames of
