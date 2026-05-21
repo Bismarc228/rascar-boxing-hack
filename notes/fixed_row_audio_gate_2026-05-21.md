@@ -208,3 +208,33 @@ group_oof_delta=-0.002890
 
 The extra oracle headroom is real, but simple source-switch rules remain
 validation-set overfit.
+
+## Audio Pose-Context Control
+
+A separate pose-context rerank check using `tools/evaluate_audio_pose_context.py`
+still fails:
+
+```text
+baseline=0.374335
+best non-noop=0.365845
+```
+
+So the positive audio result is specific to learned fixed-row keep/drop with
+pose/context features, not direct multiplicative audio rescoring.
+
+## Identity Follow-Up
+
+Retesting the exchange-side fighter model on the audio-gated rows gives only a
+micro gain:
+
+```text
+audio_gate=0.404479
+audio_gate_exchange_side=0.404915
+delta=+0.000436
+```
+
+Details are in:
+
+```text
+notes/audio_gate_exchange_side_identity_2026-05-21.md
+```
