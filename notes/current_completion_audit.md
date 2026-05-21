@@ -133,6 +133,7 @@ remaining gaps.
   - `tools/make_exchange_side_fighter_model_submission.py`
   - `tools/evaluate_tracklet_appearance_fighter_model.py`
   - `tools/make_rgb_fixed_row_attribute_submission.py`
+  - `tools/evaluate_rgb_fighter_flip_model.py`
 - Validation row tools:
   - `tools/make_pose_validation_rows.py`
   - `tools/evaluate_pose_sequence_spotter.py --write-best-rows`
@@ -214,6 +215,10 @@ next visible score   public=0.10431
 - Fight-level pooling of tracklet appearance prototypes was tested as an
   identity follow-up and regressed (`0.404915 -> 0.404856` best), so it does not
   unlock the remaining fighter oracle headroom.
+- Cached row-aligned RGB clip embeddings were retargeted to fixed-row fighter
+  flips. Union-crop HGB found only a two-row micro gain
+  (`0.401483 -> 0.401489`), while attacker/opponent crop regressed; this RGB
+  identity branch is killed for submissions.
 - Audio source-oracle headroom is real (`0.422619`, or `0.422744` with the
   exchange-side source), but current fight-level policies/stumps do not exploit
   it out of sample.
