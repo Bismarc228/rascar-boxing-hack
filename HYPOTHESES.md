@@ -234,6 +234,12 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   immediately (`0.365177 -> 0.356329` at the softest tested threshold). RGB
   may still be useful, but only as richer temporal clip/video features or a
   better witness target, not as a single-frame crop TP/FP filter.
+- A temporal version of the same RGB filter is also killed: ResNet50 union-crop
+  features at offsets `-8,0,+8` with mean/std aggregation regressed further
+  (`0.365177 -> 0.351944`). The target is the problem: selected yolo26l rows
+  are already high-precision, so filtering by RGB probability mainly removes
+  true positives. Future RGB work should predict timing offset/contact state or
+  segment confidence, not clear/drop on the current selected rows.
 - External research reinforces the priority order: impact spotting and
   precision/`clear` calibration first, fighter identity second, attributes
   later.

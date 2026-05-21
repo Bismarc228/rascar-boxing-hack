@@ -42,6 +42,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--crop-expand", type=float, default=0.16)
+    parser.add_argument("--frame-offsets", default="0")
     parser.add_argument("--thresholds", default="0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.50,0.60,0.70")
     parser.add_argument("--quiet", action="store_true")
     return parser.parse_args()
@@ -102,38 +103,49 @@ def load_or_extract_features(
         return data["features"].astype(np.float32)
     device = pick_device(args.device)
     model = load_model(args.model_name, args.pretrained, device)
+    frame_offsets = parse_ints(args.frame_offsets)
     tensors = []
-    metas = []
-    features = []
+    metas: list[tuple[int, int]] = []
+    event_features: list[list[np.ndarray]] = [[] for _ in pred_rows]
+    row_to_index = {id(row): index for index, row in enumerate(pred_rows)}
     for key, rows in progress(group_rows(pred_rows).items(), "rgb-features", args.quiet):
         video = video_by_key[key]
-        records = load_track_records(args.tracks_dir / f"{key}.jsonl", {int(row["frame"]) for row in rows})
+        frame_count = int(video["frame_count"])
+        wanted_frames = {
+            max(0, min(frame_count - 1, int(row["frame"]) + offset))
+            for row in rows
+            for offset in frame_offsets
+        }
+        records = load_track_records(args.tracks_dir / f"{key}.jsonl", wanted_frames)
         cap = cv2.VideoCapture(str(args.data_root / video["video_path"]))
         if not cap.isOpened():
             raise FileNotFoundError(args.data_root / video["video_path"])
         try:
             for row in rows:
-                frame = int(row["frame"])
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame)
-                ok, image = cap.read()
-                if not ok or image is None:
-                    tensor = torch.zeros(3, args.image_size, args.image_size)
-                else:
-                    tensor = image_to_tensor(
-                        image,
-                        records.get(frame),
-                        args.image_size,
-                        args.crop_expand,
-                    )
-                tensors.append(tensor)
-                metas.append(row)
-                if len(tensors) >= args.batch_size:
-                    features.extend(run_batch(model, device, tensors))
+                event_index = row_to_index[id(row)]
+                center = int(row["frame"])
+                for offset in frame_offsets:
+                    frame = max(0, min(frame_count - 1, center + offset))
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, frame)
+                    ok, image = cap.read()
+                    if not ok or image is None:
+                        tensor = torch.zeros(3, args.image_size, args.image_size)
+                    else:
+                        tensor = image_to_tensor(
+                            image,
+                            records.get(frame),
+                            args.image_size,
+                            args.crop_expand,
+                        )
+                    tensors.append(tensor)
+                    metas.append((event_index, offset))
+                    if len(tensors) >= args.batch_size:
+                        flush_batch(model, device, tensors, metas, event_features)
         finally:
             cap.release()
     if tensors:
-        features.extend(run_batch(model, device, tensors))
-    output = np.stack(features).astype(np.float32)
+        flush_batch(model, device, tensors, metas, event_features)
+    output = np.stack([aggregate_event_features(items) for items in event_features]).astype(np.float32)
     if args.feature_cache:
         args.feature_cache.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(args.feature_cache, features=output)
@@ -214,6 +226,30 @@ def run_batch(
     y = torch.nn.functional.normalize(y.float(), dim=1).cpu().numpy()
     tensors.clear()
     return [row.astype(np.float32) for row in y]
+
+
+def flush_batch(
+    model: torch.nn.Module,
+    device: torch.device,
+    tensors: list[torch.Tensor],
+    metas: list[tuple[int, int]],
+    event_features: list[list[np.ndarray]],
+) -> None:
+    vectors = run_batch(model, device, tensors)
+    for vector, (event_index, _offset) in zip(vectors, metas):
+        event_features[event_index].append(vector)
+    metas.clear()
+
+
+def aggregate_event_features(items: list[np.ndarray]) -> np.ndarray:
+    if not items:
+        return np.zeros(2048 * 2, dtype=np.float32)
+    values = np.stack(items).astype(np.float32)
+    mean = values.mean(axis=0)
+    if len(items) > 1:
+        std = values.std(axis=0)
+        return np.concatenate([mean, std]).astype(np.float32)
+    return np.concatenate([mean, np.zeros_like(mean)]).astype(np.float32)
 
 
 def load_track_records(path: Path, frames: set[int]) -> dict[int, dict[str, Any]]:
@@ -298,6 +334,10 @@ def progress(items, desc: str, quiet: bool):
 
 def parse_floats(text: str) -> list[float]:
     return [float(value) for value in text.split(",") if value]
+
+
+def parse_ints(text: str) -> list[int]:
+    return [int(value) for value in text.split(",") if value]
 
 
 if __name__ == "__main__":

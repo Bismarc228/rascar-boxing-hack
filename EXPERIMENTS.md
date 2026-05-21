@@ -63,6 +63,11 @@ Independent local branches after the cap was tightened:
           are killed as a direct clear-event filter; keep RGB/video work only
           if it uses richer temporal clips or a better witness target.
 
+0.351944  temporal ResNet50 RGB union-crop event filter with offsets
+          `-8,0,+8` at threshold 0.05 versus yolo26l base 0.365177. Temporal
+          mean/std embeddings still drop too many true events. This kills the
+          current logistic TP/FP filtering target, not RGB/video as a whole.
+
 Relaxed capacity audit from `notes/new_growth_report_2026-05-21.md` was
 implemented as a no-submit diagnostic. The CSV
 `submissions/relaxed_capacity_agn037_plus20_from_agn062_yolo26l_OFFLINE_DIAGNOSTIC.csv`

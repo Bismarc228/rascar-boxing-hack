@@ -72,6 +72,9 @@ next visible score   public=0.04481
 - A first frozen RGB event-filter smoke also regressed
   (`0.365177 -> 0.356329` at the softest threshold), so single-frame ResNet
   union-crop features are not a direct filter path.
+- A temporal RGB event-filter follow-up with frame offsets `-8,0,+8` also
+  regressed (`0.365177 -> 0.351944`), so the current RGB clear/drop target is
+  killed.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is

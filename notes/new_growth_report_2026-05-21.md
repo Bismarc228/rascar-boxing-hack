@@ -429,6 +429,26 @@ rate of selected yolo26l events is already high (`0.919`), and the RGB filter
 mostly drops true events. RGB/video should continue only as richer temporal
 clip features, offset/contact witness, or segment-level scorer.
 
+Temporal follow-up:
+
+```text
+CUDA_VISIBLE_DEVICES=1 .venv/bin/python tools/evaluate_rgb_event_filter.py \
+  --predictions data/processed/validation_rows/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088.csv \
+  --tracks-dir data/processed/pose_tracks/val_yolo26l_conf035 \
+  --feature-cache data/processed/rgb_features/base_resnet50_union_offsets_m8_0_p8_yolo26l_rows.npz \
+  --model-name resnet50.a1_in1k --frame-offsets=-8,0,8 --batch-size 192 --quiet
+```
+
+Result:
+
+```text
+best tested threshold 0.05 -> 0.351944
+```
+
+Adding temporal offsets did not fix the issue. This specifically kills the
+logistic clear/drop filter target on the current selected rows. RGB may still
+be useful for timing offset/contact scoring or active-exchange segment gating.
+
 ## Operational Notes
 
 - Branch for this report: `research/new-growth-opportunities`.
