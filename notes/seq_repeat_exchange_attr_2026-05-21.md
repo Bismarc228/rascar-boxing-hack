@@ -194,6 +194,27 @@ This is the best local splice so far, but it is still a private-risk artifact:
 it is based on an unsubmitted attribute base plus a sequence replacement that
 expands `agn_038` from the public-proven `81` clear rows to `99`.
 
+Two no-`agn_038` variants were generated to preserve the public-proven
+`agn_038` rows while testing only the gate-selected private-risk videos:
+
+```text
+submissions/hybrid_attrall_seqrepeat_exchange_attr_gate_noagn038_OFFLINE_CANDIDATE.csv
+replace_keys=agn_047,agn_062,agn_063
+total_clear=739
+changed_vs_root=640
+Validation passed.
+
+submissions/hybrid_root_seqrepeat_exchange_attr_gate_noagn038_OFFLINE_CANDIDATE.csv
+replace_keys=agn_047,agn_062,agn_063
+total_clear=739
+changed_vs_root=375
+Validation passed.
+```
+
+The root-based no-`agn_038` variant is the most public-conservative private
+risk artifact from this branch, but it has no fresh public evidence and should
+not be uploaded without an explicit budget decision.
+
 ## Decision
 
 - Keep as the current best local OOF branch/splice and a strong ensemble
