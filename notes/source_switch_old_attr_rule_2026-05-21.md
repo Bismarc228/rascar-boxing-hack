@@ -63,6 +63,29 @@ delta:                      -0.000836
 The rule also selects losing validation switches (`agn_024`, `agn_025`,
 `agn_057`), so it is not reliable enough for an upload by itself.
 
+## Group-OOF Stump Check
+
+Added:
+
+```text
+tools/evaluate_source_decision_stumps.py
+```
+
+This evaluator chooses the best single-feature source-switch rule on all but
+one fight group, then applies it to the held-out group. With the full source
+table and `seq_motion` as base:
+
+```text
+base=0.401483
+best in-sample stump=old_attr:source_le15>=0.9394
+best in-sample score=0.411775
+group_oof=0.399638
+group_oof_delta=-0.001845
+```
+
+The fold that holds out `agn_003` chooses a rule that does not switch `agn_003`,
+so the apparent large in-sample win disappears under honest group validation.
+
 ## Test Analog
 
 Diagnostic table:
