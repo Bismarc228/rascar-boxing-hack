@@ -68,6 +68,11 @@ Independent local branches after the cap was tightened:
           mean/std embeddings still drop too many true events. This kills the
           current logistic TP/FP filtering target, not RGB/video as a whole.
 
+0.357606  temporal ResNet50 RGB timing-offset Ridge with offsets `-8,0,+8`,
+          max shift 2 and scale 0.25 versus yolo26l base 0.365177. Larger
+          shifts regress further. RGB embeddings do not currently predict
+          useful frame corrections for fixed selected rows.
+
 Relaxed capacity audit from `notes/new_growth_report_2026-05-21.md` was
 implemented as a no-submit diagnostic. The CSV
 `submissions/relaxed_capacity_agn037_plus20_from_agn062_yolo26l_OFFLINE_DIAGNOSTIC.csv`

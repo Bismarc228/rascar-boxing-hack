@@ -449,6 +449,26 @@ Adding temporal offsets did not fix the issue. This specifically kills the
 logistic clear/drop filter target on the current selected rows. RGB may still
 be useful for timing offset/contact scoring or active-exchange segment gating.
 
+Timing-offset follow-up:
+
+```text
+.venv/bin/python tools/evaluate_rgb_timing_offset.py \
+  --predictions data/processed/validation_rows/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088.csv \
+  --feature-cache data/processed/rgb_features/base_resnet50_union_offsets_m8_0_p8_yolo26l_rows.npz \
+  --model ridge
+```
+
+Result:
+
+```text
+baseline 0.365177
+best tested setting max_shift=2 scale=0.25 -> 0.357606
+```
+
+So direct RGB offset regression is also not useful on fixed selected rows.
+The cached temporal RGB features may still be reusable for another target, but
+not as a row filter or global offset regressor.
+
 ## Operational Notes
 
 - Branch for this report: `research/new-growth-opportunities`.

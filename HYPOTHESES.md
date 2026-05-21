@@ -240,6 +240,11 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   are already high-precision, so filtering by RGB probability mainly removes
   true positives. Future RGB work should predict timing offset/contact state or
   segment confidence, not clear/drop on the current selected rows.
+- Direct RGB timing-offset regression over those temporal features is killed
+  too. Leave-fight-out Ridge predicting matched GT-frame minus pred-frame
+  regressed at the safest setting (`0.365177 -> 0.357606`) and worsened as
+  allowed shifts increased. The embeddings do not recover timing corrections
+  on fixed yolo26l selected rows.
 - External research reinforces the priority order: impact spotting and
   precision/`clear` calibration first, fighter identity second, attributes
   later.

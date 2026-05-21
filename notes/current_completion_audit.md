@@ -37,6 +37,7 @@ completion claim; it records concrete evidence and remaining gaps.
   - `tools/make_relaxed_capacity_submission.py`
   - `tools/build_fight_level_source_table.py`
   - `tools/evaluate_rgb_event_filter.py`
+  - `tools/evaluate_rgb_timing_offset.py`
 - Validation row tools:
   - `tools/make_pose_validation_rows.py`
   - `tools/evaluate_pose_sequence_spotter.py --write-best-rows`
@@ -75,6 +76,9 @@ next visible score   public=0.04481
 - A temporal RGB event-filter follow-up with frame offsets `-8,0,+8` also
   regressed (`0.365177 -> 0.351944`), so the current RGB clear/drop target is
   killed.
+- RGB timing-offset regression over the same temporal features also regressed
+  (`0.365177 -> 0.357606`), so direct RGB frame correction is not a current
+  path.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is
