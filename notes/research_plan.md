@@ -101,6 +101,11 @@ Revised queue:
     writes a validated candidate:
     `hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv`.
     This remains no-submit unless private-risk strategy is explicitly chosen.
+11. Per-video oracle for base-vs-sequence replacement reaches `0.401371`, so
+    there is still validation headroom above the threshold gate. The misses are
+    not separable by simple nearest/count thresholds alone; next work should add
+    per-video/fight features or root-aware policy before considering another
+    gated test candidate.
 
 ## Offline Work Before More Submits
 

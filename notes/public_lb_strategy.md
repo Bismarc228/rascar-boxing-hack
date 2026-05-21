@@ -144,6 +144,13 @@ selected total=731
 Do not upload this yet. It is a stronger private-risk candidate, but public is
 unlikely to rise because `agn_062/063` were individually public-neutral.
 
+Per-video OOF oracle for choosing base vs sequence reaches `0.401371`. The gate
+captures most of that (`0.395013`), but still makes validation mistakes:
+sequence is bad on `agn_010` and `agn_056`, while useful on videos such as
+`agn_004` and `agn_072`. Nearest-frame/count thresholds alone cannot separate
+all of these cases; the next improvement needs richer per-video features or a
+fight/root-aware policy, not another blind threshold tweak.
+
 `root_count=0.92` and `root_count=0.82` sequence variants were checked through
 the same gate. They select essentially the same safe video set. On `agn_038`,
 `root_count=0.88` and `0.92` have `98.8%` of selected frames within 3 frames of

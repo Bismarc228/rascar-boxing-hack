@@ -182,6 +182,10 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   gate selects `agn_038,agn_062,agn_063` and rejects `agn_037`; the CSV is
   validated but not submitted because it is expected to be public-neutral beyond
   the existing `agn_038` gain.
+- Base-vs-sequence per-video oracle reaches `0.401371`, so more validation
+  headroom exists. The remaining gate mistakes are not cleanly separated by
+  nearest-frame/count metrics; add per-video/fight context before another
+  threshold-only gate.
 - Fighter identity still has headroom, but not from current cached color/track
   signals. On yolo26x context, matched-fighter oracle reaches `0.392941`
   (`+0.018606`), but HGB/logreg keep-flip models over `score_red/score_blue`,
