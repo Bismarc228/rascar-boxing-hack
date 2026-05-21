@@ -1,7 +1,37 @@
 # Current Completion Audit
 
-Status as of 2026-05-21 after the post-reset public run. This is not a goal
-completion claim; it records concrete evidence and remaining gaps.
+Status as of 2026-05-21 after the audio-gate and exchange-side identity
+iterations. This is not a goal completion claim; it records concrete evidence
+and remaining gaps.
+
+## Latest Addendum - 2026-05-21
+
+- Current best local OOF source is
+  `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_gate_exchange_side_oof.csv`
+  at `0.404915`.
+- The first useful audio result is the fixed-row pose+audio gate:
+  `0.401483 -> 0.404479`. Audio-only was neutral, pose-only was only
+  `0.401999`, so the saved gain requires the learned pose+audio interaction.
+- The exchange-side identity micro-model on top of the audio gate improves only
+  `0.404479 -> 0.404915` and changes 22 OOF rows / 11 protected test fighter
+  labels. It is saved as an ensemble/private-risk micro-signal, not a direct
+  upload trigger.
+- Validated full and protected test artifacts exist for both the audio gate and
+  audio-gate exchange-side variants. The protected artifacts keep public-proven
+  `agn_038` unchanged.
+- Source-oracle diagnostics with audio raise headroom to `0.422619`; adding the
+  exchange-side micro-source raises it only to `0.422744`. Learned source
+  policies and stumps still fail to convert that oracle headroom into a robust
+  OOF gain.
+- Sequence audio-contact bridge infrastructure is implemented in
+  `tools/evaluate_pose_sequence_spotter.py`, but the medium cap-400 run reached
+  only `0.379792`; no test CSV was generated from that branch.
+- Deep crop fighter identity calibration with ResNet50 crop embeddings regressed
+  even under oracle cluster mapping, so the current unsupervised crop-cluster
+  mapping path is killed.
+- Submission guardrail remains unchanged: do not upload automatically; re-run
+  `tools/validate_data.py` before any explicitly approved upload and avoid
+  spending attempts on blind threshold/NMS/source sweeps.
 
 ## Objective Checklist
 
@@ -13,9 +43,9 @@ completion claim; it records concrete evidence and remaining gaps.
 | Use Kaggle submissions/leaderboard | `notes/public_lb_strategy.md` and `EXPERIMENTS.md` record public submissions, current best `0.16461`, and leaderboard check. | Done |
 | Improve public score | Public moved from `0.00000` baselines to `0.16461` with `hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088`. | Done |
 | Respect GPU 0 constraint | GPU work was run with `CUDA_VISIBLE_DEVICES=1`; GPU UUID check confirmed physical GPU 1 (`GPU-ff3c1fe8...`). | Done |
-| Punch timing improvements | Larger pose models, sequence TCN snap4, and video-local gate are implemented and validated. Best OOF gated hybrid reached `0.395013`. | Strong progress |
-| Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, and ResNet50 crop clustering are killed. A narrow opposite-fighter rival rule is saved as a micro-signal on the current best source (`0.401483 -> 0.401575`), but no robust identity fix exists yet. | Open |
-| Audio/video feature research | Audio-only, hard snap, and direct audio rescore are killed; crop-motion has a weak independent validation gain and is saved for ensemble work. | Partially explored |
+| Punch timing improvements | Larger pose models, sequence TCN snap4, video-local gates, crop-motion, and fixed-row pose+audio gating are implemented and validated. Current best local OOF is `0.404915`. | Strong progress |
+| Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, ResNet50 crop clustering, and unsupervised deep crop cluster remapping are killed. Exchange-side identity is saved as a tiny micro-signal (`0.404479 -> 0.404915`), but no robust identity fix exists yet. | Open |
+| Audio/video feature research | Audio-only, hard snap, direct audio rescore, and fixed-row frozen RGB contact are killed. Fixed-row pose+audio gating is positive; sequence audio/RGB contact bridges help weak settings but are still below the best source. | Partially explored |
 | Submission budget control | Current rule: no default uploads, at most two more attempts today, only for a clear reason above public `0.16461`. | Active guardrail |
 
 ## Current Best Artifacts
@@ -23,6 +53,18 @@ completion claim; it records concrete evidence and remaining gaps.
 - Public-best root file: `submission.csv`.
 - Public-best source:
   `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv`.
+- Current best local OOF rows:
+  `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_gate_exchange_side_oof.csv`
+  (`0.404915`).
+- Current best local non-identity source rows:
+  `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_gate_oof.csv`
+  (`0.404479`).
+- Validated audio-gate test artifacts:
+  - `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_gate_OFFLINE_CANDIDATE.csv`
+  - `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_gate_noagn038_OFFLINE_CANDIDATE.csv`
+- Validated audio-gate exchange-side test artifacts:
+  - `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_OFFLINE_CANDIDATE.csv`
+  - `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_exchange_side_noagn038_OFFLINE_CANDIDATE.csv`
 - Private-risk gated candidate:
   `submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv`.
 - Gate tools:
@@ -47,6 +89,9 @@ completion claim; it records concrete evidence and remaining gaps.
   - `tools/build_fight_level_source_table.py`
   - `tools/evaluate_rgb_event_filter.py`
   - `tools/evaluate_rgb_timing_offset.py`
+  - `tools/evaluate_fixed_row_audio_gate.py`
+  - `tools/make_fixed_row_audio_gate_submission.py`
+  - `tools/make_exchange_side_fighter_model_submission.py`
 - Validation row tools:
   - `tools/make_pose_validation_rows.py`
   - `tools/evaluate_pose_sequence_spotter.py --write-best-rows`
@@ -58,13 +103,13 @@ python3 -m py_compile $(find rascar_boxing tools -name '*.py' -print)  # passed
 python3 tools/validate_data.py --data-root data/raw --submission submission.csv  # passed
 ```
 
-Kaggle state:
+Kaggle state from the last explicit quota check; re-check before any upload:
 
 ```text
 daily_limit=30
-used_since_utc_midnight=8
-remaining_today=22
-current operative cap=max 2 more uploads, only with strong evidence
+last_checked_used_since_utc_midnight=8
+last_checked_remaining_today=22
+current operative rule=no upload without explicit approval and strong evidence
 ```
 
 Leaderboard state:
@@ -76,6 +121,27 @@ next visible score   public=0.04481
 
 ## Remaining Gaps
 
+- The current best local OOF source is now the audio-gate exchange-side variant
+  (`0.404915`), but this is not enough by itself to spend a submission. The
+  public-best root remains `0.16461`, and full sequence-derived branches have
+  prior public-transfer risk.
+- Fixed-row pose+audio gating is the strongest new independent signal
+  (`0.401483 -> 0.404479`). It has validated full and protected test artifacts,
+  but the full version drops `agn_038` rows and the protected version still
+  changes sequence-splice videos without fresh public evidence.
+- Exchange-side fighter identity remains a micro-signal only
+  (`0.404479 -> 0.404915`). It is useful for a later ensemble, not for a solo
+  upload.
+- Audio source-oracle headroom is real (`0.422619`, or `0.422744` with the
+  exchange-side source), but current fight-level policies/stumps do not exploit
+  it out of sample.
+- The new audio-contact bridge is infrastructure, not a candidate yet: cap-400
+  medium scored `0.379792`, below the current best. Future work should focus on
+  per-video sync/latency, better candidate pools, and full validation rather
+  than audio-only or global-offset submissions.
+- Deep crop identity calibration is killed for the current unsupervised mapping
+  design because ResNet50 crop remapping regressed even with oracle cluster
+  assignment.
 - No robust fighter identity correction has passed validation. A fixed-row
   audit now shows meaningful oracle headroom (`0.416256` matched-fighter oracle
   on the current best source), but simple role/color flips regress. A narrow
