@@ -76,6 +76,13 @@ update_mode=fighter_only
 threshold=0.90
 ```
 
+Saved OOF rows:
+
+```text
+data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_exchange_side_logreg_oof.csv
+macro_score=0.401720
+```
+
 Best HGB result:
 
 ```text
