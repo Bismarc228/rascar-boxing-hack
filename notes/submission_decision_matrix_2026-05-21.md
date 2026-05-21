@@ -53,6 +53,7 @@ candidate is worth spending one of the remaining attempts.
 | tracklet-appearance fighter identity alone | Positive but only micro-sized (`+0.000285` over current best, one OOF flip); no test CSV generated. |
 | learned exchange-side fighter flip | Best OOF `0.401720` is only `+0.000236` over current best; no test CSV generated. |
 | automatic row-source policy with RGB/audio/tracklet sources | Oracle headroom is high (`0.430014`), but current policies stay below the best single source (`hgb=0.404206` vs `0.407232`); no test CSV generated. |
+| stacked-attribute source policy | Focused oracle with stacked attribute sources reaches `0.422839`, and a preserve-order ridge policy materializes `0.407417`, but the lift over `rgb_eff_m02` is only `+0.000185`, stumps regress to `0.392902`, and there is no clean test analog. |
 
 ## Current Recommendation
 

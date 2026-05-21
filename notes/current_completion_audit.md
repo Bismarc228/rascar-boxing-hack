@@ -6,7 +6,11 @@ remaining gaps.
 
 ## Latest Addendum - 2026-05-21
 
-- Current best local OOF source is
+- Best materialized local OOF rows are
+  `data/processed/validation_rows/source_policy_stacked_attr_rgb_ridge_preserve_order_oof.csv`
+  at `0.407417`, but this is a tiny source-policy diagnostic with no clean test
+  analog.
+- Best single local OOF source remains
   `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_margin02_oof.csv`
   at `0.407232`.
 - The RGB fixed-row attribute witness improves only `effectiveness` on top of the
@@ -64,7 +68,7 @@ remaining gaps.
 | Use Kaggle submissions/leaderboard | `notes/public_lb_strategy.md` and `EXPERIMENTS.md` record public submissions, current best `0.16461`, and leaderboard check. | Done |
 | Improve public score | Public moved from `0.00000` baselines to `0.16461` with `hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088`. | Done |
 | Respect GPU 0 constraint | GPU work was run with `CUDA_VISIBLE_DEVICES=1`; GPU UUID check confirmed physical GPU 1 (`GPU-ff3c1fe8...`). | Done |
-| Punch timing improvements | Larger pose models, sequence TCN snap4, video-local gates, crop-motion, and fixed-row pose+audio gating are implemented and validated. Current best local OOF is `0.407232`, though the latest lift is attribute-only. | Strong progress |
+| Punch timing improvements | Larger pose models, sequence TCN snap4, video-local gates, crop-motion, and fixed-row pose+audio gating are implemented and validated. Best materialized local OOF is `0.407417`, though the latest lift is a tiny attribute/source-policy diagnostic without a clean test analog. | Strong progress |
 | Fighter identity improvements | Whole-video swaps, cached role models, simple raw-frame ROI clustering, ResNet50 crop clustering, and unsupervised deep crop cluster remapping are killed. Exchange-side and tracklet-appearance identity are saved as micro-signals (`0.404479 -> 0.405200` together), but no robust identity fix exists yet. | Open |
 | Audio/video feature research | Audio-only, hard snap, direct audio rescore, and fixed-row frozen RGB contact are killed. Fixed-row pose+audio gating is positive; sequence audio/RGB contact bridges help their own weaker settings but are still below the best source. Cached RGB clip features now add a small fixed-row effectiveness gain. | Partially explored |
 | Submission budget control | Current rule: no default uploads, at most two more attempts today, only for a clear reason above public `0.16461`. | Active guardrail |
@@ -74,7 +78,10 @@ remaining gaps.
 - Public-best root file: `submission.csv`.
 - Public-best source:
   `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv`.
-- Current best local OOF rows:
+- Best materialized local OOF rows:
+  `data/processed/validation_rows/source_policy_stacked_attr_rgb_ridge_preserve_order_oof.csv`
+  (`0.407417`).
+- Best single local OOF rows:
   `data/processed/validation_rows/seq_tcn_snap4_rootcount088_repeat_exchange_attr_motion_audio_exchange_tracklet_rgb_effectiveness_margin02_oof.csv`
   (`0.407232`).
 - Previous ungated RGB effectiveness rows:
@@ -205,6 +212,11 @@ next visible score   public=0.10431
   only 47 effectiveness labels on the known public-sensitive test video; the
   matching `attr_all` `agn_038`-only splice validates with 73 broader attribute
   changes on that same video.
+- Adding the stacked attribute sources back into the source-oracle table raises
+  focused oracle headroom to `0.422839`. A preserve-order ridge source policy
+  materializes a tiny new local OOF best (`0.407417`), but simple stumps regress
+  to `0.392902` OOF and there is no clean matching test analog, so this is not a
+  submission branch.
 - A stricter root-based splice using the latest RGB/audio-exchange source only
   on previously public-neutral `agn_047,agn_062,agn_063` validates at
   `submissions/hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv`.
@@ -337,6 +349,10 @@ next visible score   public=0.10431
   base (`hgb=0.403410` vs `0.406345`).
 - Updating again with `rgb_eff_m02` raises oracle headroom to `0.430014`, but
   policy OOF remains below base (`hgb=0.404206` vs `0.407232`).
+- Retesting source policy with the stacked public-anchor RGB attribute sources
+  gives focused oracle `0.422839` and a tiny preserve-order ridge policy OOF
+  `0.407417`, but the stump family regresses badly (`0.392902`) and the policy
+  has no clean test analog.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is
