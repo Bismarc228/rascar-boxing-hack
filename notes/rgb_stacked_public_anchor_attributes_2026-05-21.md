@@ -127,6 +127,31 @@ columns=effectiveness:345
 effectiveness transitions: landed->blocked:146, landed->miss:199
 ```
 
+Transition-gated effectiveness stack:
+
+```text
+submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_effectiveness_rgb_eff_m0_no_miss_to_landed_OFFLINE_CANDIDATE.csv
+```
+
+Validation OOF check over transition subsets showed that excluding
+`miss->landed` is stronger than the full RGB effectiveness replacement:
+
+```text
+base attr_effectiveness              0.395018
+full attr_effectiveness + RGB m0     0.397369
+no miss->landed transition subset    0.398438
+```
+
+Test artifact summary:
+
+```text
+Validation passed.
+changed_vs_root=380
+columns=effectiveness:380
+effectiveness transitions: landed->blocked:146, landed->miss:234
+clear counts unchanged
+```
+
 Public-sensitive `agn_038`-only splice for a lower-blast-radius public probe:
 
 ```text
@@ -149,6 +174,30 @@ changed_ids=47
 columns=effectiveness:47
 videos=agn_038:47
 effectiveness transitions: landed->blocked:38, landed->miss:9
+```
+
+Transition-gated `agn_038`-only splice:
+
+```text
+submissions/hybrid_root_attr_effectiveness_rgb_eff_m0_no_miss_to_landed_agn038_only_OFFLINE_CANDIDATE.csv
+```
+
+Gate/validation summary:
+
+```text
+replace_keys=agn_038
+base_count=81
+override_count=81
+Validation passed.
+```
+
+Diff versus root:
+
+```text
+changed_ids=49
+columns=effectiveness:49
+videos=agn_038:49
+effectiveness transitions: landed->blocked:38, landed->miss:11
 ```
 
 Stronger but less conservative `agn_038`-only `attr_all` splice:
@@ -185,11 +234,14 @@ This is a real stacked public-anchor attribute branch:
 - `attr_effectiveness + RGB effectiveness m0` is the cleanest public-safe
   variant: it stays fixed-row and changes only `effectiveness` versus root while
   improving the effectiveness-only OOF source from `0.395018` to `0.397369`.
+- Excluding `miss->landed` transitions improves the effectiveness-only stack to
+  `0.398438` OOF, while the resulting test artifact still changes only
+  `effectiveness` versus root.
 
 No automatic upload. Under the current submit guardrail, the effectiveness-only
-stack replaces the earlier raw RGB effectiveness probe as the best fixed-row
-public-safe candidate if an upload is explicitly approved. The `agn_038`-only
-splice is the narrower public-probe version because previous submissions showed
-`agn_038` is public-sensitive. The `attr_all` `agn_038`-only splice is bounded
-to the same video but changes punch type/hand/target too, so it is the stronger
-but less conservative public probe.
+transition-gated stack replaces the earlier raw RGB effectiveness probe as the
+best fixed-row public-safe candidate if an upload is explicitly approved. The
+transition-gated `agn_038`-only splice is the narrower public-probe version
+because previous submissions showed `agn_038` is public-sensitive. The
+`attr_all` `agn_038`-only splice is bounded to the same video but changes punch
+type/hand/target too, so it is the stronger but less conservative public probe.

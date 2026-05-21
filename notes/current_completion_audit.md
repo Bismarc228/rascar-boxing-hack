@@ -111,7 +111,9 @@ remaining gaps.
 - Validated stacked public-anchor attribute+RGB test artifacts:
   - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_all_rgb_eff_m03_OFFLINE_CANDIDATE.csv`
   - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_effectiveness_rgb_eff_m0_OFFLINE_CANDIDATE.csv`
+  - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_effectiveness_rgb_eff_m0_no_miss_to_landed_OFFLINE_CANDIDATE.csv`
   - `submissions/hybrid_root_attr_effectiveness_rgb_eff_m0_agn038_only_OFFLINE_CANDIDATE.csv`
+  - `submissions/hybrid_root_attr_effectiveness_rgb_eff_m0_no_miss_to_landed_agn038_only_OFFLINE_CANDIDATE.csv`
   - `submissions/hybrid_root_attr_all_rgb_eff_m03_agn038_only_OFFLINE_CANDIDATE.csv`
 - Private-risk gated candidate:
   `submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv`.
@@ -212,6 +214,10 @@ next visible score   public=0.11807
   only 47 effectiveness labels on the known public-sensitive test video; the
   matching `attr_all` `agn_038`-only splice validates with 73 broader attribute
   changes on that same video.
+- A transition-specific audit found the effectiveness stack is stronger if
+  `miss->landed` RGB changes are blocked: OOF `0.398438` versus `0.397369`.
+  Full and `agn_038`-only transition-gated CSVs validate and still change only
+  `effectiveness` versus root.
 - Adding the stacked attribute sources back into the source-oracle table raises
   focused oracle headroom to `0.422839`. A preserve-order ridge source policy
   materializes a tiny new local OOF best (`0.407417`), but simple stumps regress
