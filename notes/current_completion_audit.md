@@ -100,6 +100,11 @@ next visible score   public=0.04481
   Validated offline test CSVs exist, but the gated splice still changes `672`
   rows versus the public anchor and remains a private-risk artifact, not a
   default upload.
+- A fixed-row crop-motion gate is now the best local source branch:
+  `seq_repeat_exchange_attr_motion_gate=0.401483`, a `+0.001196` lift over the
+  sequence-repeat exchange+attribute source. Validated full and no-`agn_038`
+  test artifacts exist, but the lift is small and the branch still inherits
+  sequence public-risk.
 - Row-level source stacking over saved base/seq/rival/exchange/attribute/motion
   CSVs was tested and killed as a submit path. The source oracle with
   attributes reaches `0.408357`, but the learned row stacker only scored

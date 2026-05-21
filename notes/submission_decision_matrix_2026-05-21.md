@@ -21,6 +21,7 @@ candidate is worth spending one of the remaining attempts.
 | new sequence branch, attr base, no `agn_038` | Same replace keys as above; validates; `changed_vs_root=640`. | `submissions/hybrid_attrall_seqrepeat_exchange_attr_gate_noagn038_OFFLINE_CANDIDATE.csv` | Combines two unsubmitted changes: attributes plus sequence replacements. | Less conservative than root no-`agn_038`; keep for ensemble/private. |
 | new sequence branch, attr base gated | Best local splice `0.400603`; validates; replaces `agn_038,agn_047,agn_062,agn_063`; `changed_vs_root=672`. | `submissions/hybrid_attrall_seqrepeat_exchange_attr_gate_OFFLINE_CANDIDATE.csv` | Touches public-sensitive `agn_038` and expands it from `81` to `99` clear rows. | Do not upload unless explicitly accepting public-risk. |
 | full new sequence branch | Strong local source `0.400288`; validates; `changed_vs_root=767`. | `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_all_OFFLINE_CANDIDATE.csv` | Full-sequence public transfer already failed in prior probes. | Do not submit directly. |
+| motion-gated new sequence branch, root base, no `agn_038` | Best local source branch is motion-gated (`0.401483`), but this conservative test splice preserves public-proven `agn_038`; validates; `changed_vs_root=375`. | `submissions/hybrid_root_seqrepeat_exchange_attr_motion_gate_noagn038_OFFLINE_CANDIDATE.csv` | OOF lift is small, and private-risk videos still have no fresh public evidence. | Most conservative artifact from the current best local branch. |
 
 ## Rejected For Upload
 
@@ -39,7 +40,7 @@ order is:
 
 1. Public-anchor `effectiveness` or `all_attrs` attribute-only probe if the goal
    is public safety.
-2. `hybrid_root_seqrepeat_exchange_attr_gate_noagn038_OFFLINE_CANDIDATE.csv` if
+2. `hybrid_root_seqrepeat_exchange_attr_motion_gate_noagn038_OFFLINE_CANDIDATE.csv` if
    the goal is private-risk with public-sensitive `agn_038` preserved.
 3. Avoid full sequence or `agn_038`-expanded variants unless the user explicitly
    accepts public-score risk.
