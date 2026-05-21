@@ -8,7 +8,7 @@ candidate is worth spending one of the remaining attempts.
 
 | Candidate | Evidence | Risk | Decision |
 | --- | --- | --- | --- |
-| `submission.csv` / `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv` | Team public best `0.16461`; validates. Latest leaderboard check at `2026-05-21T14:04:36Z` shows visible leader at `0.32088`, with `8/30` submissions used today and reset at `2026-05-22T00:00:00Z`. | Already submitted; no longer overall leader. | Keep as root fallback; do not resubmit. |
+| `submission.csv` / `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv` | Team public best `0.16461`; validates. Latest leaderboard check at `2026-05-21T14:47:18Z` shows visible leader at `0.32088`, next visible score `0.11807`, with `8/30` submissions used today and reset at `2026-05-22T00:00:00Z`. | Already submitted; no longer overall leader. | Keep as root fallback; do not resubmit. |
 
 ## Plausible But Not Auto-Submit
 

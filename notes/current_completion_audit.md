@@ -154,7 +154,7 @@ python3 -m py_compile $(find rascar_boxing tools -name '*.py' -print)  # passed
 python3 tools/validate_data.py --data-root data/raw --submission submission.csv  # passed
 ```
 
-Kaggle state from the last explicit quota check (`2026-05-21T14:04:36Z`);
+Kaggle state from the last explicit quota check (`2026-05-21T14:47:18Z`);
 re-check before any upload:
 
 ```text
@@ -170,7 +170,7 @@ Leaderboard state:
 ```text
 кто убил бенчмарка   public=0.32088
 Los Pollos Hermanos  public=0.16461
-next visible score   public=0.10431
+next visible score   public=0.11807
 ```
 
 ## Remaining Gaps
