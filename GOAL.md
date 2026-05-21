@@ -194,6 +194,8 @@ public anchor everywhere except `agn_038`, where sequence-TCN snap4 is better.
 submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
 ```
 
+Root `submission.csv` is currently copied from this file and locally validated.
+
 Previous public best was `0.13849` from the yolo26l temporal-context/root-rate
 branch:
 

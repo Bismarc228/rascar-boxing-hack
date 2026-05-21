@@ -10,6 +10,9 @@ Current public best:
 0.16461  submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_OFFLINE_CANDIDATE.csv
 ```
 
+The root-level `submission.csv` is currently copied from this public-best file
+and passes `tools/validate_data.py`.
+
 This is a hybrid of the old public anchor plus sequence-TCN snap4 predictions
 only for `agn_038`. It beats the previous yolo26l public anchor:
 
