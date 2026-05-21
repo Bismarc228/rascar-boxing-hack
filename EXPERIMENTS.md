@@ -49,6 +49,33 @@ Independent local branches after the cap was tightened:
           weak positive ensemble feature; test CSV validates locally with
           707 clear rows; not a direct submit
 
+0.401757  per-video source oracle over base/sequence/crop-motion rows
+          versus 0.401371 for base/sequence only; crop-motion only wins
+          validation videos agn_056 and agn_057, so the extra headroom is
+          marginal and not enough for a submit path
+
+0.368799  best count/overlap gate for base -> crop-motion
+          essentially near-full crop-motion replacement; not a useful gate
+
+Relaxed capacity audit from `notes/new_growth_report_2026-05-21.md` was
+implemented as a no-submit diagnostic. The CSV
+`submissions/relaxed_capacity_agn037_plus20_from_agn062_yolo26l_OFFLINE_DIAGNOSTIC.csv`
+keeps all `1594` ids but reassigns 20 `clear=false` donor ids from `agn_062`
+to extra `agn_037` yolo26l predictions. It passes
+`tools/validate_data.py --no-strict-id-metadata` and fails strict validation
+exactly on `id -> video_key` metadata. This proves the relaxed-format file can
+be formed locally, but not that Kaggle accepts it; do not upload without
+explicit approval.
+
+Fight-level source diagnostics were materialized in
+`data/processed/diagnostics/fight_level_sources_validation.csv` and
+`data/processed/diagnostics/fight_level_sources_test.csv`. The table supports
+the known `agn_037` sequence failure (`base_le15=0.4231`,
+`source_le15=0.5577`, huge median gap), while also showing why `agn_056` is
+hard: validation sequence is worse despite high overlap
+(`base_le15=0.8969`, `source_le15=0.9038`). Count/nearest-frame gate alone is
+therefore insufficient.
+
 0.319736  ResNet50 deep crop identity gated role map on agn_003/004
           baseline was 0.322257, so killed on old boxing videos
 

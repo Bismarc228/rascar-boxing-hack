@@ -33,6 +33,9 @@ completion claim; it records concrete evidence and remaining gaps.
 - Identity/video tools:
   - `tools/evaluate_deep_fighter_identity_calibration.py`
   - `tools/make_crop_motion_context_submission.py`
+  - `tools/evaluate_row_source_ensemble.py`
+  - `tools/make_relaxed_capacity_submission.py`
+  - `tools/build_fight_level_source_table.py`
 - Validation row tools:
   - `tools/make_pose_validation_rows.py`
   - `tools/evaluate_pose_sequence_spotter.py --write-best-rows`
@@ -70,6 +73,10 @@ next visible score   public=0.04481
   `notes/ensemble_candidates.md`; the validated test artifact is
   `submissions/yolo26l_cropmotion_samesum_w4_am02_thr085_same10_cross4_rootrate088_ma-004_mb008_OFFLINE_CANDIDATE.csv`.
   It is not a direct submit branch.
+- The first `notes/new_growth_report_2026-05-21.md` priorities were started:
+  relaxed capacity reallocation has a locally relaxed-valid diagnostic CSV, and
+  fight-level source tables now exist under `data/processed/diagnostics/`.
+  Neither result is a submit trigger yet.
 - `.venv` is available for RGB/video/audio branches with `timm`, `decord`,
   `av`, `transformers`, `accelerate`, `librosa`, `soundfile`, and
   `open-clip-torch`; use `.venv/bin/python` plus `CUDA_VISIBLE_DEVICES=1`.

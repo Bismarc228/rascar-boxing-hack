@@ -217,6 +217,17 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   context improved `0.365177 -> 0.368244` with `alpha=-0.04,beta=0.08`, mostly
   through timing/fighter score but with higher FP. Keep it only for future
   ensemble/rerank work, not as a direct submit.
+- Relaxed row/id capacity is now technically audited but not submit-approved.
+  `tools/make_relaxed_capacity_submission.py` produced a 1594-row diagnostic
+  that reallocates 20 spare `agn_062` filler ids to extra `agn_037` predictions.
+  It passes relaxed local validation and fails strict `id -> video_key`
+  metadata exactly as expected. This remains high-risk because Kaggle may
+  enforce the sample metadata internally.
+- Fight-level diagnostics are now available for base/sequence/crop-motion.
+  They support the `agn_037` public failure with very low sequence/base
+  agreement, but also show the harder validation failure `agn_056`, where
+  sequence is worse despite high overlap. Future gates need richer fight-level
+  or RGB features, not only count and nearest-frame overlap.
 - External research reinforces the priority order: impact spotting and
   precision/`clear` calibration first, fighter identity second, attributes
   later.
