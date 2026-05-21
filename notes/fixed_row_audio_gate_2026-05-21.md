@@ -194,3 +194,17 @@ hgb=0.389748
 
 So `audio_gate` should be treated as a strong single source and ensemble member,
 not as proof that the current source-policy model is ready.
+
+Using `audio_gate` itself as the base confirms the same failure mode:
+
+```text
+base=audio_gate
+base_score=0.404480
+best in-sample stump=old_attr:source_le15>=0.9394
+best in-sample score=0.411851
+group_oof=0.401589
+group_oof_delta=-0.002890
+```
+
+The extra oracle headroom is real, but simple source-switch rules remain
+validation-set overfit.
