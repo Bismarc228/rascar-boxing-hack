@@ -165,6 +165,8 @@ next visible score   public=0.04481
   (`0.405200 -> 0.407232` with confidence margin `0.2`). It is saved as an OOF
   diagnostic/source but has no test artifact and should not drive an upload
   alone.
+- RGB confidence-margin checks for `punch_type`, `hand`, and `target` all remain
+  below the baseline, so the RGB attribute signal is limited to effectiveness.
 - Exchange-side fighter identity remains a micro-signal only
   (`0.404479 -> 0.404915`). It is useful for a later ensemble, not for a solo
   upload.

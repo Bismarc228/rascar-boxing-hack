@@ -41,6 +41,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pca-components", type=int, default=64)
     parser.add_argument("--logreg-c", type=float, default=0.35)
     parser.add_argument("--effectiveness-margins", default="0.0,0.1,0.2,0.3")
+    parser.add_argument(
+        "--margin-columns",
+        default="effectiveness",
+        help="Comma-separated attribute columns for confidence-margin variants.",
+    )
     parser.add_argument("--write-oof-rows", type=Path)
     parser.add_argument("--write-effectiveness-margin", type=float)
     parser.add_argument(
@@ -102,19 +107,23 @@ def main() -> int:
             f"{video_wins(score, baseline)},{changed}",
             flush=True,
         )
-    for margin in parse_floats(args.effectiveness_margins):
-        name = f"effectiveness_margin_{margin:g}"
-        rows, changed = apply_effectiveness_margin(pred_rows, predictions, probabilities, margin)
-        rows_by_variant[name] = rows
-        score = score_predictions(gt_rows, rows)
-        summary = attr_summary(score)
-        print(
-            f"{name},{score['macro_score']:.6f},{score['macro_score'] - baseline['macro_score']:.6f},"
-            f"{summary['punch_type']:.6f},{summary['effectiveness']:.6f},"
-            f"{summary['hand']:.6f},{summary['target']:.6f},"
-            f"{video_wins(score, baseline)},{changed}",
-            flush=True,
-        )
+    margin_columns = [column.strip() for column in args.margin_columns.split(",") if column.strip()]
+    for column in margin_columns:
+        if column not in ATTR_COLUMNS:
+            raise ValueError(f"unknown margin column {column}")
+        for margin in parse_floats(args.effectiveness_margins):
+            name = f"{column}_margin_{margin:g}"
+            rows, changed = apply_attribute_margin(pred_rows, predictions, probabilities, column, margin)
+            rows_by_variant[name] = rows
+            score = score_predictions(gt_rows, rows)
+            summary = attr_summary(score)
+            print(
+                f"{name},{score['macro_score']:.6f},{score['macro_score'] - baseline['macro_score']:.6f},"
+                f"{summary['punch_type']:.6f},{summary['effectiveness']:.6f},"
+                f"{summary['hand']:.6f},{summary['target']:.6f},"
+                f"{video_wins(score, baseline)},{changed}",
+                flush=True,
+            )
     if args.write_oof_rows:
         variant_name = args.write_variant
         if args.write_effectiveness_margin is not None:
@@ -330,23 +339,24 @@ def apply_predictions(
     return output, changed
 
 
-def apply_effectiveness_margin(
+def apply_attribute_margin(
     rows: list[dict[str, str]],
     predictions: dict[str, np.ndarray],
     probabilities: dict[str, list[dict[str, float]]],
+    column: str,
     margin: float,
 ) -> tuple[list[dict[str, str]], int]:
     output = []
     changed = 0
     for index, row in enumerate(rows):
         item = {col: row.get(col, "") for col in SUBMISSION_COLUMNS}
-        pred_value = str(predictions["effectiveness"][index])
-        current_value = row["effectiveness"]
-        probs = probabilities["effectiveness"][index]
+        pred_value = str(predictions[column][index])
+        current_value = row[column]
+        probs = probabilities[column][index]
         pred_prob = float(probs.get(pred_value, 0.0))
         current_prob = float(probs.get(current_value, 0.0))
         if pred_value != current_value and pred_prob - current_prob >= margin:
-            item["effectiveness"] = pred_value
+            item[column] = pred_value
             changed += 1
         output.append(item)
     return output, changed

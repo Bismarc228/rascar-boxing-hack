@@ -111,6 +111,20 @@ The effect is real enough to save, but not strong enough to justify a standalone
 upload. The confidence margin reduces churn and improves the main setting, but
 the best margin is still somewhat sensitive to RGB head capacity.
 
+## Other Attribute Margins
+
+The evaluator was extended to print confidence-margin variants for other
+attribute columns. With the main `pca=64, C=0.35` setting:
+
+```text
+punch_type_margin_0.3  0.404246  delta=-0.000955  changed=406
+hand_margin_0.3        0.401078  delta=-0.004122  changed=225
+target_margin_0.3      0.402905  delta=-0.002295  changed=160
+```
+
+Decision: only `effectiveness` is currently useful. Do not combine RGB
+`punch_type`, `hand`, or `target` replacements with the current best source.
+
 ## Decision
 
 This is the new best local OOF row source at `0.407232`, but it is an attribute
