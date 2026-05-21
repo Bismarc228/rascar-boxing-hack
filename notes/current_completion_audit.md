@@ -101,6 +101,9 @@ remaining gaps.
 - Validated public-anchor RGB-effectiveness test artifacts:
   - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_rgb_eff_m0_OFFLINE_CANDIDATE.csv`
   - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_rgb_eff_m02_OFFLINE_CANDIDATE.csv`
+- Validated stacked public-anchor attribute+RGB test artifacts:
+  - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_all_rgb_eff_m03_OFFLINE_CANDIDATE.csv`
+  - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_effectiveness_rgb_eff_m0_OFFLINE_CANDIDATE.csv`
 - Private-risk gated candidate:
   `submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv`.
 - Gate tools:
@@ -185,8 +188,14 @@ next visible score   public=0.10431
 - RGB effectiveness also improves the public-safe yolo26l/root validation anchor
   without changing timing/count/fighter (`0.365177 -> 0.371229` ungated,
   `0.369373` at margin `0.2`). Matching test artifacts on root `submission.csv`
-  validate and change only `effectiveness`, so this is now the cleanest
-  public-safe attribute probe if an upload is explicitly approved.
+  validate and change only `effectiveness`; the stacked attribute+RGB branch
+  below is stronger local evidence for the same public-safe fixed-row shape.
+- Stacking the same RGB effectiveness model on the older public-anchor
+  attribute candidates gives stronger fixed-row public-anchor evidence:
+  `attr_all 0.396329 -> 0.398315` at margin `0.3`, and
+  `attr_effectiveness 0.395018 -> 0.397369` at margin `0`. The
+  effectiveness-only stacked test artifact validates, changes only
+  `effectiveness` versus root, and keeps all per-video clear counts unchanged.
 - A stricter root-based splice using the latest RGB/audio-exchange source only
   on previously public-neutral `agn_047,agn_062,agn_063` validates at
   `submissions/hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv`.
