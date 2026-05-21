@@ -117,6 +117,29 @@ agn_063 121 -> 119
 agn_064 74 -> 73
 ```
 
+Conservative root-splice artifact with public-sensitive `agn_038` protected:
+
+```text
+input=submissions/hybrid_root_seqrepeat_exchange_attr_motion_gate_noagn038_OFFLINE_CANDIDATE.csv
+output=submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_gate_noagn038_OFFLINE_CANDIDATE.csv
+protect=agn_038
+clear_rows=733 -> 712
+dropped=21
+Validation passed.
+```
+
+Drops by video:
+
+```text
+agn_037 52 -> 51
+agn_039 57 -> 55
+agn_047 121 -> 116
+agn_049 62 -> 56
+agn_062 120 -> 117
+agn_063 121 -> 119
+agn_064 75 -> 73
+```
+
 ## Decision
 
 Keep as a useful independent audio/pose gate and future ensemble source. Do not

@@ -43,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pose-feature-windows", default="4,8,16")
     parser.add_argument("--audio-feature-windows", default="0,3,6,12,24")
     parser.add_argument("--audio-offsets", default="-12,-6,-3,0,3,6,12")
+    parser.add_argument("--protect-video-keys", default="", help="Comma-separated videos whose rows must not be dropped")
     parser.add_argument("--quiet", action="store_true")
     return parser.parse_args()
 
@@ -124,11 +125,13 @@ def main() -> int:
     )
     p_keep = model.predict_proba(x_test)[:, 1]
     keep_by_id = {row["id"]: bool(prob >= args.threshold) for row, prob in zip(clear_rows, p_keep)}
+    protected = split_keys(args.protect_video_keys)
     output = []
     dropped = 0
     for row in rows:
         out = {col: row.get(col, "") for col in SUBMISSION_COLUMNS}
-        if out.get("clear") == "true" and not keep_by_id.get(out["id"], True):
+        protected_video = out.get("video_key") in protected
+        if out.get("clear") == "true" and not protected_video and not keep_by_id.get(out["id"], True):
             out["clear"] = "false"
             dropped += 1
         output.append(out)
@@ -137,7 +140,7 @@ def main() -> int:
         f"train_rows={len(train_rows)} train_pos={int(y_train.sum())} "
         f"labels=tp_scorable:{labels.count('tp_scorable')},tp_time_only:{labels.count('tp_time_only')},fp:{labels.count('fp')} "
         f"clear_rows={len(clear_rows)} dropped={dropped} threshold={args.threshold} "
-        f"mode={args.feature_mode} model={args.model} output={args.output}"
+        f"mode={args.feature_mode} model={args.model} protected={','.join(sorted(protected))} output={args.output}"
     )
     return 0
 
@@ -169,6 +172,10 @@ def load_audio_tracks(
         )
         for key in progress(keys, "audio-features", quiet)
     }
+
+
+def split_keys(text: str) -> set[str]:
+    return {item.strip() for item in text.split(",") if item.strip()}
 
 
 if __name__ == "__main__":
