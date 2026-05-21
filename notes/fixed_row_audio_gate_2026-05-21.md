@@ -123,3 +123,51 @@ Keep as a useful independent audio/pose gate and future ensemble source. Do not
 upload automatically: the test artifact inherits full sequence-source public
 transfer risk, and `agn_038` remains public-sensitive. This is stronger than the
 previous audio-only and hard-snap failures, but not yet a public-safe submit.
+
+## Source Oracle Update
+
+Diagnostic table:
+
+```text
+data/processed/diagnostics/source_table_with_audio_gate_20260521.csv
+```
+
+Adding `audio_gate` to the current source set makes it the best single local
+source and increases the source oracle:
+
+```text
+seq_motion:    0.401483
+audio_gate:    0.404479
+exchange_side: 0.401720
+seq_attr:      0.400288
+old_attr:      0.396329
+
+source_oracle: 0.422619
+delta_vs_base: +0.021136
+```
+
+Audio-gate wins in the full oracle:
+
+```text
+agn_010, agn_025, agn_057, agn_072
+```
+
+Pairwise oracle versus `seq_motion`:
+
+```text
+audio_gate=0.409162
+delta=+0.007679
+choices=agn_003,agn_010,agn_023,agn_025,agn_056,agn_057,agn_070,agn_072
+```
+
+Existing fight-level policies still do not recover the oracle:
+
+```text
+mean_global=0.400837
+mean_root=0.384653
+ridge=0.394631
+hgb=0.389748
+```
+
+So `audio_gate` should be treated as a strong single source and ensemble member,
+not as proof that the current source-policy model is ready.
