@@ -228,6 +228,12 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
   agreement, but also show the harder validation failure `agn_056`, where
   sequence is worse despite high overlap. Future gates need richer fight-level
   or RGB features, not only count and nearest-frame overlap.
+- A first frozen RGB event-filter smoke is killed in its simple form. ResNet50
+  ImageNet features from the union crop of both fighters, trained as a
+  leave-fight-out logistic clear-event filter on yolo26l base rows, regressed
+  immediately (`0.365177 -> 0.356329` at the softest tested threshold). RGB
+  may still be useful, but only as richer temporal clip/video features or a
+  better witness target, not as a single-frame crop TP/FP filter.
 - External research reinforces the priority order: impact spotting and
   precision/`clear` calibration first, fighter identity second, attributes
   later.

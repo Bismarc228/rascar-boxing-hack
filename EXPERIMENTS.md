@@ -57,6 +57,12 @@ Independent local branches after the cap was tightened:
 0.368799  best count/overlap gate for base -> crop-motion
           essentially near-full crop-motion replacement; not a useful gate
 
+0.356329  frozen ResNet50 RGB union-crop event filter at threshold 0.05
+          versus yolo26l base 0.365177. Higher thresholds drop more true
+          events and regress further. Current single-frame RGB crop embeddings
+          are killed as a direct clear-event filter; keep RGB/video work only
+          if it uses richer temporal clips or a better witness target.
+
 Relaxed capacity audit from `notes/new_growth_report_2026-05-21.md` was
 implemented as a no-submit diagnostic. The CSV
 `submissions/relaxed_capacity_agn037_plus20_from_agn062_yolo26l_OFFLINE_DIAGNOSTIC.csv`

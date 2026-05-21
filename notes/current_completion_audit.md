@@ -36,6 +36,7 @@ completion claim; it records concrete evidence and remaining gaps.
   - `tools/evaluate_row_source_ensemble.py`
   - `tools/make_relaxed_capacity_submission.py`
   - `tools/build_fight_level_source_table.py`
+  - `tools/evaluate_rgb_event_filter.py`
 - Validation row tools:
   - `tools/make_pose_validation_rows.py`
   - `tools/evaluate_pose_sequence_spotter.py --write-best-rows`
@@ -68,6 +69,9 @@ next visible score   public=0.04481
 - No robust fighter identity correction has passed validation.
 - A first RGB/deep crop embedding identity smoke was tested and regressed; no
   robust RGB/video embedding model has passed validation yet.
+- A first frozen RGB event-filter smoke also regressed
+  (`0.365177 -> 0.356329` at the softest threshold), so single-frame ResNet
+  union-crop features are not a direct filter path.
 - Raw crop-motion rescoring has a small independent validation gain
   (`0.365177 -> 0.368244`) and is recorded in
   `notes/ensemble_candidates.md`; the validated test artifact is

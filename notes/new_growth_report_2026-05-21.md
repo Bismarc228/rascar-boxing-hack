@@ -399,6 +399,36 @@ Failure explanations now supported by table evidence:
   `0.90+`), but `agn_056` shows why this remains private-risk rather than a
   public-submit trigger.
 
+### RGB Event Filter Smoke
+
+Created:
+
+```text
+tools/evaluate_rgb_event_filter.py
+```
+
+First smoke:
+
+```text
+CUDA_VISIBLE_DEVICES=1 .venv/bin/python tools/evaluate_rgb_event_filter.py \
+  --predictions data/processed/validation_rows/yolo26l_samesum_w4_am02_thr085_same10_cross4_rootrate088.csv \
+  --tracks-dir data/processed/pose_tracks/val_yolo26l_conf035 \
+  --feature-cache data/processed/rgb_features/base_resnet50_union_yolo26l_rows.npz \
+  --model-name resnet50.a1_in1k --batch-size 128 --quiet
+```
+
+Result:
+
+```text
+baseline 0.365177
+best tested threshold 0.05 -> 0.356329
+```
+
+This kills the simple single-frame ResNet union-crop TP/FP filter. The positive
+rate of selected yolo26l events is already high (`0.919`), and the RGB filter
+mostly drops true events. RGB/video should continue only as richer temporal
+clip features, offset/contact witness, or segment-level scorer.
+
 ## Operational Notes
 
 - Branch for this report: `research/new-growth-opportunities`.

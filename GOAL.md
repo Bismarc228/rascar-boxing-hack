@@ -2,7 +2,29 @@
 
 ## Objective
 
-Build a solution for Kaggle competition `boxing-action-recognition-challenge`.
+Research and iteratively improve an end-to-end solution for Kaggle competition
+`boxing-action-recognition-challenge`.
+
+Concrete operating objective:
+
+- Explain zero/low public scores and keep that evidence recorded.
+- Maintain a reproducible pipeline from local validation to generating
+  `submission.csv`.
+- Improve punch timing and fighter identity using pose, video, and RGB
+  features.
+- Check improvements with the local metric before considering Kaggle.
+- Validate every CSV safely before upload.
+- Submit to Kaggle only with explicit permission, then inspect submissions and
+  leaderboard feedback.
+- Never use GPU 0. All GPU jobs must run on physical GPU 1 through
+  `CUDA_VISIBLE_DEVICES=1` or an equivalent explicit device setting.
+
+Guardrails:
+
+- Do not spend submissions on blind threshold/NMS sweeps.
+- Do not submit sample/temporal-prior/audio-only/global-offset-only variants.
+- Before every upload, run `tools/validate_data.py`.
+- Account for the daily Kaggle quota and current public best before upload.
 
 For each of 9 test boxing-round videos, predict a fixed-size event table where each row is one punch event. The core task is to detect the punch frame and identify the attacking fighter (`red` or `blue`). Extra punch attributes also affect the score:
 
