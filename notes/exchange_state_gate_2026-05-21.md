@@ -96,7 +96,7 @@ Result:
 
 ## Test Artifact
 
-Generated from the current rival offline candidate:
+Generated from the public-anchor rival offline candidate:
 
 ```bash
 python3 tools/make_exchange_state_gate_submission.py \
@@ -121,10 +121,36 @@ The train-all test gate dropped only one clear row:
 
 - `agn_062`, id `614`, frame `2716`, red left head.
 
+Also generated the OOF-analog private-risk branch by applying rival+exchange to
+the gated test candidate (`agn_038,agn_062,agn_063` sequence replacement):
+
+```bash
+python3 tools/make_fighter_rival_flip_submission.py \
+  --input submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv \
+  --output submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_rival_w0_samehand_r13_min1_fht_OFFLINE_CANDIDATE.csv \
+  --tracks-dir data/processed/pose_tracks/test_yolo26x_conf035 \
+  --window 0 \
+  --match-mode same_hand \
+  --ratio 1.3 \
+  --min-rival-score 1.0 \
+  --update-mode fighter_hand_target
+```
+
+This changes 11 fighter/target fields and keeps 731 clear rows. Applying the
+exchange gate to that gated+rival file at threshold `0.24` drops zero rows:
+
+```text
+submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_rival_exchange_hgb_p024_OFFLINE_CANDIDATE.csv
+Validation passed.
+```
+
+So the exchange test effect is source-dependent: it is useful OOF, but the
+train-all threshold is nearly inactive on the private-risk gated test source.
+
 ## Decision
 
 - Keep as an ensemble candidate and source-gating signal.
-- Do not upload directly: OOF gain is real but modest, and the test artifact is
-  extremely conservative at the validated threshold.
+- Do not upload directly: OOF gain is real but modest, and the test artifacts
+  are extremely conservative at the validated threshold.
 - Next useful step is a fight-level source policy over base/seq/motion/rival/
   exchange, not another blind threshold sweep.
