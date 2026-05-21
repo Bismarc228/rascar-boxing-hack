@@ -98,6 +98,9 @@ remaining gaps.
 - Validated RGB-effectiveness-on-audio-exchange test artifacts:
   - `submissions/seq_tcn_yolo26x_witness_repeat_thr06_nms10_cross2_snap4_rootcount088_exchange_attr_motion_audio_exchange_side_rgb_eff_m02_OFFLINE_CANDIDATE.csv`
   - `submissions/hybrid_root_seqrepeat_exchange_attr_motion_audio_exchange_side_rgb_eff_m02_noagn038_OFFLINE_CANDIDATE.csv`
+- Validated public-anchor RGB-effectiveness test artifacts:
+  - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_rgb_eff_m0_OFFLINE_CANDIDATE.csv`
+  - `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_rgb_eff_m02_OFFLINE_CANDIDATE.csv`
 - Private-risk gated candidate:
   `submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv`.
 - Gate tools:
@@ -179,6 +182,11 @@ next visible score   public=0.10431
   changes 195 effectiveness labels, and protected no-`agn_038` artifact changes
   165. It validates, but it is still attribute-only and does not remove sequence
   public-risk.
+- RGB effectiveness also improves the public-safe yolo26l/root validation anchor
+  without changing timing/count/fighter (`0.365177 -> 0.371229` ungated,
+  `0.369373` at margin `0.2`). Matching test artifacts on root `submission.csv`
+  validate and change only `effectiveness`, so this is now the cleanest
+  public-safe attribute probe if an upload is explicitly approved.
 - A stricter root-based splice using the latest RGB/audio-exchange source only
   on previously public-neutral `agn_047,agn_062,agn_063` validates at
   `submissions/hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv`.

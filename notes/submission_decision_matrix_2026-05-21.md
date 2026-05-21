@@ -16,6 +16,7 @@ candidate is worth spending one of the remaining attempts.
 | --- | --- | --- | --- | --- |
 | public-anchor attribute-only, effectiveness | Fixed-row attribute OOF `0.395018`, fewer test changes than all-attrs. | `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_effectiveness_OFFLINE_CANDIDATE.csv` | Attribute-only; may not move public much; still unsubmitted model output. | Safest attribute probe if an upload is explicitly allowed. |
 | public-anchor attribute-only, all attrs | Fixed-row attribute OOF `0.396329`, stronger than effectiveness-only. | `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_attr_all_OFFLINE_CANDIDATE.csv` | More attribute churn; timing/count unchanged. | Stronger but less conservative attribute probe. |
+| public-anchor RGB effectiveness | RGB ViT-B/16 effectiveness replacement improves the yolo26l validation anchor `0.365177 -> 0.371229` ungated and `0.369373` at margin `0.2`; only `effectiveness` changes. | `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_rgb_eff_m0_OFFLINE_CANDIDATE.csv`; `submissions/hybrid_yolo26l_best_agn038_seq_tcn_snap4_rootcount088_rgb_eff_m02_OFFLINE_CANDIDATE.csv`; both validate. | Attribute-only and unsubmitted, but timing/count/fighter are exactly preserved. | Cleanest current public-safe RGB probe; no automatic upload. |
 | old gated sequence private-risk | Previous gate OOF around `0.395013`; public expected mostly neutral beyond anchor. | `submissions/hybrid_yolo26l_best_seq_tcn_snap4_gate_oof395_test_OFFLINE_CANDIDATE.csv` | Private-risk, not a public growth trigger. | Keep as older conservative private-risk baseline. |
 | new sequence branch, root base, no `agn_038` | Preserves public-proven `agn_038`; replaces only `agn_047,agn_062,agn_063`; validates; `changed_vs_root=375`. | `submissions/hybrid_root_seqrepeat_exchange_attr_gate_noagn038_OFFLINE_CANDIDATE.csv` | No fresh public evidence; public may be neutral if these videos are mostly private, but this is unknown. | Most public-conservative private-risk artifact from the new branch. |
 | new sequence branch, attr base, no `agn_038` | Same replace keys as above; validates; `changed_vs_root=640`. | `submissions/hybrid_attrall_seqrepeat_exchange_attr_gate_noagn038_OFFLINE_CANDIDATE.csv` | Combines two unsubmitted changes: attributes plus sequence replacements. | Less conservative than root no-`agn_038`; keep for ensemble/private. |
@@ -54,8 +55,8 @@ candidate is worth spending one of the remaining attempts.
 Do not upload automatically. If an upload is explicitly approved, the least bad
 order is:
 
-1. Public-anchor `effectiveness` or `all_attrs` attribute-only probe if the goal
-   is public safety.
+1. Public-anchor RGB `effectiveness` margin `0` if the goal is public safety
+   with fixed timing/count/fighter; margin `0.2` is the lower-churn fallback.
 2. `hybrid_root_audio_exchange_rgb_eff_m02_publicneutral_047_062_063_OFFLINE_CANDIDATE.csv`
    if the goal is the safest current private-risk splice with `agn_038` and
    `agn_037` preserved.
