@@ -9,6 +9,7 @@ sequence scorer/reranker rather than a standalone dense detector.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 import os
@@ -106,6 +107,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dropout", type=float, default=0.08)
     parser.add_argument("--lr", type=float, default=2e-3)
     parser.add_argument("--pos-sample-rate", type=float, default=0.65)
+    parser.add_argument("--contrastive-weight", type=float, default=0.0)
+    parser.add_argument("--contrastive-temperature", type=float, default=0.10)
+    parser.add_argument("--contrastive-anchor-threshold", type=float, default=0.70)
+    parser.add_argument("--contrastive-positive-threshold", type=float, default=0.20)
+    parser.add_argument("--contrastive-positive-window", type=int, default=1)
+    parser.add_argument("--contrastive-negative-threshold", type=float, default=0.05)
+    parser.add_argument("--contrastive-negatives", type=int, default=512)
+    parser.add_argument("--contrastive-max-anchors", type=int, default=128)
+    parser.add_argument("--contrastive-hard-negative-frac", type=float, default=0.5)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--seeds", default="")
     parser.add_argument("--device", default="auto")
@@ -114,12 +124,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--thresholds", default="0.05,0.08,0.1,0.12,0.15,0.2,0.25,0.3,0.4")
     parser.add_argument("--nms-frames", default="8,10,12")
     parser.add_argument("--cross-nms-frames", default="2,4")
+    parser.add_argument("--cross-nms-diff-fighter-ratio-thresholds", default="5.0")
+    parser.add_argument("--same-group-nms-ratio-thresholds", default="None")
     parser.add_argument("--snap-windows", default="0")
+    parser.add_argument("--snap-features", default="sequence")
     parser.add_argument("--count-modes", default="threshold,root_rate,root_count")
     parser.add_argument("--count-multipliers", default="0.72,0.78,0.84,0.88,0.92")
     parser.add_argument("--pose-priors", default="0.0,0.1,0.2,0.4")
     parser.add_argument("--top-k", type=int, default=50)
     parser.add_argument("--quiet", action="store_true")
+    parser.add_argument("--trace-epochs", action="store_true")
+    parser.add_argument("--select-best-epoch", action="store_true")
     parser.add_argument("--write-best-rows", type=Path)
     parser.add_argument("--rgb-contact-feature-cache", type=Path)
     parser.add_argument("--rgb-contact-model-name", default="vit_base_patch16_clip_224.openai")
@@ -219,12 +234,38 @@ def main() -> int:
 
     group_by_key = {key: fight_group(video_by_key[key]) for key in ready_keys}
     groups = sorted(set(group_by_key.values()))
+    ready_set = set(ready_keys)
+    train_gt = [row for row in clear_gt if row["video_key"] not in ready_set]
+    gt = [row for row in clear_gt if row["video_key"] in ready_set]
+    train_videos = [row for row in videos if row["video_key"] not in ready_set]
+    train_counts = Counter(row["video_key"] for row in train_gt)
+    gt_counts = Counter(row["video_key"] for row in gt)
+    attr_priors = fit_attr_priors(train_gt)
     scored_by_key: dict[str, list[PunchCandidate]] = {}
     stream_scores_by_key_group: dict[tuple[str, int], np.ndarray] = {}
     device = resolve_device(args.device)
     seed_values = parse_ints(args.seeds) if args.seeds else [args.seed]
     print(f"device={device}", flush=True)
     print("seeds=" + ",".join(str(seed) for seed in seed_values), flush=True)
+    if args.contrastive_weight > 0:
+        print(
+            "contrastive="
+            f"weight={args.contrastive_weight},temperature={args.contrastive_temperature},"
+            f"anchor_threshold={args.contrastive_anchor_threshold},"
+            f"positive_threshold={args.contrastive_positive_threshold},"
+            f"positive_window={args.contrastive_positive_window},"
+            f"negative_threshold={args.contrastive_negative_threshold},"
+            f"negatives={args.contrastive_negatives},max_anchors={args.contrastive_max_anchors},"
+            f"hard_negative_frac={args.contrastive_hard_negative_frac}",
+            flush=True,
+        )
+    if args.trace_epochs or args.select_best_epoch:
+        print(
+            "epoch_trace_header=fold,seed,epoch,train_loss,score,time,fighter,fp_penalty,n_pred,"
+            "pose_prior,threshold,nms,cross_nms,cross_diff_ratio,same_group_ratio,snap_window,"
+            "snap_feature,count_mode,count_multiplier",
+            flush=True,
+        )
 
     for fold_index, group in enumerate(groups):
         valid_keys = [key for key in ready_keys if group_by_key[key] == group]
@@ -239,6 +280,25 @@ def main() -> int:
         for seed_index, model_seed in enumerate(seed_values):
             seed_everything(model_seed + 1000 * fold_index, args.deterministic)
             model = TinyTCN(train_samples[0].x.shape[1], args.hidden, args.layers, args.dropout).to(device)
+            epoch_callback = None
+            if args.trace_epochs or args.select_best_epoch:
+                epoch_callback = make_epoch_trace_callback(
+                    args,
+                    valid_keys,
+                    valid_samples,
+                    video_by_key,
+                    packs,
+                    attr_priors,
+                    train_videos,
+                    train_counts,
+                    gt_counts,
+                    [row for row in gt if row["video_key"] in set(valid_keys)],
+                    device,
+                    fold_index,
+                    len(groups),
+                    group,
+                    seed_index,
+                )
             train_model(
                 model,
                 train_samples,
@@ -248,6 +308,7 @@ def main() -> int:
                 group,
                 sample_seed=model_seed + 1000 * fold_index,
                 seed_index=seed_index,
+                epoch_callback=epoch_callback,
             )
             stream_predictions = predict_samples(model, valid_samples, device)
             if stream_predictions_sum is None:
@@ -302,13 +363,6 @@ def main() -> int:
             gt_by_key,
         )
 
-    train_gt = [row for row in clear_gt if row["video_key"] not in set(ready_keys)]
-    gt = [row for row in clear_gt if row["video_key"] in set(ready_keys)]
-    train_videos = [row for row in videos if row["video_key"] not in set(ready_keys)]
-    train_counts = Counter(row["video_key"] for row in train_gt)
-    gt_counts = Counter(row["video_key"] for row in gt)
-    attr_priors = fit_attr_priors(train_gt)
-
     baseline_rows = build_rows(
         ready_keys,
         video_by_key,
@@ -320,6 +374,8 @@ def main() -> int:
         threshold=0.65,
         nms_frames=8,
         cross_nms=4,
+        cross_nms_diff_fighter_ratio_threshold=5.0,
+        same_group_nms_ratio_threshold=None,
         count_mode="threshold",
         count_multiplier=1.0,
         pose_prior=0.0,
@@ -333,7 +389,10 @@ def main() -> int:
     thresholds = parse_floats(args.thresholds)
     nms_values = parse_ints(args.nms_frames)
     cross_values = parse_ints(args.cross_nms_frames)
+    cross_diff_thresholds = parse_optional_floats(args.cross_nms_diff_fighter_ratio_thresholds)
+    same_group_thresholds = parse_optional_floats(args.same_group_nms_ratio_thresholds)
     snap_windows = parse_ints(args.snap_windows)
+    snap_features = [value for value in args.snap_features.split(",") if value]
     count_modes = [value for value in args.count_modes.split(",") if value]
     multipliers = parse_floats(args.count_multipliers)
     pose_priors = parse_floats(args.pose_priors)
@@ -352,59 +411,80 @@ def main() -> int:
                 for threshold in thresholds:
                     for nms_frames in nms_values:
                         for cross_nms in cross_values:
-                            for snap_window in snap_windows:
-                                for count_mode in count_modes:
-                                    mode_multipliers = [1.0] if count_mode == "threshold" else multipliers
-                                    for count_multiplier in mode_multipliers:
-                                        rows = build_rows(
-                                            ready_keys,
-                                            video_by_key,
-                                            reranked,
-                                            attr_priors,
-                                            train_videos,
-                                            train_counts,
-                                            gt_counts,
-                                            threshold,
-                                            nms_frames,
-                                            cross_nms,
-                                            count_mode,
-                                            count_multiplier,
-                                            pose_prior=0.0,
-                                            snap_window=snap_window,
-                                            stream_scores_by_key_group=stream_scores_by_key_group,
-                                        )
-                                        score = score_predictions(gt, rows)
-                                        summary = score_summary(score)
-                                        results.append(
-                                            (
-                                                score["macro_score"],
-                                                summary["time"],
-                                                summary["fp_penalty"],
-                                                video_wins(score, baseline_score),
-                                                len(rows),
-                                                pose_prior,
-                                                rgb_alpha,
-                                                audio_alpha,
-                                                threshold,
-                                                nms_frames,
-                                                cross_nms,
-                                                snap_window,
-                                                count_mode,
-                                                count_multiplier,
-                                            )
-                                        )
+                            for cross_diff_threshold in cross_diff_thresholds:
+                                for same_group_threshold in same_group_thresholds:
+                                    for snap_window in snap_windows:
+                                        for snap_feature in snap_features:
+                                            for count_mode in count_modes:
+                                                mode_multipliers = [1.0] if count_mode == "threshold" else multipliers
+                                                for count_multiplier in mode_multipliers:
+                                                    rows = build_rows(
+                                                        ready_keys,
+                                                        video_by_key,
+                                                        reranked,
+                                                        attr_priors,
+                                                        train_videos,
+                                                        train_counts,
+                                                        gt_counts,
+                                                        threshold,
+                                                        nms_frames,
+                                                        cross_nms,
+                                                        cross_diff_threshold,
+                                                        same_group_threshold,
+                                                        count_mode,
+                                                        count_multiplier,
+                                                        pose_prior=0.0,
+                                                        snap_window=snap_window,
+                                                        snap_feature=snap_feature,
+                                                        stream_scores_by_key_group=stream_scores_by_key_group,
+                                                    )
+                                                    score = score_predictions(gt, rows)
+                                                    summary = score_summary(score)
+                                                    fighter = float(
+                                                        np.mean(
+                                                            [
+                                                                item["score_fighter"]
+                                                                for item in score["by_video"].values()
+                                                            ]
+                                                        )
+                                                    )
+                                                    results.append(
+                                                        (
+                                                            score["macro_score"],
+                                                            summary["time"],
+                                                            fighter,
+                                                            summary["fp_penalty"],
+                                                            video_wins(score, baseline_score),
+                                                            len(rows),
+                                                            pose_prior,
+                                                            rgb_alpha,
+                                                            audio_alpha,
+                                                            threshold,
+                                                            nms_frames,
+                                                            cross_nms,
+                                                            cross_diff_threshold,
+                                                            same_group_threshold,
+                                                            snap_window,
+                                                            snap_feature,
+                                                            count_mode,
+                                                            count_multiplier,
+                                                        )
+                                                    )
 
     print(
-        "score,time,fp_penalty,wins,n_pred,pose_prior,rgb_alpha,audio_alpha,threshold,nms,cross_nms,snap_window,"
-        "count_mode,count_multiplier"
+        "score,time,fighter,fp_penalty,wins,n_pred,pose_prior,rgb_alpha,audio_alpha,threshold,nms,cross_nms,"
+        "cross_nms_diff_fighter_ratio_threshold,same_group_nms_ratio_threshold,snap_window,"
+        "snap_feature,count_mode,count_multiplier"
     )
-    for result in sorted(results, reverse=True)[: args.top_k]:
+    sorted_results = sorted(results, key=result_sort_key, reverse=True)
+    for result in sorted_results[: args.top_k]:
         print(
-            f"{result[0]:.6f},{result[1]:.6f},{result[2]:.6f},{result[3]},"
-            f"{result[4]},{result[5]},{result[6]},{result[7]},{result[8]},"
-            f"{result[9]},{result[10]},{result[11]},{result[12]},{result[13]}"
+            f"{result[0]:.6f},{result[1]:.6f},{result[2]:.6f},{result[3]:.6f},{result[4]},"
+            f"{result[5]},{result[6]},{result[7]},{result[8]},{result[9]},"
+            f"{result[10]},{result[11]},{format_optional_float(result[12])},"
+            f"{format_optional_float(result[13])},{result[14]},{result[15]},{result[16]},{result[17]}"
         )
-    best_result = sorted(results, reverse=True)[0]
+    best_result = sorted_results[0]
     best_rows = build_result_rows(
         best_result,
         ready_keys,
@@ -615,11 +695,14 @@ class TinyTCN(nn.Module):
         )
         self.output = nn.Conv1d(hidden, 1, kernel_size=1)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, return_embedding: bool = False) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         x = torch.relu(self.input(x))
         for block in self.blocks:
             x = block(x)
-        return self.output(x).squeeze(1)
+        logits = self.output(x).squeeze(1)
+        if return_embedding:
+            return logits, x
+        return logits
 
 
 class ResidualBlock(nn.Module):
@@ -646,6 +729,7 @@ def train_model(
     group: str,
     sample_seed: int,
     seed_index: int,
+    epoch_callback: Callable[[int, nn.Module, float], float | None] | None = None,
 ) -> None:
     dataset = ChunkDataset(
         train_samples,
@@ -656,6 +740,9 @@ def train_model(
     )
     loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=0, pin_memory=device.type == "cuda")
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    best_metric = -float("inf")
+    best_epoch = 0
+    best_state: dict[str, torch.Tensor] | None = None
     model.train()
     iterator = range(args.epochs)
     if not args.quiet:
@@ -664,22 +751,314 @@ def train_model(
             desc=f"fold {fold_index + 1} seed {seed_index + 1} {group[:18]}",
             leave=False,
         )
-    for _ in iterator:
+    for epoch_index in iterator:
+        model.train()
         running = 0.0
         for x, y, weight in loader:
             x = x.to(device, non_blocking=True)
             y = y.to(device, non_blocking=True)
             weight = weight.to(device, non_blocking=True)
-            logits = model(x)
+            if args.contrastive_weight > 0:
+                logits, embeddings = model(x, return_embedding=True)
+            else:
+                logits = model(x)
+                embeddings = None
             loss = nn.functional.binary_cross_entropy_with_logits(logits, y, reduction="none")
             loss = (loss * weight).mean()
+            if embeddings is not None:
+                contrastive_loss = local_temporal_contrastive_loss(embeddings, y, weight, args)
+                loss = loss + args.contrastive_weight * contrastive_loss
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
             optimizer.step()
             running += float(loss.detach().cpu())
+        epoch_loss = running / max(1, len(loader))
+        if epoch_callback is not None:
+            metric = epoch_callback(int(epoch_index) + 1, model, epoch_loss)
+            if args.select_best_epoch and metric is not None and metric > best_metric:
+                best_metric = float(metric)
+                best_epoch = int(epoch_index) + 1
+                best_state = {
+                    name: value.detach().cpu().clone()
+                    for name, value in model.state_dict().items()
+                }
         if not args.quiet and hasattr(iterator, "set_postfix"):
-            iterator.set_postfix(loss=f"{running / max(1, len(loader)):.4f}")
+            iterator.set_postfix(loss=f"{epoch_loss:.4f}")
+
+    if args.select_best_epoch and best_state is not None:
+        model.load_state_dict({name: value.to(device) for name, value in best_state.items()})
+        print(
+            f"selected_epoch=fold{fold_index + 1},seed{seed_index + 1},epoch{best_epoch},metric={best_metric:.6f}",
+            flush=True,
+        )
+
+
+def make_epoch_trace_callback(
+    args: argparse.Namespace,
+    valid_keys: list[str],
+    valid_samples: list[StreamSample],
+    video_by_key: dict[str, dict[str, str]],
+    packs: dict[str, VideoPack],
+    attr_priors: dict[str, object],
+    train_videos: list[dict[str, str]],
+    train_counts: Counter[str],
+    gt_counts: Counter[str],
+    valid_gt: list[dict[str, str]],
+    device: torch.device,
+    fold_index: int,
+    n_folds: int,
+    group: str,
+    seed_index: int,
+) -> Callable[[int, nn.Module, float], float | None]:
+    thresholds = parse_floats(args.thresholds)
+    nms_values = parse_ints(args.nms_frames)
+    cross_values = parse_ints(args.cross_nms_frames)
+    cross_diff_thresholds = parse_optional_floats(args.cross_nms_diff_fighter_ratio_thresholds)
+    same_group_thresholds = parse_optional_floats(args.same_group_nms_ratio_thresholds)
+    snap_windows = parse_ints(args.snap_windows)
+    snap_features = [value for value in args.snap_features.split(",") if value]
+    count_modes = [value for value in args.count_modes.split(",") if value]
+    multipliers = parse_floats(args.count_multipliers)
+    pose_priors = parse_floats(args.pose_priors)
+
+    def callback(epoch: int, model: nn.Module, train_loss: float) -> float | None:
+        stream_predictions = predict_samples(model, valid_samples, device)
+        by_key_group = {
+            (sample.key, sample.group_index): prediction
+            for sample, prediction in zip(valid_samples, stream_predictions)
+        }
+        scored_by_key = {}
+        for key in valid_keys:
+            scored_by_key[key] = [
+                replace_score(
+                    candidate,
+                    float(
+                        by_key_group[(key, GROUP_INDEX[(candidate.fighter, candidate.hand)])][
+                            min(candidate.frame, len(by_key_group[(key, GROUP_INDEX[(candidate.fighter, candidate.hand)])]) - 1)
+                        ]
+                    ),
+                )
+                for candidate in packs[key].candidates
+            ]
+
+        best: tuple[
+            float,
+            float,
+            float,
+            float,
+            int,
+            float,
+            float,
+            int,
+            int,
+            float | None,
+            float | None,
+            int,
+            str,
+            str,
+            float,
+        ] | None = None
+        for pose_prior in pose_priors:
+            reranked = {
+                key: [apply_pose_prior(candidate, pose_prior) for candidate in candidates]
+                for key, candidates in scored_by_key.items()
+            }
+            for threshold in thresholds:
+                for nms_frames in nms_values:
+                    for cross_nms in cross_values:
+                        for cross_diff_threshold in cross_diff_thresholds:
+                            for same_group_threshold in same_group_thresholds:
+                                for snap_window in snap_windows:
+                                    for snap_feature in snap_features:
+                                        for count_mode in count_modes:
+                                            mode_multipliers = [1.0] if count_mode == "threshold" else multipliers
+                                            for count_multiplier in mode_multipliers:
+                                                rows = build_rows(
+                                                    valid_keys,
+                                                    video_by_key,
+                                                    reranked,
+                                                    attr_priors,
+                                                    train_videos,
+                                                    train_counts,
+                                                    gt_counts,
+                                                    threshold,
+                                                    nms_frames,
+                                                    cross_nms,
+                                                    cross_diff_threshold,
+                                                    same_group_threshold,
+                                                    count_mode,
+                                                    count_multiplier,
+                                                    pose_prior=0.0,
+                                                    snap_window=snap_window,
+                                                    snap_feature=snap_feature,
+                                                    stream_scores_by_key_group=by_key_group,
+                                                )
+                                                score = score_predictions(valid_gt, rows)
+                                                summary = score_summary(score)
+                                                by_video = score["by_video"]
+                                                fighter = float(np.mean([item["score_fighter"] for item in by_video.values()]))
+                                                result = (
+                                                    float(score["macro_score"]),
+                                                    float(summary["time"]),
+                                                    fighter,
+                                                    float(summary["fp_penalty"]),
+                                                    len(rows),
+                                                    pose_prior,
+                                                    threshold,
+                                                    nms_frames,
+                                                    cross_nms,
+                                                    cross_diff_threshold,
+                                                    same_group_threshold,
+                                                    snap_window,
+                                                    snap_feature,
+                                                    count_mode,
+                                                    count_multiplier,
+                                                )
+                                                if best is None or result_sort_key(result) > result_sort_key(best):
+                                                    best = result
+
+        if best is None:
+            return None
+        (
+            score,
+            time_score,
+            fighter,
+            fp_penalty,
+            n_pred,
+            pose_prior,
+            threshold,
+            nms_frames,
+            cross_nms,
+            cross_diff_threshold,
+            same_group_threshold,
+            snap_window,
+            snap_feature,
+            count_mode,
+            count_multiplier,
+        ) = best
+        print(
+            "epoch_trace="
+            f"{fold_index + 1}/{n_folds},{seed_index + 1},{epoch},{train_loss:.6f},"
+            f"{score:.6f},{time_score:.6f},{fighter:.6f},{fp_penalty:.6f},{n_pred},"
+            f"{pose_prior},{threshold},{nms_frames},{cross_nms},"
+            f"{format_optional_float(cross_diff_threshold)},"
+            f"{format_optional_float(same_group_threshold)},"
+            f"{snap_window},{snap_feature},{count_mode},{count_multiplier}",
+            flush=True,
+        )
+        return score
+
+    return callback
+
+
+def local_temporal_contrastive_loss(
+    embeddings: torch.Tensor,
+    y: torch.Tensor,
+    weight: torch.Tensor,
+    args: argparse.Namespace,
+) -> torch.Tensor:
+    if args.contrastive_positive_window <= 0 or args.contrastive_max_anchors <= 0:
+        return embeddings.sum() * 0.0
+
+    batch, hidden, length = embeddings.shape
+    if length <= 1:
+        return embeddings.sum() * 0.0
+
+    flat_embeddings = nn.functional.normalize(embeddings.transpose(1, 2).reshape(batch * length, hidden), dim=1)
+    flat_y = y.reshape(-1)
+    flat_weight = weight.reshape(-1)
+
+    anchor_indices = torch.nonzero(flat_y >= args.contrastive_anchor_threshold, as_tuple=False).flatten()
+    if anchor_indices.numel() == 0:
+        return embeddings.sum() * 0.0
+    if anchor_indices.numel() > args.contrastive_max_anchors:
+        order = torch.randperm(anchor_indices.numel(), device=anchor_indices.device)[: args.contrastive_max_anchors]
+        anchor_indices = anchor_indices[order]
+
+    positive_window = int(args.contrastive_positive_window)
+    offsets = torch.cat(
+        [
+            torch.arange(-positive_window, 0, device=embeddings.device),
+            torch.arange(1, positive_window + 1, device=embeddings.device),
+        ]
+    )
+    anchor_frames = anchor_indices % length
+    anchor_bases = anchor_indices - anchor_frames
+    positive_frames = anchor_frames[:, None] + offsets[None, :]
+    valid_positions = (positive_frames >= 0) & (positive_frames < length)
+    positive_indices = anchor_bases[:, None] + positive_frames.clamp(0, length - 1)
+    positive_labels = flat_y[positive_indices]
+    positive_mask = valid_positions & (positive_labels >= args.contrastive_positive_threshold)
+    has_positive = positive_mask.any(dim=1)
+    if not bool(has_positive.any()):
+        return embeddings.sum() * 0.0
+
+    anchors = anchor_indices[has_positive]
+    positive_indices = positive_indices[has_positive]
+    positive_labels = positive_labels[has_positive]
+    positive_mask = positive_mask[has_positive]
+    negative_mask = (flat_y <= args.contrastive_negative_threshold) & (flat_weight > 0)
+    negative_indices = torch.nonzero(negative_mask, as_tuple=False).flatten()
+    negative_indices = select_contrastive_negatives(
+        negative_indices,
+        flat_weight,
+        args.contrastive_negatives,
+        args.contrastive_hard_negative_frac,
+    )
+    if negative_indices.numel() == 0:
+        return embeddings.sum() * 0.0
+
+    anchor_embeddings = flat_embeddings[anchors]
+    positive_weights = (positive_labels * positive_mask.float()).unsqueeze(-1)
+    positive_embeddings = flat_embeddings[positive_indices]
+    positive_embeddings_tensor = (positive_embeddings * positive_weights).sum(dim=1) / positive_weights.sum(
+        dim=1
+    ).clamp_min(1e-6)
+    positive_embeddings_tensor = nn.functional.normalize(positive_embeddings_tensor, dim=1)
+    negative_embeddings = flat_embeddings[negative_indices]
+    temperature = max(1e-4, float(args.contrastive_temperature))
+    positive_logits = (anchor_embeddings * positive_embeddings_tensor).sum(dim=1, keepdim=True)
+    negative_logits = anchor_embeddings @ negative_embeddings.T
+    logits = torch.cat([positive_logits, negative_logits], dim=1) / temperature
+    targets = torch.zeros(logits.shape[0], device=logits.device, dtype=torch.long)
+    losses = nn.functional.cross_entropy(logits, targets, reduction="none")
+    anchor_weights = flat_y[anchors].clamp_min(1e-3)
+    return (losses * anchor_weights).sum() / anchor_weights.sum().clamp_min(1e-3)
+
+
+def select_contrastive_negatives(
+    negative_indices: torch.Tensor,
+    flat_weight: torch.Tensor,
+    max_negatives: int,
+    hard_negative_frac: float,
+) -> torch.Tensor:
+    if max_negatives <= 0 or negative_indices.numel() <= max_negatives:
+        return negative_indices
+
+    max_negatives = int(max_negatives)
+    hard_frac = min(1.0, max(0.0, float(hard_negative_frac)))
+    hard_count = min(max_negatives, int(round(max_negatives * hard_frac)))
+    selected_parts = []
+    remaining_indices = negative_indices
+    if hard_count > 0:
+        hard_scores = flat_weight[negative_indices]
+        hard_order = torch.topk(hard_scores, k=min(hard_count, negative_indices.numel())).indices
+        selected_parts.append(negative_indices[hard_order])
+        keep_mask = torch.ones(negative_indices.numel(), device=negative_indices.device, dtype=torch.bool)
+        keep_mask[hard_order] = False
+        remaining_indices = negative_indices[keep_mask]
+
+    random_count = max_negatives - sum(part.numel() for part in selected_parts)
+    if random_count > 0 and remaining_indices.numel() > 0:
+        random_order = torch.randperm(remaining_indices.numel(), device=remaining_indices.device)[
+            : min(random_count, remaining_indices.numel())
+        ]
+        selected_parts.append(remaining_indices[random_order])
+
+    if not selected_parts:
+        return negative_indices[:0]
+    return torch.unique(torch.cat(selected_parts))
 
 
 @torch.inference_mode()
@@ -716,10 +1095,13 @@ def build_rows(
     threshold: float,
     nms_frames: int,
     cross_nms: int,
+    cross_nms_diff_fighter_ratio_threshold: float | None,
+    same_group_nms_ratio_threshold: float | None,
     count_mode: str,
     count_multiplier: float,
     pose_prior: float,
     snap_window: int = 0,
+    snap_feature: str = "sequence",
     stream_scores_by_key_group: dict[tuple[str, int], np.ndarray] | None = None,
 ) -> list[dict[str, str]]:
     rows = []
@@ -733,12 +1115,21 @@ def build_rows(
                 nms_frames=nms_frames,
                 nms_group_mode="fighter_hand",
                 cross_nms_frames=cross_nms,
+                cross_nms_diff_fighter_ratio_threshold=cross_nms_diff_fighter_ratio_threshold,
+                same_group_nms_ratio_threshold=same_group_nms_ratio_threshold,
             ),
             estimate_count(video, train_videos, train_counts, gt_counts, count_mode, count_multiplier),
         )
         for candidate in selected:
             attrs = estimate_attrs(candidate, attr_priors)
-            frame = snap_frame(candidate, video, snap_window, stream_scores_by_key_group)
+            frame = snap_candidate_frame(
+                candidate,
+                candidates_by_key[key],
+                video,
+                snap_window,
+                snap_feature,
+                stream_scores_by_key_group,
+            )
             rows.append(
                 {
                     "id": str(row_id),
@@ -756,6 +1147,51 @@ def build_rows(
             )
             row_id += 1
     return rows
+
+
+def snap_candidate_frame(
+    candidate: PunchCandidate,
+    candidates: list[PunchCandidate],
+    video: dict[str, str],
+    snap_window: int,
+    snap_feature: str,
+    stream_scores_by_key_group: dict[tuple[str, int], np.ndarray] | None,
+) -> int:
+    if snap_feature == "sequence":
+        return snap_frame(candidate, video, snap_window, stream_scores_by_key_group)
+    if snap_feature == "closing":
+        return snap_frame_closing(candidate, candidates, video, snap_window)
+    raise ValueError(f"Unknown snap_feature: {snap_feature}")
+
+
+def snap_frame_closing(
+    candidate: PunchCandidate,
+    candidates: list[PunchCandidate],
+    video: dict[str, str],
+    snap_window: int,
+) -> int:
+    frame_count = int(video["frame_count"])
+    frame = max(0, min(frame_count - 1, candidate.frame))
+    if snap_window <= 0:
+        return frame
+    neighbors = [
+        item
+        for item in candidates
+        if item.fighter == candidate.fighter
+        and item.hand == candidate.hand
+        and abs(item.frame - candidate.frame) <= snap_window
+    ]
+    if not neighbors:
+        return frame
+    best = max(
+        neighbors,
+        key=lambda item: (
+            float(item.features.get("closing", 0.0)),
+            item.score,
+            -abs(item.frame - candidate.frame),
+        ),
+    )
+    return max(0, min(frame_count - 1, best.frame))
 
 
 def snap_frame(
@@ -836,8 +1272,12 @@ def print_score(label: str, score: dict[str, object], n_rows: int, wins: int) ->
     )
 
 
+def result_sort_key(result: tuple[object, ...]) -> tuple[object, ...]:
+    return tuple(float("inf") if value is None else value for value in result)
+
+
 def print_best_detail(
-    result: tuple[float, float, float, int, int, float, float, float, float, int, int, int, str, float],
+    result: tuple[float, float, float, float, int, int, float, float, float, float, int, int, float | None, float | None, int, str, str, float],
     ready_keys: list[str],
     video_by_key: dict[str, dict[str, str]],
     gt: list[dict[str, str]],
@@ -846,6 +1286,7 @@ def print_best_detail(
     (
         _score,
         _time,
+        _fighter,
         _fp,
         _wins,
         _n_pred,
@@ -855,7 +1296,10 @@ def print_best_detail(
         threshold,
         nms_frames,
         cross_nms,
+        cross_diff_threshold,
+        same_group_threshold,
         snap_window,
+        snap_feature,
         count_mode,
         count_multiplier,
     ) = result
@@ -865,8 +1309,10 @@ def print_best_detail(
         "best_detail: "
         f"score={score['macro_score']:.6f},pose_prior={pose_prior},rgb_alpha={rgb_alpha},"
         f"audio_alpha={audio_alpha},threshold={threshold},"
-        f"nms={nms_frames},cross_nms={cross_nms},count_mode={count_mode},"
-        f"count_multiplier={count_multiplier},snap_window={snap_window},n={len(rows)}",
+        f"nms={nms_frames},cross_nms={cross_nms},"
+        f"cross_diff_ratio={format_optional_float(cross_diff_threshold)},"
+        f"same_group_ratio={format_optional_float(same_group_threshold)},count_mode={count_mode},"
+        f"count_multiplier={count_multiplier},snap_window={snap_window},snap_feature={snap_feature},n={len(rows)}",
         flush=True,
     )
     print("best_roots: root,n_videos,score,time,fp,n_pred", flush=True)
@@ -894,7 +1340,7 @@ def print_best_detail(
 
 
 def build_result_rows(
-    result: tuple[float, float, float, int, int, float, float, float, float, int, int, int, str, float],
+    result: tuple[float, float, float, float, int, int, float, float, float, float, int, int, float | None, float | None, int, str, str, float],
     ready_keys: list[str],
     video_by_key: dict[str, dict[str, str]],
     scored_by_key: dict[str, list[PunchCandidate]],
@@ -909,6 +1355,7 @@ def build_result_rows(
     (
         _score,
         _time,
+        _fighter,
         _fp,
         _wins,
         _n_pred,
@@ -918,7 +1365,10 @@ def build_result_rows(
         threshold,
         nms_frames,
         cross_nms,
+        cross_diff_threshold,
+        same_group_threshold,
         snap_window,
+        snap_feature,
         count_mode,
         count_multiplier,
     ) = result
@@ -939,10 +1389,13 @@ def build_result_rows(
         threshold,
         nms_frames,
         cross_nms,
+        cross_diff_threshold,
+        same_group_threshold,
         count_mode,
         count_multiplier,
         pose_prior=0.0,
         snap_window=snap_window,
+        snap_feature=snap_feature,
         stream_scores_by_key_group=stream_scores_by_key_group,
     )
 
@@ -1224,6 +1677,23 @@ def seed_everything(seed: int, deterministic: bool) -> None:
 
 def parse_floats(text: str) -> list[float]:
     return [float(value) for value in text.split(",") if value]
+
+
+def parse_optional_floats(text: str) -> list[float | None]:
+    values: list[float | None] = []
+    for value in text.split(","):
+        value = value.strip()
+        if not value:
+            continue
+        if value.lower() in {"none", "null"}:
+            values.append(None)
+        else:
+            values.append(float(value))
+    return values
+
+
+def format_optional_float(value: float | None) -> str:
+    return "None" if value is None else str(value)
 
 
 def parse_ints(text: str) -> list[int]:

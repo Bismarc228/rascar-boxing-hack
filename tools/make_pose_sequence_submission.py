@@ -68,6 +68,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dropout", type=float, default=0.08)
     parser.add_argument("--lr", type=float, default=2e-3)
     parser.add_argument("--pos-sample-rate", type=float, default=0.65)
+    parser.add_argument("--contrastive-weight", type=float, default=0.0)
+    parser.add_argument("--contrastive-temperature", type=float, default=0.10)
+    parser.add_argument("--contrastive-anchor-threshold", type=float, default=0.70)
+    parser.add_argument("--contrastive-positive-threshold", type=float, default=0.20)
+    parser.add_argument("--contrastive-positive-window", type=int, default=1)
+    parser.add_argument("--contrastive-negative-threshold", type=float, default=0.05)
+    parser.add_argument("--contrastive-negatives", type=int, default=512)
+    parser.add_argument("--contrastive-max-anchors", type=int, default=128)
+    parser.add_argument("--contrastive-hard-negative-frac", type=float, default=0.5)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--seeds", default="41,42,43")
     parser.add_argument("--device", default="auto")
@@ -77,7 +86,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--nms-frames", type=int, default=10)
     parser.add_argument("--cross-nms-frames", type=int, default=2)
+    parser.add_argument("--cross-nms-diff-fighter-ratio-threshold", default="5.0")
+    parser.add_argument("--same-group-nms-ratio-threshold", default="None")
     parser.add_argument("--snap-window", type=int, default=0)
+    parser.add_argument("--snap-feature", choices=["sequence", "closing"], default="sequence")
     parser.add_argument("--count-mode", default="root_count")
     parser.add_argument("--count-multiplier", type=float, default=0.92)
     parser.add_argument("--quiet", action="store_true")
@@ -86,6 +98,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    cross_diff_threshold = parse_optional_float(args.cross_nms_diff_fighter_ratio_threshold)
+    same_group_threshold = parse_optional_float(args.same_group_nms_ratio_threshold)
     torch.set_num_threads(max(1, args.threads))
     seed_everything(args.seed, args.deterministic)
 
@@ -208,13 +222,17 @@ def main() -> int:
                 nms_frames=args.nms_frames,
                 nms_group_mode="fighter_hand",
                 cross_nms_frames=args.cross_nms_frames,
+                cross_nms_diff_fighter_ratio_threshold=cross_diff_threshold,
+                same_group_nms_ratio_threshold=same_group_threshold,
             ),
             count,
         )
         selected_by_video[key] = snap_selected_candidates(
             selected,
+            scored,
             video,
             args.snap_window,
+            args.snap_feature,
             by_key_group,
         )
 
@@ -233,12 +251,26 @@ def main() -> int:
     print(
         "config="
         f"threshold={args.threshold},nms={args.nms_frames},cross={args.cross_nms_frames},"
+        f"cross_diff_ratio={format_optional_float(cross_diff_threshold)},"
+        f"same_group_ratio={format_optional_float(same_group_threshold)},"
         f"count_mode={args.count_mode},count_multiplier={args.count_multiplier},"
-        f"pose_prior={args.pose_prior},snap_window={args.snap_window}"
+        f"pose_prior={args.pose_prior},snap_window={args.snap_window},snap_feature={args.snap_feature},"
+        f"contrastive_weight={args.contrastive_weight}"
     )
     print("selected=" + ",".join(f"{key}:{by_video.get(key, 0)}" for key in sorted(test_video_by_key)))
     print(f"total_clear={sum(by_video.values())}")
     return 0
+
+
+def parse_optional_float(value: str) -> float | None:
+    value = value.strip()
+    if value.lower() in {"none", "null"}:
+        return None
+    return float(value)
+
+
+def format_optional_float(value: float | None) -> str:
+    return "None" if value is None else str(value)
 
 
 def build_labeled_pack(
@@ -297,15 +329,22 @@ def build_candidates_and_streams(
 
 def snap_selected_candidates(
     selected: list[PunchCandidate],
+    candidates: list[PunchCandidate],
     video: dict[str, str],
     snap_window: int,
+    snap_feature: str,
     by_key_group: dict[tuple[str, int], np.ndarray],
 ) -> list[PunchCandidate]:
     if snap_window <= 0:
         return selected
     snapped = []
     for candidate in selected:
-        frame = snap_frame(candidate, video, snap_window, by_key_group)
+        if snap_feature == "sequence":
+            frame = snap_frame(candidate, video, snap_window, by_key_group)
+        elif snap_feature == "closing":
+            frame = snap_frame_closing(candidate, candidates, video, snap_window)
+        else:
+            raise ValueError(f"Unknown snap_feature: {snap_feature}")
         snapped.append(
             PunchCandidate(
                 candidate.video_key,
@@ -318,6 +357,34 @@ def snap_selected_candidates(
             )
         )
     return sorted(snapped, key=lambda item: item.frame)
+
+
+def snap_frame_closing(
+    candidate: PunchCandidate,
+    candidates: list[PunchCandidate],
+    video: dict[str, str],
+    snap_window: int,
+) -> int:
+    frame_count = int(video["frame_count"])
+    frame = max(0, min(frame_count - 1, candidate.frame))
+    neighbors = [
+        item
+        for item in candidates
+        if item.fighter == candidate.fighter
+        and item.hand == candidate.hand
+        and abs(item.frame - candidate.frame) <= snap_window
+    ]
+    if not neighbors:
+        return frame
+    best = max(
+        neighbors,
+        key=lambda item: (
+            float(item.features.get("closing", 0.0)),
+            item.score,
+            -abs(item.frame - candidate.frame),
+        ),
+    )
+    return max(0, min(frame_count - 1, best.frame))
 
 
 def fill_sample_rows(

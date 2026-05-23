@@ -62,6 +62,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tracks-dir", type=Path, required=True)
     parser.add_argument("--model", choices=["hgb", "lgbm"], default="hgb")
     parser.add_argument("--threads", type=int, default=32)
+    parser.add_argument("--valid-fraction", type=float, default=0.0)
+    parser.add_argument("--hgb-max-iter", type=int, default=180)
+    parser.add_argument("--hgb-max-leaf-nodes", type=int, default=31)
+    parser.add_argument("--hgb-early-stopping-rounds", type=int, default=0)
+    parser.add_argument("--lgbm-n-estimators", type=int, default=240)
+    parser.add_argument("--lgbm-num-leaves", type=int, default=31)
+    parser.add_argument("--lgbm-early-stopping-rounds", type=int, default=0)
     parser.add_argument("--pool-min-score", type=float, default=0.0)
     parser.add_argument("--pool-nms-frames", type=int, default=2)
     parser.add_argument("--max-candidates-per-video", type=int, default=4000)
@@ -130,14 +137,34 @@ def main() -> int:
     for group in groups:
         valid_keys = [key for key in ready_keys if group_by_key[key] == group]
         train_keys = [key for key in ready_keys if group_by_key[key] != group]
-        x_train = np.concatenate([packs[key].x for key in train_keys], axis=0)
-        y_train = np.concatenate([packs[key].y for key in train_keys], axis=0)
-        w_train = np.concatenate([packs[key].weight for key in train_keys], axis=0)
+        fit_keys, inner_valid_keys = split_inner_validation_keys(
+            train_keys,
+            packs,
+            group_by_key,
+            args.valid_fraction,
+        )
+        x_train = np.concatenate([packs[key].x for key in fit_keys], axis=0)
+        y_train = np.concatenate([packs[key].y for key in fit_keys], axis=0)
+        w_train = np.concatenate([packs[key].weight for key in fit_keys], axis=0)
         if len(np.unique(y_train)) < 2:
             print(f"skip_group={group} reason=single_class")
             continue
 
-        model = fit_model(args.model, x_train, y_train, w_train, args.threads)
+        valid_pack = None
+        if inner_valid_keys:
+            x_valid = np.concatenate([packs[key].x for key in inner_valid_keys], axis=0)
+            y_valid = np.concatenate([packs[key].y for key in inner_valid_keys], axis=0)
+            w_valid = np.concatenate([packs[key].weight for key in inner_valid_keys], axis=0)
+            if len(np.unique(y_valid)) == 2:
+                valid_pack = (x_valid, y_valid, w_valid)
+            else:
+                print(
+                    f"fold={group} inner_valid_skipped={','.join(inner_valid_keys)} "
+                    "reason=single_class",
+                    flush=True,
+                )
+
+        model = fit_model(args, x_train, y_train, w_train, valid_pack)
         for key in valid_keys:
             proba = model.predict_proba(packs[key].x)[:, 1]
             scored_by_key[key] = [
@@ -146,6 +173,7 @@ def main() -> int:
             ]
         print(
             f"fold={group} train={len(train_keys)} valid={','.join(valid_keys)} "
+            f"fit={len(fit_keys)} inner_valid={','.join(inner_valid_keys) or '-'} "
             f"pos={int(y_train.sum())}/{len(y_train)}",
             flush=True,
         )
@@ -384,32 +412,90 @@ def build_labels(
     return y, weight
 
 
-def fit_model(model_name: str, x: np.ndarray, y: np.ndarray, weight: np.ndarray, threads: int):
-    if model_name == "lgbm":
+def split_inner_validation_keys(
+    train_keys: list[str],
+    packs: dict[str, FeaturePack],
+    group_by_key: dict[str, str],
+    valid_fraction: float,
+) -> tuple[list[str], list[str]]:
+    if valid_fraction <= 0.0 or len(train_keys) < 3:
+        return train_keys, []
+
+    target = sum(len(packs[key].y) for key in train_keys) * min(valid_fraction, 0.5)
+    group_sizes: dict[str, int] = {}
+    for key in train_keys:
+        group = group_by_key[key]
+        group_sizes[group] = group_sizes.get(group, 0) + len(packs[key].y)
+
+    valid_groups: set[str] = set()
+    valid_size = 0
+    for group, size in sorted(group_sizes.items(), key=lambda item: (item[1], item[0])):
+        if len(valid_groups) + 1 >= len(group_sizes):
+            break
+        valid_groups.add(group)
+        valid_size += size
+        if valid_size >= target:
+            break
+
+    valid_keys = [key for key in train_keys if group_by_key[key] in valid_groups]
+    fit_keys = [key for key in train_keys if group_by_key[key] not in valid_groups]
+    if not fit_keys or not valid_keys:
+        return train_keys, []
+    return fit_keys, valid_keys
+
+
+def fit_model(
+    args: argparse.Namespace,
+    x: np.ndarray,
+    y: np.ndarray,
+    weight: np.ndarray,
+    valid_pack: tuple[np.ndarray, np.ndarray, np.ndarray] | None,
+):
+    if args.model == "lgbm":
         from lightgbm import LGBMClassifier
+        from lightgbm import early_stopping
 
         model = LGBMClassifier(
-            n_estimators=240,
+            n_estimators=args.lgbm_n_estimators,
             learning_rate=0.035,
-            num_leaves=31,
+            num_leaves=args.lgbm_num_leaves,
             min_child_samples=30,
             subsample=0.85,
             colsample_bytree=0.85,
             reg_lambda=0.5,
             objective="binary",
-            n_jobs=threads,
+            n_jobs=args.threads,
             random_state=42,
             verbosity=-1,
         )
+        fit_kwargs = {}
+        if args.lgbm_early_stopping_rounds > 0:
+            if valid_pack is None:
+                raise ValueError("--lgbm-early-stopping-rounds requires --valid-fraction with two-class inner validation")
+            x_valid, y_valid, w_valid = valid_pack
+            fit_kwargs = {
+                "eval_set": [(x_valid, y_valid)],
+                "eval_sample_weight": [w_valid],
+                "callbacks": [early_stopping(args.lgbm_early_stopping_rounds, verbose=False)],
+            }
+        model.fit(x, y, sample_weight=weight, **fit_kwargs)
     else:
         model = HistGradientBoostingClassifier(
-            max_iter=180,
+            max_iter=args.hgb_max_iter,
             learning_rate=0.05,
-            max_leaf_nodes=31,
+            max_leaf_nodes=args.hgb_max_leaf_nodes,
             l2_regularization=0.05,
+            early_stopping=args.hgb_early_stopping_rounds > 0,
+            n_iter_no_change=max(1, args.hgb_early_stopping_rounds),
             random_state=42,
         )
-    model.fit(x, y, sample_weight=weight)
+        fit_kwargs = {}
+        if args.hgb_early_stopping_rounds > 0:
+            if valid_pack is None:
+                raise ValueError("--hgb-early-stopping-rounds requires --valid-fraction with two-class inner validation")
+            x_valid, y_valid, w_valid = valid_pack
+            fit_kwargs = {"X_val": x_valid, "y_val": y_valid, "sample_weight_val": w_valid}
+        model.fit(x, y, sample_weight=weight, **fit_kwargs)
     return model
 
 

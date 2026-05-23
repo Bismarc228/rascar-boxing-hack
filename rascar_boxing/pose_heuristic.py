@@ -35,6 +35,10 @@ class PoseHeuristicConfig:
     nms_frames: int = 12
     nms_group_mode: str = "global"
     cross_nms_frames: int | None = None
+    cross_nms_diff_fighter_ratio_threshold: float | None = 5.0
+    same_group_nms_ratio_threshold: float | None = None
+    same_group_local_peak_window: int = 2
+    same_group_local_peak_penalty: float = 0.5
     context_feature: str = "none"
     context_window: int = 4
     context_alpha: float = 0.0
@@ -151,6 +155,7 @@ def select_candidates(
     count: int | None,
 ) -> list[PunchCandidate]:
     filtered = [item for item in candidates if item.score >= config.min_score]
+    filtered = _apply_same_group_local_peak_tiebreak(filtered, config)
     selected: list[PunchCandidate] = []
     cross_nms = config.nms_frames if config.cross_nms_frames is None else config.cross_nms_frames
     for candidate in sorted(filtered, key=lambda item: item.score, reverse=True):
@@ -167,12 +172,105 @@ def select_candidates(
                     suppressed = True
                     break
             elif frame_distance <= cross_nms:
-                suppressed = True
-                break
+                if _should_cross_suppress(candidate, chosen, config):
+                    suppressed = True
+                    break
         if suppressed:
             continue
         selected.append(candidate)
     return sorted(selected, key=lambda item: item.frame)
+
+
+def _should_cross_suppress(
+    candidate: PunchCandidate,
+    chosen: PunchCandidate,
+    config: PoseHeuristicConfig,
+) -> bool:
+    if candidate.fighter == chosen.fighter:
+        return True
+
+    threshold = config.cross_nms_diff_fighter_ratio_threshold
+    if threshold is None:
+        return False
+
+    score_ratio = chosen.score / max(candidate.score, 1e-12)
+    return score_ratio > threshold
+
+
+def _apply_same_group_local_peak_tiebreak(
+    candidates: list[PunchCandidate],
+    config: PoseHeuristicConfig,
+) -> list[PunchCandidate]:
+    threshold = config.same_group_nms_ratio_threshold
+    if threshold is None or not candidates:
+        return candidates
+    if config.same_group_local_peak_window < 0:
+        raise ValueError("same_group_local_peak_window must be non-negative")
+    if not (0.0 < config.same_group_local_peak_penalty <= 1.0):
+        raise ValueError("same_group_local_peak_penalty must be in (0, 1]")
+
+    grouped: dict[tuple[str, str], list[int]] = defaultdict(list)
+    for index, candidate in enumerate(candidates):
+        grouped[(candidate.fighter, candidate.hand)].append(index)
+
+    local_peak = [False] * len(candidates)
+    window = config.same_group_local_peak_window
+    for indices in grouped.values():
+        ordered = sorted(indices, key=lambda index: candidates[index].frame)
+        for index in ordered:
+            candidate = candidates[index]
+            closing = float(candidate.features.get("closing", 0.0))
+            local_max = max(
+                float(candidates[other].features.get("closing", 0.0))
+                for other in ordered
+                if abs(candidates[other].frame - candidate.frame) <= window
+            )
+            local_peak[index] = closing >= local_max - 1e-12
+
+    penalized: set[int] = set()
+    for indices in grouped.values():
+        ordered = sorted(indices, key=lambda index: candidates[index].frame)
+        for left_pos, left_index in enumerate(ordered):
+            left = candidates[left_index]
+            for right_index in ordered[left_pos + 1 :]:
+                right = candidates[right_index]
+                frame_distance = right.frame - left.frame
+                if frame_distance > config.nms_frames:
+                    break
+                low_score = max(min(left.score, right.score), 1e-12)
+                score_ratio = max(left.score, right.score) / low_score
+                if score_ratio > threshold:
+                    continue
+                if left.score >= right.score:
+                    high_index, low_index = left_index, right_index
+                else:
+                    high_index, low_index = right_index, left_index
+                if not local_peak[high_index] and local_peak[low_index]:
+                    penalized.add(high_index)
+
+    if not penalized:
+        return candidates
+
+    output = []
+    for index, candidate in enumerate(candidates):
+        features = dict(candidate.features)
+        features["same_group_local_peak"] = float(local_peak[index])
+        if index not in penalized:
+            output.append(candidate)
+            continue
+        features["same_group_peak_tiebreak_penalty"] = config.same_group_local_peak_penalty
+        output.append(
+            PunchCandidate(
+                candidate.video_key,
+                candidate.frame,
+                candidate.fighter,
+                candidate.hand,
+                candidate.target,
+                float(candidate.score * config.same_group_local_peak_penalty),
+                features,
+            )
+        )
+    return output
 
 
 def apply_temporal_context(

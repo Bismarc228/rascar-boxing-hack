@@ -309,6 +309,14 @@ comes from `EXPERIMENTS.md`, `OVERVIEW.md`, and `DATA_DESCRIPTION.md`.
 - The event-selector path is now sequence/anchor spotting, not flat candidate
   ranking. Keep the direct yolo26x/agreement heuristic as fallback; do not
   revisit simple candidate-level rankers on the current feature set.
+- Local anti-suppression is the next timing-selector path to pursue. The strict
+  yolo26l pool has high GT coverage but selected-row coverage is much lower, and
+  `tools/evaluate_local_antisuppression_oracle.py` shows large oracle headroom
+  by swapping nearby selected rows to suppressed pool-positive candidates:
+  `macro_delta=+0.053752`, `time_delta=+0.039206`,
+  `fighter_delta=+0.055285`, and `fp_penalty_delta=-0.012939` for the best
+  NMS-conflict guarded config. Treat this as an oracle audit only; next work is
+  a held-out local swap/no-swap model, not a direct submit artifact.
 - Improve per-video count control. Dense NMS improves offline, but test/public
   FP risk may differ by fight, so count calibration needs stress tests.
 - Use audio only as a weak learned feature such as local onset max or nearest
