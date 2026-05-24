@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import sys
 from typing import Any
@@ -16,6 +17,9 @@ from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+import torch
+from torch import nn
+from torch.utils.data import DataLoader, TensorDataset
 
 from rascar_boxing.constants import SUBMISSION_COLUMNS
 from rascar_boxing.io import as_int, group_by, read_csv_rows, write_csv_rows
@@ -40,6 +44,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--label-window", type=int, default=12)
     parser.add_argument("--pca-components", type=int, default=64)
     parser.add_argument("--logreg-c", type=float, default=0.35)
+    parser.add_argument("--head-type", choices=["logreg", "torch_linear", "torch_mlp"], default="logreg")
+    parser.add_argument(
+        "--train-columns",
+        default=",".join(ATTR_COLUMNS),
+        help="Comma-separated attribute heads to train; untrained heads keep input values.",
+    )
+    parser.add_argument("--device", default="auto")
+    parser.add_argument("--torch-hidden-dim", type=int, default=192)
+    parser.add_argument("--torch-depth", type=int, default=2)
+    parser.add_argument("--torch-dropout", type=float, default=0.15)
+    parser.add_argument("--torch-epochs", type=int, default=120)
+    parser.add_argument("--torch-batch-size", type=int, default=256)
+    parser.add_argument("--torch-lr", type=float, default=3e-3)
+    parser.add_argument("--torch-weight-decay", type=float, default=1e-3)
+    parser.add_argument("--torch-seed", type=int, default=17)
+    parser.add_argument("--torch-class-weight", choices=["none", "balanced"], default="balanced")
+    parser.add_argument("--torch-pca-components", type=int, default=0)
     parser.add_argument("--effectiveness-margins", default="0.0,0.1,0.2,0.3")
     parser.add_argument(
         "--margin-columns",
@@ -48,6 +69,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--write-oof-rows", type=Path)
     parser.add_argument("--write-effectiveness-margin", type=float)
+    parser.add_argument("--write-margin-column", choices=ATTR_COLUMNS, default="effectiveness")
     parser.add_argument(
         "--write-variant",
         choices=["punch_type", "effectiveness", "ptype_eff", "hand_target", "all_attrs"],
@@ -85,7 +107,13 @@ def main() -> int:
         flush=True,
     )
 
-    predictions, probabilities = oof_attribute_predictions(args, x, labels, groups, pred_rows, matched)
+    train_columns = [column.strip() for column in args.train_columns.split(",") if column.strip()]
+    for column in train_columns:
+        if column not in ATTR_COLUMNS:
+            raise ValueError(f"unknown train column {column}")
+    if args.head_type.startswith("torch_"):
+        print(f"torch_head_device={resolve_device(args.device)} train_columns={','.join(train_columns)}", flush=True)
+    predictions, probabilities = oof_attribute_predictions(args, x, labels, groups, pred_rows, matched, train_columns)
     variants = {
         "punch_type": ["punch_type"],
         "effectiveness": ["effectiveness"],
@@ -127,7 +155,7 @@ def main() -> int:
     if args.write_oof_rows:
         variant_name = args.write_variant
         if args.write_effectiveness_margin is not None:
-            variant_name = f"effectiveness_margin_{args.write_effectiveness_margin:g}"
+            variant_name = f"{args.write_margin_column}_margin_{args.write_effectiveness_margin:g}"
         if variant_name not in rows_by_variant:
             raise KeyError(f"variant {variant_name} was not evaluated")
         write_csv_rows(args.write_oof_rows, rows_by_variant[variant_name], SUBMISSION_COLUMNS)
@@ -273,6 +301,7 @@ def oof_attribute_predictions(
     groups: np.ndarray,
     pred_rows: list[dict[str, str]],
     matched: np.ndarray,
+    train_columns: list[str],
 ) -> tuple[dict[str, np.ndarray], dict[str, list[dict[str, float]]]]:
     output = {column: np.asarray([row[column] for row in pred_rows], dtype=object) for column in ATTR_COLUMNS}
     probabilities = {
@@ -287,7 +316,7 @@ def oof_attribute_predictions(
         if train.sum() < 20 or valid_predict.sum() == 0:
             print(f"fold={group} train={int(train.sum())} valid={int(valid_predict.sum())} skipped", flush=True)
             continue
-        for column in ATTR_COLUMNS:
+        for column in train_columns:
             values = [labels[index][column] for index in np.where(train)[0]]  # type: ignore[index]
             encoder = LabelEncoder()
             y = encoder.fit_transform(values)
@@ -296,22 +325,32 @@ def oof_attribute_predictions(
                 for index in np.where(valid_predict)[0]:
                     probabilities[column][index] = {str(encoder.classes_[0]): 1.0}
                 continue
-            n_components = min(args.pca_components, train.sum() - 1, x.shape[1])
-            model = make_pipeline(
-                StandardScaler(),
-                PCA(n_components=n_components, random_state=42),
-                LogisticRegression(
-                    C=args.logreg_c,
-                    max_iter=1200,
-                    class_weight="balanced",
-                    random_state=42,
-                ),
-            )
-            model.fit(x[train], y)
-            pred_encoded = model.predict(x[valid_predict])
+            if args.head_type.startswith("torch_"):
+                pred_encoded, proba = fit_torch_mlp_classifier(
+                    args,
+                    x[train],
+                    y,
+                    x[valid_predict],
+                    len(encoder.classes_),
+                    stable_fold_seed(group, column, args.torch_seed),
+                )
+            else:
+                n_components = min(args.pca_components, train.sum() - 1, x.shape[1])
+                model = make_pipeline(
+                    StandardScaler(),
+                    PCA(n_components=n_components, random_state=42),
+                    LogisticRegression(
+                        C=args.logreg_c,
+                        max_iter=1200,
+                        class_weight="balanced",
+                        random_state=42,
+                    ),
+                )
+                model.fit(x[train], y)
+                pred_encoded = model.predict(x[valid_predict])
+                proba = model.predict_proba(x[valid_predict])
             pred_values = encoder.inverse_transform(pred_encoded)
             output[column][valid_predict] = pred_values
-            proba = model.predict_proba(x[valid_predict])
             class_values = [str(value) for value in encoder.classes_]
             for index, row_probs in zip(np.where(valid_predict)[0], proba):
                 probabilities[column][index] = {
@@ -320,6 +359,118 @@ def oof_attribute_predictions(
                 }
         print(f"fold={group} train={int(train.sum())} valid={int(valid_predict.sum())}", flush=True)
     return output, probabilities
+
+
+class ResidualMLP(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int, n_classes: int, depth: int, dropout: float) -> None:
+        super().__init__()
+        self.input = nn.Sequential(
+            nn.LayerNorm(input_dim),
+            nn.Linear(input_dim, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+        )
+        self.blocks = nn.ModuleList([ResidualMLPBlock(hidden_dim, dropout) for _ in range(depth)])
+        self.output = nn.Linear(hidden_dim, n_classes)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = self.input(x)
+        for block in self.blocks:
+            h = block(h)
+        return self.output(h)
+
+
+class ResidualMLPBlock(nn.Module):
+    def __init__(self, hidden_dim: int, dropout: float) -> None:
+        super().__init__()
+        self.layers = nn.Sequential(
+            nn.LayerNorm(hidden_dim),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x + self.layers(x)
+
+
+def fit_torch_mlp_classifier(
+    args: argparse.Namespace,
+    train_x: np.ndarray,
+    train_y: np.ndarray,
+    valid_x: np.ndarray,
+    n_classes: int,
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    set_torch_seed(seed)
+    device = resolve_device(args.device)
+    mean = train_x.mean(axis=0, keepdims=True)
+    std = train_x.std(axis=0, keepdims=True)
+    std = np.where(std < 1e-6, 1.0, std)
+    train_x = (train_x - mean) / std
+    valid_x = (valid_x - mean) / std
+    if args.torch_pca_components > 0:
+        train_x, valid_x = project_torch_pca(args, train_x, valid_x, device)
+    if args.head_type == "torch_linear":
+        model: nn.Module = nn.Linear(train_x.shape[1], n_classes)
+    else:
+        model = ResidualMLP(
+            input_dim=train_x.shape[1],
+            hidden_dim=args.torch_hidden_dim,
+            n_classes=n_classes,
+            depth=args.torch_depth,
+            dropout=args.torch_dropout,
+        )
+    model = model.to(device)
+    class_counts = np.bincount(train_y, minlength=n_classes).astype(np.float32)
+    class_weights = class_counts.sum() / np.maximum(class_counts, 1.0)
+    class_weights = class_weights / class_weights.mean()
+    weight_tensor = torch.from_numpy(class_weights).to(device) if args.torch_class_weight == "balanced" else None
+    criterion = nn.CrossEntropyLoss(weight=weight_tensor)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.torch_lr, weight_decay=args.torch_weight_decay)
+    train_tensor = torch.from_numpy(train_x.astype(np.float32))
+    target_tensor = torch.from_numpy(train_y.astype(np.int64))
+    generator = torch.Generator()
+    generator.manual_seed(seed)
+    loader = DataLoader(
+        TensorDataset(train_tensor, target_tensor),
+        batch_size=args.torch_batch_size,
+        shuffle=True,
+        generator=generator,
+        pin_memory=device.type == "cuda",
+    )
+    model.train()
+    for _epoch in range(args.torch_epochs):
+        for xb, yb in loader:
+            xb = xb.to(device, non_blocking=True)
+            yb = yb.to(device, non_blocking=True)
+            optimizer.zero_grad(set_to_none=True)
+            loss = criterion(model(xb), yb)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+            optimizer.step()
+    model.eval()
+    with torch.inference_mode():
+        logits = model(torch.from_numpy(valid_x.astype(np.float32)).to(device))
+        proba = torch.softmax(logits, dim=1).cpu().numpy()
+    return proba.argmax(axis=1).astype(np.int64), proba.astype(np.float32)
+
+
+def project_torch_pca(
+    args: argparse.Namespace,
+    train_x: np.ndarray,
+    valid_x: np.ndarray,
+    device: torch.device,
+) -> tuple[np.ndarray, np.ndarray]:
+    n_components = min(args.torch_pca_components, train_x.shape[0] - 1, train_x.shape[1])
+    train_tensor = torch.from_numpy(train_x.astype(np.float32)).to(device)
+    valid_tensor = torch.from_numpy(valid_x.astype(np.float32)).to(device)
+    with torch.inference_mode():
+        _u, _s, v = torch.pca_lowrank(train_tensor, q=n_components, center=False, niter=5)
+        train_projected = (train_tensor @ v[:, :n_components]).cpu().numpy()
+        valid_projected = (valid_tensor @ v[:, :n_components]).cpu().numpy()
+    return train_projected.astype(np.float32), valid_projected.astype(np.float32)
 
 
 def apply_predictions(
@@ -398,6 +549,28 @@ def parse_floats(text: str) -> list[float]:
 
 def fight_group(video: dict[str, str]) -> str:
     return "|".join([video["dataset_type"], video["data_root"], video["fight_index"], video["fight_folder"]])
+
+
+def resolve_device(value: str) -> torch.device:
+    if value == "auto":
+        visible = str(os.environ.get("CUDA_VISIBLE_DEVICES", ""))
+        if torch.cuda.is_available() and visible == "1":
+            return torch.device("cuda")
+        return torch.device("cpu")
+    return torch.device(value)
+
+
+def stable_fold_seed(group: str, column: str, seed: int) -> int:
+    value = seed
+    for char in f"{group}|{column}":
+        value = (value * 131 + ord(char)) % 2_147_483_647
+    return value
+
+
+def set_torch_seed(seed: int) -> None:
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 
 if __name__ == "__main__":

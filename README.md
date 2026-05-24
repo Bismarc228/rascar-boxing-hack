@@ -123,6 +123,7 @@ SHA совпал с expected value.
 
 ```text
 README.md
+notes/release_full_provenance_2026-05-24.md
 notes/release_shadow_stack_clearcut_e2e.md
 notes/release_candidates_2026-05-23.md
 tools/release_build_shadow_stack_clearcut.py
@@ -134,6 +135,53 @@ tools/evaluate_candidate_token_reranker.py
 `tools/evaluate_candidate_token_reranker.py` vendored из исторической
 experiment-ветки. `tools/make_candidate_token_clear_submission.py` сначала
 пытается загрузить этот локальный файл, поэтому checkout старой ветки не нужен.
+
+## Provenance ignored CSV
+
+Релизный runner ниже пересобирает финальный RC1 CSV, но часть входов живёт в
+ignored caches (`data/processed/`, `submissions/`). Они больше не должны
+считаться непрозрачным источником истины: полный индекс происхождения этих CSV,
+upstream training/gate scripts и соответствующие notes добавлены в
+`notes/release_full_provenance_2026-05-24.md`.
+
+Коротко:
+
+```text
+RC1: strict clearens anchor -> private component stack -> candidate-token clear
+RC2: sequence/motion/attribute sources -> old_attr source switch
+```
+
+Ветка теперь также содержит RC2 E2E runner:
+
+```text
+tools/release_build_old_attribute_source_switch.py
+notes/release_old_attribute_source_switch_e2e.md
+```
+
+Сами большие артефакты по-прежнему не коммитятся: YOLO `*.pt`, pose tracks,
+feature caches, diagnostics и submissions остаются external/generated assets.
+Вместо заливки больших файлов ветка теперь содержит reproducibility bundle:
+
+```text
+requirements-release.txt
+release_artifacts/release_artifacts_manifest.tsv
+tools/bootstrap_release_assets.py
+tools/verify_release_artifacts.py
+notes/release_reproducibility_2026-05-24.md
+```
+
+Быстрая проверка локальных артефактов:
+
+```bash
+.venv/bin/python tools/verify_release_artifacts.py --release rc1 --stage generated_input --strict
+.venv/bin/python tools/verify_release_artifacts.py --release rc2 --stage generated_input --strict
+```
+
+Веса и HF mirror можно восстановить без коммита больших файлов:
+
+```bash
+.venv/bin/python tools/bootstrap_release_assets.py download-models --verify
+```
 
 ## Входные файлы
 

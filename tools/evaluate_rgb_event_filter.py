@@ -174,7 +174,12 @@ def load_model(
 ) -> tuple[torch.nn.Module, np.ndarray, np.ndarray]:
     import timm
 
-    model = timm.create_model(model_name, pretrained=pretrained, num_classes=0, global_pool="avg")
+    try:
+        model = timm.create_model(model_name, pretrained=pretrained, num_classes=0, global_pool="avg")
+    except RuntimeError as exc:
+        if "fc_norm" not in str(exc) or "norm." not in str(exc):
+            raise
+        model = timm.create_model(model_name, pretrained=pretrained, num_classes=0, global_pool="token")
     model.eval().to(device)
     cfg = getattr(model, "default_cfg", {}) or {}
     mean = np.asarray(cfg.get("mean", DEFAULT_MEAN[:, 0, 0]), dtype=np.float32)[:, None, None]
@@ -199,6 +204,93 @@ def image_to_tensor(
     arr = np.transpose(arr, (2, 0, 1))
     arr = (arr - mean) / std
     return torch.from_numpy(arr.astype(np.float32))
+
+
+def crop_bounds(
+    image_shape: tuple[int, ...],
+    record: dict[str, Any] | None,
+    row: dict[str, str],
+    expand: float,
+    mode: str,
+) -> tuple[int, int, int, int]:
+    height, width = image_shape[:2]
+    if mode == "full":
+        return 0, height, 0, width
+    if mode == "union":
+        return crop_union_bounds(height, width, record, expand)
+    attacker = row["fighter"]
+    opponent = "blue" if attacker == "red" else "red"
+    if mode == "attacker":
+        return crop_role_bounds(height, width, record, attacker, expand)
+    if mode == "opponent":
+        return crop_role_bounds(height, width, record, opponent, expand)
+    if mode == "attacker_opponent":
+        return 0, height, 0, width
+    raise ValueError(f"Unknown crop_mode: {mode}")
+
+
+def crop_union_bounds(
+    height: int,
+    width: int,
+    record: dict[str, Any] | None,
+    expand: float,
+) -> tuple[int, int, int, int]:
+    if not record:
+        return 0, height, 0, width
+    boxes = []
+    for role in ["red", "blue"]:
+        fighter = record.get("fighters", {}).get(role, {})
+        bbox = fighter.get("bbox")
+        if bbox and len(bbox) == 4:
+            boxes.append([float(value) for value in bbox])
+    if not boxes:
+        return 0, height, 0, width
+    x1 = min(box[0] for box in boxes)
+    y1 = min(box[1] for box in boxes)
+    x2 = max(box[2] for box in boxes)
+    y2 = max(box[3] for box in boxes)
+    return expanded_bounds(height, width, x1, y1, x2, y2, expand)
+
+
+def crop_role_bounds(
+    height: int,
+    width: int,
+    record: dict[str, Any] | None,
+    role: str,
+    expand: float,
+) -> tuple[int, int, int, int]:
+    if not record:
+        return 0, height, 0, width
+    fighter = record.get("fighters", {}).get(role, {})
+    bbox = fighter.get("bbox")
+    if not bbox or len(bbox) != 4:
+        return 0, height, 0, width
+    x1, y1, x2, y2 = [float(value) for value in bbox]
+    return expanded_bounds(height, width, x1, y1, x2, y2, expand)
+
+
+def expanded_bounds(
+    height: int,
+    width: int,
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    expand: float,
+) -> tuple[int, int, int, int]:
+    bw = x2 - x1
+    bh = y2 - y1
+    x1 -= bw * expand
+    x2 += bw * expand
+    y1 -= bh * expand
+    y2 += bh * expand
+    xi1 = max(0, min(width - 1, int(round(x1))))
+    xi2 = max(0, min(width, int(round(x2))))
+    yi1 = max(0, min(height - 1, int(round(y1))))
+    yi2 = max(0, min(height, int(round(y2))))
+    if xi2 - xi1 < 16 or yi2 - yi1 < 16:
+        return 0, height, 0, width
+    return yi1, yi2, xi1, xi2
 
 
 def crop_image(
@@ -302,7 +394,7 @@ def run_batch(
 ) -> list[np.ndarray]:
     x = torch.stack(tensors).to(device, non_blocking=True)
     with torch.inference_mode():
-        with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+        with torch.amp.autocast(device_type=device.type, enabled=device.type == "cuda"):
             y = model(x)
     if isinstance(y, (tuple, list)):
         y = y[0]

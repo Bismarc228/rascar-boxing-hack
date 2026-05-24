@@ -7,6 +7,7 @@ import argparse
 from collections import defaultdict
 from pathlib import Path
 import random
+import subprocess
 import sys
 from typing import Any
 
@@ -25,6 +26,7 @@ from rascar_boxing.io import read_csv_rows, write_csv_rows
 from rascar_boxing.metric import match_events, score_predictions
 from tools.evaluate_pose_selection_variants import video_wins
 from tools.evaluate_rgb_event_filter import (
+    crop_bounds,
     group_rows,
     image_to_tensor,
     load_model,
@@ -51,6 +53,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--crop-modes", default="union")
     parser.add_argument("--crop-expand", type=float, default=0.16)
     parser.add_argument("--decode-mode", choices=["sequential", "seek"], default="sequential")
+    parser.add_argument("--video-decoder", choices=["opencv", "ffmpeg_cuda"], default="ffmpeg_cuda")
+    parser.add_argument("--gpu-preprocess", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--cpu-threads", type=int, default=1)
     parser.add_argument("--epochs", type=int, default=36)
     parser.add_argument("--head-batch-size", type=int, default=128)
     parser.add_argument("--hidden", type=int, default=192)
@@ -172,6 +177,8 @@ def extract_features(
     pred_rows: list[dict[str, str]],
     video_by_key: dict[str, dict[str, str]],
 ) -> np.ndarray:
+    cv2.setNumThreads(max(0, int(getattr(args, "cpu_threads", 1))))
+    torch.set_num_threads(max(1, int(getattr(args, "cpu_threads", 1))))
     device = pick_device(args.device)
     print(f"extract_device={device}", flush=True)
     model, mean, std = load_model(args.model_name, args.pretrained, device)
@@ -191,11 +198,30 @@ def extract_features(
             for offset in offsets
         }
         records = load_track_records(args.tracks_dir / f"{key}.jsonl", wanted_frames)
-        cap = cv2.VideoCapture(str(args.data_root / video["video_path"]))
+        video_path = args.data_root / video["video_path"]
+        frame_jobs = build_frame_jobs(rows, row_to_index, offsets, frame_count)
+        if args.video_decoder == "ffmpeg_cuda" and args.decode_mode == "sequential":
+            extract_video_ffmpeg_cuda_sequential(
+                args,
+                video_path,
+                int(video["width"]),
+                int(video["height"]),
+                frame_jobs,
+                records,
+                modes,
+                mean,
+                std,
+                model,
+                device,
+                tensors,
+                metas,
+                per_event,
+            )
+            continue
+        cap = cv2.VideoCapture(str(video_path))
         if not cap.isOpened():
-            raise FileNotFoundError(args.data_root / video["video_path"])
+            raise FileNotFoundError(video_path)
         try:
-            frame_jobs = build_frame_jobs(rows, row_to_index, offsets, frame_count)
             if args.decode_mode == "seek":
                 extract_video_seek(
                     args,
@@ -347,6 +373,129 @@ def extract_video_sequential(
         frame += 1
 
 
+def extract_video_ffmpeg_cuda_sequential(
+    args: argparse.Namespace,
+    video_path: Path,
+    width: int,
+    height: int,
+    frame_jobs: dict[int, list[FrameJob]],
+    records: dict[int, dict[str, Any]],
+    modes: list[str],
+    mean: np.ndarray,
+    std: np.ndarray,
+    model: torch.nn.Module,
+    device: torch.device,
+    tensors: list[torch.Tensor],
+    metas: list[tuple[int, int, int]],
+    per_event: list[list[np.ndarray | None]],
+) -> None:
+    if not frame_jobs:
+        return
+    max_frame = max(frame_jobs)
+    use_nv12_gpu = getattr(args, "gpu_preprocess", False) and device.type == "cuda"
+    pix_fmt = "nv12" if use_nv12_gpu else "bgr24"
+    frame_size = width * height * 3 // 2 if use_nv12_gpu else width * height * 3
+    cmd = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-threads",
+        "1",
+        "-filter_threads",
+        "1",
+        "-hwaccel",
+        "cuda",
+        "-c:v",
+        "hevc_cuvid",
+        "-i",
+        str(video_path),
+        "-an",
+        "-sn",
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        pix_fmt,
+        "-",
+    ]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if proc.stdout is None:
+        raise RuntimeError("ffmpeg stdout pipe was not created")
+    try:
+        for frame in range(max_frame + 1):
+            raw = proc.stdout.read(frame_size)
+            if len(raw) != frame_size:
+                image = None
+                rgb_frame = None
+            elif use_nv12_gpu:
+                image = None
+                rgb_frame = nv12_raw_to_rgb_tensor(raw, width, height, device)
+            else:
+                image = np.frombuffer(raw, dtype=np.uint8).reshape((height, width, 3))
+                rgb_frame = None
+            if frame in frame_jobs:
+                if rgb_frame is not None:
+                    append_rgb_frame_tensors(
+                        args,
+                        rgb_frame,
+                        (height, width, 3),
+                        records.get(frame),
+                        frame_jobs[frame],
+                        modes,
+                        mean,
+                        std,
+                        model,
+                        device,
+                        tensors,
+                        metas,
+                        per_event,
+                    )
+                else:
+                    append_frame_tensors(
+                        args,
+                        image,
+                        records.get(frame),
+                        frame_jobs[frame],
+                        modes,
+                        mean,
+                        std,
+                        model,
+                        device,
+                        tensors,
+                        metas,
+                        per_event,
+                    )
+            if len(raw) != frame_size:
+                break
+    finally:
+        if proc.stdout is not None:
+            proc.stdout.close()
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=5)
+
+
+def nv12_raw_to_rgb_tensor(raw: bytes, width: int, height: int, device: torch.device) -> torch.Tensor:
+    data = torch.frombuffer(raw, dtype=torch.uint8).to(device, non_blocking=True)
+    y = data[: width * height].reshape(height, width).to(dtype=torch.float32)
+    uv = data[width * height :].reshape(height // 2, width // 2, 2).permute(2, 0, 1).unsqueeze(0)
+    uv = torch.nn.functional.interpolate(
+        uv.to(dtype=torch.float32),
+        size=(height, width),
+        mode="nearest",
+    ).squeeze(0)
+    yy = torch.clamp(y - 16.0, min=0.0) * 1.164383
+    u = uv[0] - 128.0
+    v = uv[1] - 128.0
+    red = torch.clamp(yy + 1.792741 * v, 0.0, 255.0)
+    green = torch.clamp(yy - 0.213249 * u - 0.532909 * v, 0.0, 255.0)
+    blue = torch.clamp(yy + 2.112402 * u, 0.0, 255.0)
+    return torch.stack([red, green, blue], dim=0).div_(255.0)
+
+
 def append_frame_tensors(
     args: argparse.Namespace,
     image: np.ndarray | None,
@@ -361,10 +510,38 @@ def append_frame_tensors(
     metas: list[tuple[int, int, int]],
     per_event: list[list[np.ndarray | None]],
 ) -> None:
+    gpu_image = None
+    mean_tensor = None
+    std_tensor = None
+    if (
+        getattr(args, "gpu_preprocess", False)
+        and device.type == "cuda"
+        and image is not None
+        and image.flags["C_CONTIGUOUS"]
+        and all(mode != "attacker_opponent" for mode in modes)
+    ):
+        gpu_image = torch.from_numpy(image).to(device, non_blocking=True)
+        mean_tensor = torch.as_tensor(mean, dtype=torch.float32, device=device)
+        std_tensor = torch.as_tensor(std, dtype=torch.float32, device=device)
     for event_index, time_index, row in jobs:
         for mode_index, mode in enumerate(modes):
             if image is None:
-                tensor = torch.zeros(3, args.image_size, args.image_size)
+                if getattr(args, "gpu_preprocess", False) and device.type == "cuda":
+                    tensor = torch.zeros(3, args.image_size, args.image_size, device=device)
+                else:
+                    tensor = torch.zeros(3, args.image_size, args.image_size)
+            elif gpu_image is not None and mean_tensor is not None and std_tensor is not None:
+                tensor = image_to_tensor_from_gpu_frame(
+                    gpu_image,
+                    image.shape,
+                    record,
+                    row,
+                    args.image_size,
+                    args.crop_expand,
+                    mean_tensor,
+                    std_tensor,
+                    mode,
+                )
             else:
                 tensor = image_to_tensor(
                     image,
@@ -380,6 +557,95 @@ def append_frame_tensors(
             metas.append((event_index, time_index, mode_index))
             if len(tensors) >= args.batch_size:
                 flush_sequence_batch(model, device, tensors, metas, per_event, len(modes))
+
+
+def append_rgb_frame_tensors(
+    args: argparse.Namespace,
+    image: torch.Tensor,
+    image_shape: tuple[int, ...],
+    record: dict[str, Any] | None,
+    jobs: list[FrameJob],
+    modes: list[str],
+    mean: np.ndarray,
+    std: np.ndarray,
+    model: torch.nn.Module,
+    device: torch.device,
+    tensors: list[torch.Tensor],
+    metas: list[tuple[int, int, int]],
+    per_event: list[list[np.ndarray | None]],
+) -> None:
+    mean_tensor = torch.as_tensor(mean, dtype=torch.float32, device=device)
+    std_tensor = torch.as_tensor(std, dtype=torch.float32, device=device)
+    for event_index, time_index, row in jobs:
+        for mode_index, mode in enumerate(modes):
+            if mode == "attacker_opponent":
+                raise ValueError("ffmpeg_cuda NV12 GPU preprocessing does not support attacker_opponent crops")
+            tensor = rgb_tensor_crop_from_gpu_frame(
+                image,
+                image_shape,
+                record,
+                row,
+                args.image_size,
+                args.crop_expand,
+                mean_tensor,
+                std_tensor,
+                mode,
+            )
+            tensors.append(tensor)
+            metas.append((event_index, time_index, mode_index))
+            if len(tensors) >= args.batch_size:
+                flush_sequence_batch(model, device, tensors, metas, per_event, len(modes))
+
+
+def rgb_tensor_crop_from_gpu_frame(
+    image: torch.Tensor,
+    image_shape: tuple[int, ...],
+    record: dict[str, Any] | None,
+    row: dict[str, str],
+    image_size: int,
+    crop_expand: float,
+    mean: torch.Tensor,
+    std: torch.Tensor,
+    crop_mode: str,
+) -> torch.Tensor:
+    y1, y2, x1, x2 = crop_bounds(image_shape, record, row, crop_expand, crop_mode)
+    crop = image[:, y1:y2, x1:x2]
+    if crop.numel() == 0:
+        crop = image
+    tensor = torch.nn.functional.interpolate(
+        crop.unsqueeze(0),
+        size=(image_size, image_size),
+        mode="bilinear",
+        align_corners=False,
+        antialias=True,
+    ).squeeze(0)
+    return (tensor - mean) / std
+
+
+def image_to_tensor_from_gpu_frame(
+    image: torch.Tensor,
+    image_shape: tuple[int, ...],
+    record: dict[str, Any] | None,
+    row: dict[str, str],
+    image_size: int,
+    crop_expand: float,
+    mean: torch.Tensor,
+    std: torch.Tensor,
+    crop_mode: str,
+) -> torch.Tensor:
+    y1, y2, x1, x2 = crop_bounds(image_shape, record, row, crop_expand, crop_mode)
+    crop = image[y1:y2, x1:x2]
+    if crop.numel() == 0:
+        crop = image
+    tensor = crop.permute(2, 0, 1).flip(0).to(dtype=torch.float32).div_(255.0)
+    tensor = torch.nn.functional.interpolate(
+        tensor.unsqueeze(0),
+        size=(image_size, image_size),
+        mode="bilinear",
+        align_corners=False,
+        antialias=True,
+    ).squeeze(0)
+    return (tensor - mean) / std
 
 
 def flush_sequence_batch(
